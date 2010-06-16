@@ -34,8 +34,6 @@ const vec3_t NORMAL_Z = {0.0, 0.0, 1.0};
 typedef struct plane_s	{
 	vec3_t origin;
 	vec3_t normal;
-	float length;	// optional, for limiting plane length
-					// uses: bsp tree creation
 }plane_t;
 
 
@@ -46,13 +44,6 @@ typedef struct polygon_s	{
 	// we can add:
 	// - texture coords (uv st)
 	// - texture id or name
-
-
-
-	// for linking polygons
-	polygon_s *nextPoly;
-	polygon_s *prevPoly;
-
 }polygon_t;
 
 void VectorInit(vec3_t vec)	{
@@ -124,13 +115,11 @@ void VectorNegate(const vec3_t a, vec3_t result)	{
 	result[2] = -a[2];
 }
 
-void VectorPrint(const vec3_t v)
-{
+void VectorPrint(const vec3_t v)	{
 	cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
 }
 
-float classifyPoint(const plane_t *plane, const vec3_t point)
-{
+float classifyPoint(const plane_t *plane, const vec3_t point)	{
 	return DotProduct(plane->normal, point) - DotProduct(plane->normal, plane->origin);
 }
 
@@ -163,7 +152,6 @@ int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 		}
 	}
 
-
 	if( hasFront )
 		return FRONT;
 
@@ -173,8 +161,7 @@ int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	return -99;	// Error of sorts happened.
 }
 
-int findLinePlaneIntersect( const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect )
-{
+int findLinePlaneIntersect( const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect )	{
 	vec3_t u;
 	vec3_t w;
 
