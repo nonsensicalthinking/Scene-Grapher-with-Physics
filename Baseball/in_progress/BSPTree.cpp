@@ -17,46 +17,6 @@ using namespace std;
 #define BACK 		-1
 #define COINCIDENT	0
 
-#define EPSILON		0.0001f
-
-
-float classifyPoint(const plane_t *plane, const vec3_t point)
-{
-	return DotProduct(plane->normal, point) - DotProduct(plane->normal, plane->origin);
-}
-
-
-int findLinePlaneIntersect( const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect )
-{
-	vec3_t u;
-	vec3_t w;
-
-	VectorSubtract(pointB, pointA, u);
-	VectorSubtract(pointA, plane->origin, w);
-
-	float numerator = -DotProduct(plane->normal, w);
-	float denominator = DotProduct(plane->normal, u);
-
-	if (fabs(denominator) < EPSILON) {          // segment is parallel to plane
-		if (numerator == 0)                     // segment lies in plane
-			return 2;
-		else
-			return 0;                   // no intersection
-	}
-
-	// they are not parallel
-	// compute intersect param
-	float fractSect = numerator / denominator;
-
-	if( fractSect < 0 || fractSect > 1 )
-		return 0;                       // no intersection
-
-	VectorMA( pointA, u, fractSect, intersect);
-
-	return 1;	// Indicate that we had an intersection
-}
-
-
 
 
 
@@ -75,15 +35,14 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 	float sideA = classifyPoint(split, pointA);
 	float sideB;
 
-	cout << "------------Polygon Split--------------" << endl;
 	cout << "Num Points: " << poly->numPoints << endl;
 
 	for(x=0; x < poly->numPoints; x++)	{
 		VectorCopy(poly->points[x], pointB);
 		sideB = classifyPoint(split, pointB);
 
-//		cout << "Working on pointA " << x << ": [" << pointA[0] << ", " << pointA[1] << ", " << pointA[2] << "]" << endl;
-//		cout << "Working on pointB " << x << ": [" << pointB[0] << ", " << pointB[1] << ", " << pointB[2] << "]" << endl;
+		cout << "Working on pointA " << x << ": [" << pointA[0] << ", " << pointA[1] << ", " << pointA[2] << "]" << endl;
+		cout << "Working on pointB " << x << ": [" << pointB[0] << ", " << pointB[1] << ", " << pointB[2] << "]" << endl;
 		cout << "sideA: " << sideA << endl;
 		cout << "sideB: " << sideB << endl;
 
@@ -160,220 +119,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		cout << endl;
 	}
 
-	cout << "---------------Polygon Split Complete---------------" << endl;
-
 }
-
-
-void initPoly(polygon_t* poly)	{
-	int x=0;
-	poly->numPoints = 0;
-
-	for(x=0; x < MAX_POLY_POINTS; x++)
-		VectorInit(poly->points[x]);
-}
-
-
-/*
-void buildBSPTree(bsp_node_t* tree, polygon_t* polygons, const plane_t* partition, int depth)
-{
-   polygon   *root = polygons.Get_From_List ();
-   tree->partition = partition;
-   tree->addPolygon(root);
-
-   polygon_t* front_list;
-   polygon_t* back_list;
-
-   polygon_t* poly;
-
-   int x;
-   for(x=0; x <  )
-
-
-   while ((poly = polygons.Get_From_List ()) != 0)
-   {
-      int   result = tree->partition.Classify_Polygon (poly);
-      switch (result)
-      {
-         case COINCIDENT:
-            tree->polygons.Add_To_List (poly);
-            break;
-         case IN_BACK_OF:
-            back_list.Add_To_List (poly);
-            break;
-         case IN_FRONT_OF:
-            front_list.Add_To_List (poly);
-            break;
-         case SPANNING:
-            polygon   *front_piece, *back_piece;
-            Split_Polygon (poly, tree->partition, front_piece, back_piece);
-            back_list.Add_To_List (back_piece);
-            front_list.Add_To_List (front_piece);
-            break;
-      }
-   }
-   if ( ! front_list.Is_Empty_List ())
-   {
-      tree->front = new BSP_tree;
-      Build_BSP_Tree (tree->front, front_list);
-   }
-   if ( ! back_list.Is_Empty_List ())
-   {
-      tree->back = new BSP_tree;
-      Build_BSP_Tree (tree->back, back_list);
-   }
-}
-*/
-
-/*
- * This main tests the working-ness of splitting polygons
- */
-
-int main( void )
-{
-	int x;
-
-	polygon_t *poly = new polygon_t;
-	polygon_t *front = new polygon_t;
-	polygon_t *back = new polygon_t;
-
-	plane_t *splitPlane = new plane_t;
-
-
-	splitPlane->origin[0] = 2.0;
-	splitPlane->origin[1] = 0.0;
-	splitPlane->origin[2] = 3.0;
-
-	splitPlane->normal[0] = 0.0;
-	splitPlane->normal[1] = 0.0;
-	splitPlane->normal[2] = 1.0;
-
-	cout << "===> Splitting square..." << endl;
-
-	poly->numPoints = 4;
-	vec3_t polygon[] = {{1.0f, 0.0f, 2.0f},
-						{1.0f, 0.0f, 4.0f},
-						{3.0f, 0.0f, 4.0f},
-						{3.0f, 0.0f, 2.0f}};
-
-	for(x=0; x < poly->numPoints; x++)
-		VectorCopy(polygon[x], poly->points[x]);
-
-	splitPolygon(poly, splitPlane, front, back);
-
-	for(x =0; x < front->numPoints; x++)	{
-		cout << "Front Point " << x << ": ";
-		VectorPrint(front->points[x]);
-		cout << endl;
-	}
-
-	for(x =0; x < back->numPoints; x++)	{
-		cout << "Back Point " << x << ": ";
-		VectorPrint(back->points[x]);
-		cout << endl;
-	}
-
-
-
-	// Triangle
-	cout << "===> Splitting triangle..." << endl;
-	delete poly;
-	poly = new polygon_t;
-
-	vec3_t polygonB[] = {{1.0, 0.0, 1.0}, {2.5, 0.0, 4.0}, {4.0, 0.0, 1.0} };
-
-	splitPlane->origin[0] = 2.5;
-	splitPlane->origin[1] = 0.0;
-	splitPlane->origin[2] = 2.0;
-
-	splitPlane->normal[0] = 1.0;
-	splitPlane->normal[1] = 0.0;
-	splitPlane->normal[2] = 0.0;
-
-	poly->numPoints = 3;
-
-	for(x=0; x < poly->numPoints; x++)
-		VectorCopy(polygonB[x], poly->points[x]);
-
-	splitPolygon(poly, splitPlane, front, back);
-
-	for(x =0; x < front->numPoints; x++)	{
-		cout << "Front Point " << x << ": ";
-		VectorPrint(front->points[x]);
-		cout << endl;
-	}
-
-	for(x =0; x < back->numPoints; x++)	{
-		cout << "Back Point " << x << ": ";
-		VectorPrint(back->points[x]);
-		cout << endl;
-	}
-
-
-
-
-
-	return 0;
-}
-
-
-#define BSP_RECURSION_DEPTH		4
-#define		PLANE_NORMAL_X		0
-#define 	PLANE_NORMAL_Y		1
-#define		PLANE_NORMAL_Z		2
-#define		BACK				-1
-#define		SPANNING			0
-#define		FRONT				1
-
-const vec3_t NORMAL_X = {1.0, 0.0, 0.0};
-const vec3_t NORMAL_Y = {0.0, 1.0, 0.0};
-const vec3_t NORMAL_Z = {0.0, 0.0, 1.0};
-
-
-
-int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
-
-	int x;
-	bool hasFront = false;
-	bool hasBack = false;
-
-
-	for(x=0; x < poly->numPoints; x++)	{
-		float classification = classifyPoint(partition, poly->points[x]);
-
-		// we can do the returns below because if any point on the
-		// polygon is on the opposite side there will be a split
-		// we don't care to check every point, the splitting routines
-		// will do that for us later.
-		if( classification  >= 0 )	{
-			hasFront = true;
-
-			if( hasBack )
-				return SPANNING;
-
-		}
-		else	{ // if( classification < 0 )
-			hasBack = true;
-
-			if( hasFront )
-				return SPANNING;
-		}
-	}
-
-
-	if( hasFront )
-		return FRONT;
-
-	if( hasBack )
-		return BACK;
-
-	return -99;	// Error of sorts happened.
-}
-
-
-
-
-
 
 
 void buildTree(const float width, const float height, plane_t* partition, bsp_node_t* this_node)
@@ -455,6 +201,19 @@ void buildTree(const float width, const float height, plane_t* partition, bsp_no
 
 			VectorCopy(NORMAL_X, new_front_partition->normal);
 			VectorCopy(NORMAL_X, new_back_partition->normal);
+
+			cout << "Next Partition Normal: ";
+			VectorPrint(new_front_partition->normal);
+			cout << endl;
+
+			cout << "Next Partition Origin: ";
+			VectorPrint(new_front_partition->origin);
+			cout << endl;
+
+			cout << "newWidth = " << newWidth << endl;
+			cout << "newHeight = " << newHeight << endl;
+			cout << "Next Center = " << nextCenter << endl;
+
 		}
 		else	{	// partition->normal[PLANE_NORMAL_Z] == 0.0
 			// the last partition was on the x axis
@@ -468,6 +227,19 @@ void buildTree(const float width, const float height, plane_t* partition, bsp_no
 
 			VectorCopy(NORMAL_Z, new_front_partition->normal);
 			VectorCopy(NORMAL_Z, new_back_partition->normal);
+
+			cout << "Next Partition Normal: ";
+			VectorPrint(new_front_partition->normal);
+			cout << endl;
+
+			cout << "Next Partition Origin: ";
+			VectorPrint(new_front_partition->origin);
+			cout << endl;
+
+			cout << "newWidth = " << newWidth << endl;
+			cout << "newHeight = " << newHeight << endl;
+			cout << "Next Center = " << nextCenter << endl;
+
 		}
 
 		/*
@@ -503,10 +275,6 @@ void buildTree(const float width, const float height, plane_t* partition, bsp_no
 
 
 
-/*
-
-
-
 
 int main(void)
 {
@@ -519,17 +287,17 @@ int main(void)
 	p->points[0][1] = 0;
 	p->points[0][2] = -175;
 
-	p->points[0][0] = 175;
-	p->points[0][1] = 0;
-	p->points[0][2] = -175;
+	p->points[1][0] = 175;
+	p->points[1][1] = 0;
+	p->points[1][2] = -175;
 
-	p->points[0][0] = 175;
-	p->points[0][1] = 0;
-	p->points[0][2] = 175;
+	p->points[2][0] = 175;
+	p->points[2][1] = 0;
+	p->points[2][2] = 175;
 
-	p->points[0][0] = -175;
-	p->points[0][1] = 0;
-	p->points[0][2] = 175;
+	p->points[3][0] = -175;
+	p->points[3][1] = 0;
+	p->points[3][2] = 175;
 
 	polygonList.push_back(p);
 
@@ -549,69 +317,9 @@ int main(void)
 
 	buildTree(400, 400, partition, root);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	return 0;
 }
 
-
-
-
-
-
-
-/*
-
-int main(void)
-{
-	int x;
-
-	bsp_node_t* node = new bsp_node_t;
-
-	for(x=0; x < 100; x++)	{
-		polygon_t *a = new polygon_t;
-		a->numPoints = x;
-		node->addPolygon(a);
-	}
-
-	polygon_t* polyItr;
-
-	for(polyItr=node->getPolygonList(); polyItr != NULL; polyItr=polyItr->nextPoly)
-		cout << "Polygon number: " << polyItr->numPoints << endl;
-
-	polygon_t* dpoly = node->getPolyByIndex(5);
-	polygon_t* test = node->removePolygon(dpoly);
-
-
-	if( test == dpoly )
-		cout << "Same polygon returned from remove as we specified" << endl;
-	else
-		cout << "remove polygon removed a different poly than ours" << endl;
-
-	delete dpoly;
-
-	cout << "here" << endl;
-
-	for(polyItr=node->getPolygonList(); polyItr != NULL; polyItr=polyItr->nextPoly)
-		cout << "Polygon number: " << polyItr->numPoints << endl;
-
-
-
-	return 0;
-}*/
 
 
 
@@ -624,3 +332,105 @@ BSPTree::BSPTree() {
 BSPTree::~BSPTree() {
 	// TODO Auto-generated destructor stub
 }
+
+
+
+
+/*
+ * This func tests the working-ness of splitting polygons
+ * oh, but you have to evaluate the results by paper =P
+ */
+void testSplittingOperations()
+{
+	int x;
+
+	polygon_t *poly = new polygon_t;
+	polygon_t *front = new polygon_t;
+	polygon_t *back = new polygon_t;
+
+	plane_t *splitPlane = new plane_t;
+
+
+	splitPlane->origin[0] = 2.0;
+	splitPlane->origin[1] = 0.0;
+	splitPlane->origin[2] = 3.0;
+
+	splitPlane->normal[0] = 0.0;
+	splitPlane->normal[1] = 0.0;
+	splitPlane->normal[2] = 1.0;
+
+	cout << "===> Splitting square..." << endl;
+
+	poly->numPoints = 4;
+	vec3_t polygon[] = {{1.0f, 0.0f, 2.0f},
+						{1.0f, 0.0f, 4.0f},
+						{3.0f, 0.0f, 4.0f},
+						{3.0f, 0.0f, 2.0f}};
+
+	for(x=0; x < poly->numPoints; x++)
+		VectorCopy(polygon[x], poly->points[x]);
+
+	splitPolygon(poly, splitPlane, front, back);
+
+	for(x =0; x < front->numPoints; x++)	{
+		cout << "Front Point " << x << ": ";
+		VectorPrint(front->points[x]);
+		cout << endl;
+	}
+
+	for(x =0; x < back->numPoints; x++)	{
+		cout << "Back Point " << x << ": ";
+		VectorPrint(back->points[x]);
+		cout << endl;
+	}
+
+	// Triangle
+	cout << "===> Splitting triangle..." << endl;
+	delete poly;
+	poly = new polygon_t;
+
+	vec3_t polygonB[] = {{1.0, 0.0, 1.0}, {2.5, 0.0, 4.0}, {4.0, 0.0, 1.0} };
+
+	splitPlane->origin[0] = 2.5;
+	splitPlane->origin[1] = 0.0;
+	splitPlane->origin[2] = 2.0;
+
+	splitPlane->normal[0] = 0.0;
+	splitPlane->normal[1] = 0.0;
+	splitPlane->normal[2] = 1.0;
+
+	poly->numPoints = 3;
+
+	for(x=0; x < poly->numPoints; x++)
+		VectorCopy(polygonB[x], poly->points[x]);
+
+	splitPolygon(poly, splitPlane, front, back);
+
+	for(x =0; x < front->numPoints; x++)	{
+		cout << "Front Point " << x << ": ";
+		VectorPrint(front->points[x]);
+		cout << endl;
+	}
+
+	for(x =0; x < back->numPoints; x++)	{
+		cout << "Back Point " << x << ": ";
+		VectorPrint(back->points[x]);
+		cout << endl;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

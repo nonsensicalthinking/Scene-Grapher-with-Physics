@@ -9,6 +9,14 @@
 #define BSPTREE_H_
 #include <list>
 
+
+#define BSP_RECURSION_DEPTH		10
+
+#define		PLANE_NORMAL_X		0
+#define 	PLANE_NORMAL_Y		1
+#define		PLANE_NORMAL_Z		2
+
+
 // TODO: Consider making BSPNode class instead
 typedef struct bsp_node_s	{
 
