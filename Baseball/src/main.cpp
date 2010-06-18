@@ -15,21 +15,18 @@
 // With regards to the mapping bsp split objects with one whole texture
 // the same principle is in effect for the texture mapped fonts
 
-// The TODO list...ooooo
+// The over all TODO list for the program
 //
 //
 // TODO Make Camera class to store camera info and
 //		functions used to move camera about the scene
 //
-// TODO Implement BSP Tree for collision detection and
-// 		drawing visible objects??
+// TODO Implement collision detection
+//
+// TODO Implement texture mapping
 //
 // TODO Implement simple texturing system so we can texture
 //		parts of a texture on a particular polygon
-//
-// TODO Make Vector3d one unified container, as of right now
-//		there are 3 kinds of vector containers: vec3_t, vec3f, Vector3D
-//		pick one and stick with it asshole...
 //
 // TODO Create some sort of glPrint function, or rip one off and offer
 //		credit to the creator in exchange..,
@@ -37,8 +34,9 @@
 // TODO Create console class so we can modify cvars and view errors printed
 //		inside the simulation
 //
+// TODO Implement programmable shaders
 //
-// End the TODO List....thank god
+// End the TODO List...for now.
 
 /*
  * Ideas on how this might all fit together.

@@ -5,19 +5,29 @@
  *      Author: brof
  */
 
+
+/*
+ * TODO LIST for this file
+ *
+ * TODO Remove constructs and rename file, BSPTree won't be a class after all.
+ *
+ * TODO: Generate U and V texture coords when splitting polygons
+ * idea behind doing it now lets us avoid more calculations later
+ * in the program for determining texture mapping coords
+ *
+ */
+
+
 #include <iostream>
 #include <cmath>
 #include "shared.h"
 #include "BSPTree.h"
-
 
 using namespace std;
 
 #define FRONT 		1
 #define BACK 		-1
 #define COINCIDENT	0
-
-
 
 
 void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front, polygon_t *back)

@@ -9,6 +9,18 @@
  *  Created on: Feb 25, 2010
  *      Author: brof
  */
+
+/*
+ * TODO LIST for this file
+ *
+ * TODO: Generate display lists for polygons
+ *
+ *
+ */
+
+
+
+
 #include <iostream>
 #include "scene.h"
 #include "shared.h"	// this is included in physics.h too
