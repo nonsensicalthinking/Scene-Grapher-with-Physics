@@ -9,10 +9,11 @@
  *  Created on: Feb 25, 2010
  *      Author: brof
  */
-#include "scene.h"
-#include "shared.h"
-#include "physics.h"
 #include <iostream>
+#include "scene.h"
+#include "shared.h"	// this is included in physics.h too
+#include "physics.h"
+#include "BSPTree.h"
 #include <GL/glut.h>
 
 #define MODEL 			"models/tallguy.md2"
@@ -33,12 +34,64 @@ MotionUnderGravitation* motionUnderGravitation;
 vec3_t startPos = {0.0, 0.0, 0.0};
 vec3_t startAngle = {10.0, 15.0, 0.0};
 
+
+bsp_node_t* bspRoot;
+
+
+void createSimpleBSP(bsp_node_t* root)	{
+	list<polygon_t*> polygonList;
+
+	polygon_t* p = new polygon_t;
+	p->numPoints = 4;
+
+	p->points[0][0] = -200;
+	p->points[0][1] = 0;
+	p->points[0][2] = -200;
+
+	p->points[1][0] = -200;
+	p->points[1][1] = 0;
+	p->points[1][2] = 200;
+
+	p->points[2][0] = 200;
+	p->points[2][1] = 0;
+	p->points[2][2] = 200;
+
+	p->points[3][0] = 200;
+	p->points[3][1] = 0;
+	p->points[3][2] = -200;
+
+	polygonList.push_back(p);
+
+	plane_t* partition = new plane_t;
+
+	partition->normal[0] = 1.0;
+	partition->normal[1] = 0.0;
+	partition->normal[2] = 0.0;
+
+	partition->origin[0] = 0.0;
+	partition->origin[1] = 0.0;
+	partition->origin[2] = 0.0;
+
+	root->setPolygonList(polygonList);
+
+
+	buildTree(400, partition, root);
+}
+
+
+
+
 Scene::Scene()
 {
 //	m = MD2Model::load(MODEL);
 
 	// TODO REMOVE, This is just a test object for which to test the physics header
 	vec3_t startVel;
+
+	bspRoot = new bsp_node_t;
+
+	createSimpleBSP(bspRoot);
+
 
 	VectorSubtract(startPos, startAngle, startVel);
 	float len = VectorLength(startVel);
@@ -62,6 +115,50 @@ Scene::~Scene()
 }
 
 
+
+
+
+
+void renderPolygonList(list<polygon_t*> polygons)
+{
+	list<polygon_t*>::iterator itr;
+
+	// for each polygon in the list
+	for(itr = polygons.begin(); itr != polygons.end(); itr++)	{
+		glColor3f(0.0, 0.0, 1.0);
+		glPushMatrix();
+		glBegin(GL_POLYGON);
+		for(int x=0; x < (*itr)->numPoints; x++)	{
+			vec3_t point;
+			VectorCopy((*itr)->points[x], point);
+			glVertex3f(point[0], point[1], point[2]);
+		}
+		glEnd();
+		glPopMatrix();
+
+	}
+}
+
+
+
+void renderBSPTree(bsp_node_t* tree)	{
+	static int leafCount = 0;
+
+	if( tree->isLeaf() )	{
+		leafCount++;
+		cout << "Rendering Leaf #" << leafCount << endl;
+		renderPolygonList(tree->getPolygonList());
+	}
+	else	{
+		// perform render back to front
+		renderBSPTree(tree->back);
+		renderBSPTree(tree->front);
+	}
+}
+
+
+
+
 void Scene::render()
 {
 	int a;
@@ -69,6 +166,10 @@ void Scene::render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
+	if( bspRoot )	{
+		renderBSPTree(bspRoot);
+	}
+
 
 	glPushMatrix();
 

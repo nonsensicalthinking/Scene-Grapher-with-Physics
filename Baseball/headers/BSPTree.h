@@ -10,7 +10,7 @@
 #include <list>
 
 
-#define BSP_RECURSION_DEPTH		10
+#define BSP_RECURSION_DEPTH		4
 
 #define		PLANE_NORMAL_X		0
 #define 	PLANE_NORMAL_Y		1
@@ -34,7 +34,7 @@ typedef struct bsp_node_s	{
 	// node helpers
 
 	bool isLeaf()	{
-		if(!front)
+		if(front)
 			return false;
 
 		return true;
@@ -60,6 +60,10 @@ typedef struct bsp_node_s	{
 		return polygonList.end();
 	}
 
+	list<polygon_t*> getPolygonList()	{
+		return polygonList;
+	}
+
 	void setPolygonList(list<polygon_t*> polyList)	{
 		polygonList = polyList;
 	}
@@ -71,6 +75,7 @@ typedef struct bsp_node_s	{
 }bsp_node_t;
 
 
+void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node);
 
 
 class BSPTree {

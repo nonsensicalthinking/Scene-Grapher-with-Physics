@@ -7,12 +7,13 @@
 	Thanks for the lesson.
 
 **************************************************************************/
-#include <math.h>
-#include "shared.h"
+
 
 #ifndef PHYSICS_H_
 #define PHYSICS_H_
 
+#include <math.h>
+#include "shared.h"
 
 // class Mass			---> An object to represent a mass
 class Mass

@@ -214,8 +214,6 @@ void processSpecialKeys(int key, int x, int y) {
 }
 
 
-
-// What to call and when, kick it off my brotha
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
