@@ -6,6 +6,7 @@
  */
 
 #include <string>
+#include <list>
 
 #ifndef CONSOLE_H_
 #define CONSOLE_H_
@@ -17,15 +18,22 @@ enum CON_COMMAND {
 	CON_HEIGHT
 };
 
+using namespace std;
 
 
 class Console {
+
+private:
+	list<string> *input;
+	list<string> *output;
+
 
 public:
 	Console();
 	virtual ~Console();
 
 	void processConsoleCommand(const std::string conInput);
+	int TokenizeString(const string str, const char delim, list<string> *tokens);
 
 
 };
