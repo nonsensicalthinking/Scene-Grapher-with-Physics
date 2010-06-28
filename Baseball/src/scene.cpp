@@ -25,8 +25,14 @@
 #include "scene.h"
 #include "shared.h"	// this is included in physics.h too
 #include "physics.h"
-#include "BSPTree.h"
+#include "bsptree.h"
+#include "font.h"
+#include "Console.h"
+#include "keys.h"
+#include <sstream>
 #include <GL/glut.h>
+
+Font* f;
 
 #define MODEL 			"models/tallguy.md2"
 #define FLOOR_RADIUS 	100
@@ -91,20 +97,31 @@ void createSimpleBSP(bsp_node_t* root)	{
 }
 
 
-
-
 Scene::Scene()
 {
 //	m = MD2Model::load(MODEL);
 
-	// TODO REMOVE, This is just a test object for which to test the physics header
-	vec3_t startVel;
 
 	bspRoot = new bsp_node_t;
-
 	createSimpleBSP(bspRoot);
 
+//	dimention_t* dim = new dimention_t;
+//	dim->width = 800;
+//	dim->height = 600;
 
+//	f = new Font(dim);
+
+	consoleActive = false;
+	con = new Console();
+
+	for(int x=0; x < 20; x++)	{
+		ostringstream s;
+		s << "this is line #" << x << "\n";
+		con->output->push_back(s.str());
+	}
+
+	// TODO REMOVE, This is just a test object for which to test the physics header
+	vec3_t startVel;
 	VectorSubtract(startPos, startAngle, startVel);
 	float len = VectorLength(startVel);
 
@@ -128,6 +145,20 @@ Scene::~Scene()
 
 
 
+// TODO Test me
+// This should be used when "Loading the map"
+void glCachePolygon(polygon_t* polygon)	{
+    polygon->glCacheID = glGenLists(1);
+    glNewList(polygon->glCacheID, GL_COMPILE);
+//    glBindTexture(GL_TEXTURE_2D, texture[0]);
+    glBegin(GL_POLYGON);
+    for(int loop = 0; loop < polygon->numPoints ; loop++)	{
+//		glTexCoord2f(u_coord, v_coord);
+		glVertex3f(polygon->points[loop][0], polygon->points[loop][1], polygon->points[loop][2]);
+    }
+    glEnd();
+	glEndList();
+}
 
 
 
@@ -158,7 +189,7 @@ void renderBSPTree(bsp_node_t* tree)	{
 
 	if( tree->isLeaf() )	{
 		leafCount++;
-		cout << "Rendering Leaf #" << leafCount << endl;
+//		cout << "Rendering Leaf #" << leafCount << endl;
 		renderPolygonList(tree->getPolygonList());
 	}
 	else	{
@@ -201,6 +232,35 @@ void Scene::render()
 	}
 	glPopMatrix();
 
+
+//	if( f )
+//	string msg = "Hello there!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+//	f->glPrint(15, 15, msg.c_str(), 0);
+	if( consoleActive )
+		con->Draw();
+
+
+
+
+	/*
+	glPushMatrix();
+    glBindTexture(GL_TEXTURE_2D, testTex);
+	glBegin(GL_POLYGON);
+		glTexCoord2f(0.0, 0.0);
+		glVertex3f(0.0, 0.0, 0.0);
+
+		glTexCoord2f(0.0, 1.0);
+		glVertex3f(0.0, 50.0, 0.0);
+
+		glTexCoord2f(1.0, 1.0);
+		glVertex3f(50.0, 50.0, 0.0);
+
+		glTexCoord2f(1.0, 0.0);
+		glVertex3f(50.0, 0.0, 0.0);
+	glEnd();
+	glPopMatrix();
+*/
+
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
 
@@ -237,6 +297,26 @@ void Scene::doItAgain()
 {
 	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
 }
+
+
+void Scene::keyPressed(unsigned char key)	{
+	cout << "Key pressed: " << (int)key << endl;
+
+	if( consoleActive )	{
+		if( key == CONSOLE_KEY )	// allow to exit console
+			consoleActive = !consoleActive;
+		else
+			con->appendToInput(key);
+	}
+	else	{
+		switch(key)	{
+			case '`':	// active console
+				consoleActive = !consoleActive;
+				break;
+		}
+	}
+}
+
 
 
 

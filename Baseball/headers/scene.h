@@ -5,14 +5,19 @@
  *      Author: brof
  */
 
+#include "Console.h"
 #include <string>
 
 #ifndef SCENE_H_
 #define SCENE_H_
 
-
 // TODO MD2Model Example Code
 //#include "md2model.h"
+
+
+
+
+
 
 
 class Scene	{
@@ -21,12 +26,16 @@ class Scene	{
 //	MD2Model *m;
 
 public:
+	Console* con;
+	bool consoleActive;
+
 
 	Scene(void);
 	~Scene(void);
 	void render(void);
 	void advance(clock_t milliseconds);
 	void doItAgain();
+	void keyPressed(unsigned char key);
 };
 
 

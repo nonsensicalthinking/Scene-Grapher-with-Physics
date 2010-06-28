@@ -8,7 +8,6 @@
 #ifndef KEYS_H_
 #define KEYS_H_
 
-#define ESC_KEY 	27
 #define A_KEY		'a'
 #define B_KEY		'b'
 #define C_KEY		'c'
@@ -35,5 +34,10 @@
 #define X_KEY		'x'
 #define Y_KEY		'y'
 #define Z_KEY		'z'
+
+#define CONSOLE_KEY 	'`'
+#define BACKSPACE_KEY	8
+#define ENTER_KEY		13
+#define ESC_KEY 		27
 
 #endif /* KEYS_H_ */

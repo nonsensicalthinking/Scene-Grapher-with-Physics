@@ -95,6 +95,8 @@ GLfloat camOrientation[] = {0.0, 1.0, 0.0};	// Which way is up?? =P
 
 Scene *curScene;
 
+float clearColor[] = {0.0, 0.0, 0.0, 0.0};
+
 void init()	{
 	curScene = new Scene();	// Create a new scene to feed me!
 	glClearDepth(1.0f);									// Depth Buffer Setup
@@ -102,13 +104,15 @@ void init()	{
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
 
-	glClearColor(0,0,0,0);
+	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
   	glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+
+
 }
 
 
@@ -188,7 +192,9 @@ void processNormalKeys(unsigned char key, int x, int y)
 	if (key == ESC_KEY)
 		exit(0);
 
-	if( key == A_KEY )	{
+	curScene->keyPressed(key);
+
+/*	if( key == A_KEY )	{
 		curScene->doItAgain();
 	}
 	else if( key == D_KEY )	{
@@ -200,6 +206,7 @@ void processNormalKeys(unsigned char key, int x, int y)
 	else if( key == W_KEY )	{
 
 	}
+*/
 }
 
 void processSpecialKeys(int key, int x, int y) {

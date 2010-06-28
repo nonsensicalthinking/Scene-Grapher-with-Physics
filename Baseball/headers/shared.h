@@ -43,6 +43,8 @@ typedef struct plane_s	{
 typedef struct polygon_s	{
 	int numPoints;
 	vec3_t points[MAX_POLY_POINTS];
+	int glCacheID;
+
 	// we can add:
 	// - texture coords (uv st)
 	// - texture id or name

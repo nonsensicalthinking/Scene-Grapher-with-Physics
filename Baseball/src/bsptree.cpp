@@ -11,7 +11,7 @@
  *
  * TODO Remove constructs and rename file, BSPTree won't be a class after all.
  *
- * TODO: Generate U and V texture coords when splitting polygons
+ * TODO Generate U and V texture coords when splitting polygons
  * idea behind doing it now lets us avoid more calculations later
  * in the program for determining texture mapping coords
  *
@@ -21,7 +21,7 @@
 #include <iostream>
 #include <cmath>
 #include "shared.h"
-#include "BSPTree.h"
+#include "bsptree.h"
 
 using namespace std;
 
@@ -45,20 +45,24 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 	float sideA = classifyPoint(split, pointA);
 	float sideB;
 
+#ifdef DEBUG_SPLIT
 	cout << "Num Points: " << poly->numPoints << endl;
-
+#endif
 	for(x=0; x < poly->numPoints; x++)	{
 		VectorCopy(poly->points[x], pointB);
 		sideB = classifyPoint(split, pointB);
 
+#ifdef DEBUG_SPLIT
 		cout << "Working on pointA " << x << ": [" << pointA[0] << ", " << pointA[1] << ", " << pointA[2] << "]" << endl;
 		cout << "Working on pointB " << x << ": [" << pointB[0] << ", " << pointB[1] << ", " << pointB[2] << "]" << endl;
 		cout << "sideA: " << sideA << endl;
 		cout << "sideB: " << sideB << endl;
-
+#endif
 		if( sideB > 0 )	{
 			if( sideA < 0 )	{
+#ifdef DEBUG_SPLIT
 				cout << "Line crosses plane." << endl;
+#endif
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a simple ray-plane intersection.
@@ -71,14 +75,17 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 					VectorCopy(intersection, backPoints[backCount++]);
 				}
 			}
+#ifdef DEBUG_SPLIT
 			else
 				cout << "Same side of plane." << endl;
-
+#endif
 			VectorCopy(pointB, frontPoints[frontCount++]);
 		}
 		else if( sideB < 0 )	{
 			if( sideA > 0 )	{
+#ifdef DEBUG_SPLIT
 				cout << "Line crosses plane." << endl;
+#endif
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a simple ray-plane intersection.
@@ -90,9 +97,10 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 					VectorCopy(intersection, backPoints[backCount++]);
 				}
 			}
+#ifdef DEBUG_SPLIT
 			else
 				cout << "Same side of plane." << endl;
-
+#endif
 			VectorCopy(pointB, backPoints[backCount++]);
 		}
 		else	{	// coincident ?
@@ -109,24 +117,30 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		sideA = sideB;
 	}
 
+#ifdef DEBUG_SPLIT
 	cout << "Front Point Count: " << frontCount << endl;
 	cout << "Back Point Count: " << backCount << endl;
-
+#endif
 	front->numPoints = frontCount;
 	for(x=0; x < frontCount; x++)	{
 		VectorCopy(frontPoints[x], front->points[x]);
 
+#ifdef DEBUG_SPLIT
 		cout << "front->points: ";
 		VectorPrint(front->points[x]);
 		cout << endl;
+#endif
 	}
 
 	back->numPoints = backCount;
 	for(x=0; x < backCount; x++)	{
 		VectorCopy(backPoints[x], back->points[x]);
+
+#ifdef DEBUG_SPLIT
 		cout << "back->points: ";
 		VectorPrint(back->points[x]);
 		cout << endl;
+#endif
 	}
 
 }
@@ -143,9 +157,6 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		leafCount++;
 		cout << "Level " << depth << ": " << "END OF BRANCH (LEAF#" << leafCount << ")" << endl;
 
-		if( parent_node->parent )
-			cout << "We have a parent too" << endl;
-
 		depth--;
 		return;
 	}
@@ -159,7 +170,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		list<polygon_t*> front_list;
 		list<polygon_t*> back_list;
 
-		cout << "Level " << depth << "Polygon count: " << parent_node->getPolygonCount() << endl;
+		cout << "Level " << depth << " Polygon count: " << parent_node->getPolygonCount() << endl;
 
 		for(itr=parent_node->beginPolyListItr(); itr != parent_node->endPolyListItr(); itr++)	{
 			polygon_t* curPoly = (*itr);
@@ -265,7 +276,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		 * End creation of new partitioning planes
 		 */
 		cout << "*** END DIMENSIONS ***" << endl;
-		cout << "Level " << depth << ": " << "Done creating new partitions" << endl;
+		cout << "Level " << depth << ": " << " Done creating new partitions." << endl;
 
 
 
@@ -291,21 +302,21 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		front_node->setPolygonList(front_list);
 		back_node->setPolygonList(back_list);
 
-		cout << "Level " << depth << ": " << "Done linking, calling next FRONT" << endl;
+		cout << "Level " << depth << ": " << " Done linking, calling next FRONT." << endl;
 		buildTree(nextLength, new_front_partition, front_node);
 
-		cout << "Level " << depth << ": " << "Done linking, calling next BACK" << endl;
+		cout << "Level " << depth << ": " << " Done linking, calling next BACK." << endl;
 		buildTree(nextLength, new_back_partition, back_node);
 
 	}
 
-	cout << "BACK UP ONE" << endl;
-	cout << "Partition Norm: ";
-	VectorPrint(parent_node->partition->normal);
-	cout << endl;
-	cout << "Partition Origin: ";
-	VectorPrint(parent_node->partition->origin);
-	cout << endl;
+//	cout << "BACK UP ONE" << endl;
+//	cout << "Partition Norm: ";
+//	VectorPrint(parent_node->partition->normal);
+//	cout << endl;
+//	cout << "Partition Origin: ";
+//	VectorPrint(parent_node->partition->origin);
+//	cout << endl;
 
 	depth--;
 }
@@ -394,17 +405,6 @@ int main(void)
 }
 
 */
-
-
-
-BSPTree::BSPTree() {
-	// TODO Auto-generated constructor stub
-
-}
-
-BSPTree::~BSPTree() {
-	// TODO Auto-generated destructor stub
-}
 
 
 

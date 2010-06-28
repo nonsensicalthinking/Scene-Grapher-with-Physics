@@ -77,29 +77,4 @@ typedef struct bsp_node_s	{
 
 void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node);
 
-
-class BSPTree {
-private:
-	bsp_node_t* root;
-
-
-public:
-	BSPTree();
-	virtual ~BSPTree();
-
-//	void constructTree(polygon_t* polyList, );
-
-
-
-
-
-
-};
-
-
-
-
-
-
-
 #endif /* BSPTREE_H_ */
