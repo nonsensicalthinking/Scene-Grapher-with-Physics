@@ -15,11 +15,6 @@
 //#include "md2model.h"
 
 
-
-
-
-
-
 class Scene	{
 
 // TODO MD2Model Example Code
@@ -30,12 +25,13 @@ public:
 	bool consoleActive;
 
 
-	Scene(void);
+	Scene(int width, int height);
 	~Scene(void);
 	void render(void);
 	void advance(clock_t milliseconds);
 	void doItAgain();
 	void keyPressed(unsigned char key);
+	void specialKeyPressed(int key, int x, int y);
 };
 
 

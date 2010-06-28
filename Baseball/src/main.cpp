@@ -28,12 +28,6 @@
 // TODO Implement simple texturing system so we can texture
 //		parts of a texture on a particular polygon
 //
-// TODO Create some sort of glPrint function, or rip one off and offer
-//		credit to the creator in exchange..,
-//
-// TODO Create console class so we can modify cvars and view errors printed
-//		inside the simulation
-//
 // TODO Implement programmable shaders
 //
 // End the TODO List...for now.
@@ -98,7 +92,7 @@ Scene *curScene;
 float clearColor[] = {0.0, 0.0, 0.0, 0.0};
 
 void init()	{
-	curScene = new Scene();	// Create a new scene to feed me!
+	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);	// Create a new scene to feed me!
 	glClearDepth(1.0f);									// Depth Buffer Setup
 	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
@@ -210,6 +204,9 @@ void processNormalKeys(unsigned char key, int x, int y)
 }
 
 void processSpecialKeys(int key, int x, int y) {
+
+	curScene->specialKeyPressed(key, x, y);
+//	cout << "kp: " << key << endl;
 
 	switch(key) {
 //		case GLUT_KEY_F1 : red = 1.0; green = 0.0; blue = 0.0; break;

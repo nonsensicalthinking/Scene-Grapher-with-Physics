@@ -12,6 +12,32 @@
 
 using namespace std;
 
+Console::Console(int width, int height) {
+	input = new list<string>;
+	instr = new ostringstream;
+	output = new list<string>;	// console output
+	font = new Font(width,height);
+	screenWidth = width;
+	screenHeight = height;
+	minusIndex = 1;
+}
+
+Console::~Console() {
+	delete input;
+	delete instr;
+	delete output;
+	delete font;
+}
+
+void Console::scrollDown()	{
+	if( minusIndex > 1 )
+		minusIndex--;
+}
+
+void Console::scrollUp()	{
+	if( minusIndex < output->size() )
+		minusIndex++;
+}
 
 void Console::appendToInput(unsigned char s)	{
 	if( s == ENTER_KEY )	{
@@ -39,16 +65,62 @@ void Console::clearInput()	{
 	instr = new ostringstream;
 }
 
-Console::Console() {
-	input = new list<string>;
-	instr = new ostringstream;
-	output = new list<string>;	// console output
-	font = new Font(800,600);
+void range_tolower ( string::iterator beg, string::iterator end ) {
+	for( string::iterator iter = beg; iter != end; ++iter ) {
+		*iter = std::tolower( *iter );
+	}
 }
 
-Console::~Console() {
-	// TODO Auto-generated destructor stub
+void string_tolower ( std::string &str ) {
+	range_tolower( str.begin(), str.end() );
 }
+
+int Console::TokenizeString(const string str, const char delim, list<string> *tokens)
+{
+    string::size_type lastPos = str.find_first_not_of(delim, 0);
+    string::size_type pos = str.find_first_of(delim, lastPos);
+
+    while (string::npos != pos || string::npos != lastPos)	{
+    	tokens->push_back(str.substr(lastPos, pos - lastPos));
+        lastPos = str.find_first_not_of(delim, pos);
+        pos = str.find_first_of(delim, lastPos);
+    }
+
+    return tokens->size();
+}
+
+
+// TODO make these changeable and/or dependent upon environment
+//#define screenHeight 600
+#define left 0
+#define lines		20
+
+void Console::Draw()	{
+	int lineNumber = lines;
+	list<string>::iterator strItr;
+
+	// TODO Give console a background and outline the input line
+	// Draw it before drawing any console text.
+
+	// Seek scroll position
+	strItr = output->end();
+	for(int x=0; x < minusIndex; x++)
+		strItr--;
+
+	// iterate and draw the console output backward so we can see most recent output
+	for(; (strItr!=output->begin() && lineNumber > 0); strItr--, lineNumber--)
+		font->glPrint(left, (screenHeight-(lineNumber*16)), (*strItr).c_str(), 0);
+
+	string s = ">" + inputString;
+
+	// draw input line
+	font->glPrint(left, screenHeight-((lines+1)*16), s.c_str(), 0);
+}
+
+
+
+
+
 
 #define CMDCOUNT	3
 
@@ -66,19 +138,6 @@ string commands[] = {
 		"there",
 		"everywhere"
 };
-
-
-
-void range_tolower ( string::iterator beg, string::iterator end ) {
-	for( string::iterator iter = beg; iter != end; ++iter ) {
-		*iter = std::tolower( *iter );
-	}
-}
-
-void string_tolower ( std::string &str ) {
-	range_tolower( str.begin(), str.end() );
-}
-
 
 
 void Console::processConsoleCommand(const string conInput)	{
@@ -138,59 +197,7 @@ void Console::processConsoleCommand(const string conInput)	{
 }
 
 
-int Console::TokenizeString(const string str, const char delim, list<string> *tokens)
-{
-    string::size_type lastPos = str.find_first_not_of(delim, 0);
-    string::size_type pos = str.find_first_of(delim, lastPos);
-
-    while (string::npos != pos || string::npos != lastPos)	{
-    	tokens->push_back(str.substr(lastPos, pos - lastPos));
-        lastPos = str.find_first_not_of(delim, pos);
-        pos = str.find_first_of(delim, lastPos);
-    }
-
-    return tokens->size();
-}
-
-#define top 600
-#define left 0
-#define lines		10
-
-void Console::Draw()	{
-	int lineNumber = lines;
-	list<string>::iterator strItr;
-
-	// TODO Implement a way to scroll up in the console
-	// TODO Give console a background and outline the input line
-
-	// iterate and draw the console output backward so we can see most recent output
-	for(strItr=output->end(); (strItr!=output->begin() && lineNumber > 0); strItr--, lineNumber--)
-		font->glPrint(left, (top-(lineNumber*16)), (*strItr).c_str(), 0);
-
-	// draw input line
-	font->glPrint(left, top-(lines*16), inputString.c_str(), 0);
-
-
-}
-
-
-
-/*
-int main(void)	{
-
-	Console *con = new Console();
-
-	list<string> *tokens = new list<string>;
-
-	con->processConsoleCommand("CONDUMP output.txt");
-	con->processConsoleCommand("HERE");
-	con->processConsoleCommand("THERE");
-	con->processConsoleCommand("EVERYwhere");
-	con->processConsoleCommand("boo");
 
 
 
 
-	return 0;
-}
-*/

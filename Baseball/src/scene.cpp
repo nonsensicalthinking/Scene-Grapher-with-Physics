@@ -97,9 +97,14 @@ void createSimpleBSP(bsp_node_t* root)	{
 }
 
 
-Scene::Scene()
+Scene::Scene(int width, int height)
 {
-//	m = MD2Model::load(MODEL);
+	consoleActive = false;
+	con = new Console(width,height);
+
+
+
+	//	m = MD2Model::load(MODEL);
 
 
 	bspRoot = new bsp_node_t;
@@ -111,8 +116,6 @@ Scene::Scene()
 
 //	f = new Font(dim);
 
-	consoleActive = false;
-	con = new Console();
 
 	for(int x=0; x < 20; x++)	{
 		ostringstream s;
@@ -141,6 +144,7 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+	delete con;
 }
 
 
@@ -185,11 +189,7 @@ void renderPolygonList(list<polygon_t*> polygons)
 
 
 void renderBSPTree(bsp_node_t* tree)	{
-	static int leafCount = 0;
-
 	if( tree->isLeaf() )	{
-		leafCount++;
-//		cout << "Rendering Leaf #" << leafCount << endl;
 		renderPolygonList(tree->getPolygonList());
 	}
 	else	{
@@ -233,33 +233,11 @@ void Scene::render()
 	glPopMatrix();
 
 
-//	if( f )
-//	string msg = "Hello there!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-//	f->glPrint(15, 15, msg.c_str(), 0);
+
+	// Draw the console if open
 	if( consoleActive )
 		con->Draw();
 
-
-
-
-	/*
-	glPushMatrix();
-    glBindTexture(GL_TEXTURE_2D, testTex);
-	glBegin(GL_POLYGON);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3f(0.0, 0.0, 0.0);
-
-		glTexCoord2f(0.0, 1.0);
-		glVertex3f(0.0, 50.0, 0.0);
-
-		glTexCoord2f(1.0, 1.0);
-		glVertex3f(50.0, 50.0, 0.0);
-
-		glTexCoord2f(1.0, 0.0);
-		glVertex3f(50.0, 0.0, 0.0);
-	glEnd();
-	glPopMatrix();
-*/
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
@@ -298,25 +276,45 @@ void Scene::doItAgain()
 	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
 }
 
-
+// Handles keyboard input from normal text keys
 void Scene::keyPressed(unsigned char key)	{
-	cout << "Key pressed: " << (int)key << endl;
-
-	if( consoleActive )	{
-		if( key == CONSOLE_KEY )	// allow to exit console
-			consoleActive = !consoleActive;
-		else
-			con->appendToInput(key);
+//	cout << "Key pressed: " << key << endl;
+	if( consoleActive )	{	// send key input to console
+		switch(key)	{
+			case CONSOLE_KEY:	// deactivate console
+				consoleActive = !consoleActive;
+				break;
+			default:	// add to input line
+				con->appendToInput(key);
+		}
 	}
-	else	{
+	else	{	// Don't send key input to console
 		switch(key)	{
 			case '`':	// active console
 				consoleActive = !consoleActive;
+				break;
+			case 'a':	// omg our first control over the scene!
+				doItAgain();
 				break;
 		}
 	}
 }
 
+// handles keyboard input from special keys
+void Scene::specialKeyPressed(int key, int x, int y)	{
+	cout << "SKey Pressed: " << key << endl;
+
+	if( consoleActive )	{	// send key input to console
+		switch(key)	{
+			case PAGE_UP_KEY:	// scroll up
+				con->scrollUp();
+				break;
+			case PAGE_DOWN_KEY:	// scroll down
+				con->scrollDown();
+				break;
+		}
+	}
+}
 
 
 

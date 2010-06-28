@@ -13,30 +13,26 @@
 #ifndef CONSOLE_H_
 #define CONSOLE_H_
 
-enum CON_COMMAND {
-	CLEAR,
-	DUMP,
-	QUIT,
-	CON_HEIGHT
-};
-
 using namespace std;
 
 
 class Console {
-
-private:
-
 public:
 	string inputString;
 	ostringstream* instr;
 	list<string> *input;
 	list<string> *output;
+	int minusIndex;
 	Font* font;
 
-	Console();
+	int screenWidth;
+	int screenHeight;
+
+	Console(int width, int height);
 	virtual ~Console();
 
+	void scrollDown();
+	void scrollUp();
 	void appendToInput(unsigned char s);
 	void removeLastCharacter();
 	void clearInput();
