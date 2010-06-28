@@ -62,6 +62,7 @@ void Console::removeLastCharacter()	{
 }
 
 void Console::clearInput()	{
+	delete instr;
 	instr = new ostringstream;
 }
 
