@@ -1,6 +1,6 @@
 /**************************************************************************
 
-  File: Physics.h
+  File: physics.h
 	Portions of the code in this file was derived from the works of:
 	Erkin Tunca for http://nehe.gamedev.net
 
@@ -53,7 +53,7 @@ public:
 
 };
 
-// class Simulation template
+// Abstract class Simulation
 class Simulation	{
 public:
 	int numOfMasses;

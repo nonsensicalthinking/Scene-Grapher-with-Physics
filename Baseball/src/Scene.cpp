@@ -22,7 +22,7 @@
 
 
 #include <iostream>
-#include "scene.h"
+#include "Scene.h"
 #include "shared.h"	// this is included in physics.h too
 #include "physics.h"
 #include "bsptree.h"
@@ -303,7 +303,7 @@ void Scene::keyPressed(unsigned char key)	{
 
 // handles keyboard input from special keys
 void Scene::specialKeyPressed(int key, int x, int y)	{
-	cout << "Special Key Pressed: " << key << endl;
+//	cout << "Special Key Pressed: " << key << endl;
 
 	if( consoleActive )	{	// send key input to console
 		switch(key)	{

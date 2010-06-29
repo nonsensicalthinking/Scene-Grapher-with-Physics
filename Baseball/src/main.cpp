@@ -63,7 +63,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <iostream>
-#include "scene.h"
+#include "Scene.h"
 #include "texture.h"
 #include "keys.h"			// Key presses defined
 #include <GL/glut.h>

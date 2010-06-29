@@ -28,7 +28,7 @@ using namespace std;
 // NOTE: because of this extern declaration, remember that
 // things aren't the way they may seem, wasted 45m trying
 // to track down a segfault that was due to the object never
-// having been called, but for some reason we were able to
+// having been instantiated, but for some reason we were able to
 // call one of its member functions without instantiation of
 // said object...wtf?  JUST REMEMBER! DANGER!
 extern TextureManager* getTextureManager();
@@ -54,26 +54,9 @@ private:
 	string fontPath;
 
 public:
-	Font(dimention_t *dimention)	{
-		this->windowDimention = dimention;
-
-		textures = getTextureManager();
-
-		fontPath = "font.bmp";
-
-		if( textures->loadBitmap(fontPath) )	{
-			buildFont();
-			cout << "Font Build Complete." << endl;
-		}
-		else
-			cout << "Font build failed because of texture!" << endl;
-
-	}
-
+	// Will load a default font
 	Font(float width, float height)	{
-
 		this->windowDimention = new dimention_t;
-
 		this->windowDimention->height = height;
 		this->windowDimention->width = width;
 
@@ -81,17 +64,33 @@ public:
 
 		fontPath = "font.bmp";
 
+		loadFont();
+	}
+
+	// Will load specified font
+	Font(float width, float height, string font)	{
+		windowDimention = new dimention_t;
+		windowDimention->height = height;
+		windowDimention->width = width;
+
+		textures = getTextureManager();
+
+		fontPath = font;
+
+		loadFont();
+	}
+
+	~Font()	{
+		killFont();
+	}
+
+	void loadFont()	{
 		if( textures->loadBitmap(fontPath) )	{
 			buildFont();
 			cout << "Font Build Complete." << endl;
 		}
 		else
 			cout << "Font build failed because of texture!" << endl;
-	}
-
-
-	~Font()	{
-		killFont();
 	}
 
 	void buildFont(void) {
