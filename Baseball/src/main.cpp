@@ -17,7 +17,6 @@
 
 // The over all TODO list for the program
 //
-//
 // TODO Make Camera class to store camera info and
 //		functions used to move camera about the scene
 //
@@ -60,12 +59,13 @@
  */
 
 
-#include <stdlib.h>
-#include <ctime>
-#include <iostream>
 #include "Scene.h"
 #include "texture.h"
 #include "keys.h"			// Key presses defined
+#include <stdlib.h>
+#include <ctime>
+#include <iostream>
+#include <sys/time.h>
 #include <GL/glut.h>
 
 
@@ -101,14 +101,55 @@ Scene* getScene()	{
 	return curScene;
 }
 
+void cleanExit()	{
+	delete textures;
+	delete curScene;
+	exit(0);
+}
+
+/*
+================
+Sys_Milliseconds
+================
+*/
+/* base time in seconds, that's our origin
+   timeval:tv_sec is an int:
+   assuming this wraps every 0x7fffffff - ~68 years since the Epoch (1970) - we're safe till 2038
+   using unsigned long data type to work right with Sys_XTimeToSysTime */
+unsigned long sys_timeBase = 0;
+/* current time in ms, using sys_timeBase as origin
+   NOTE: sys_timeBase*1000 + curtime -> ms since the Epoch
+     0x7fffffff ms - ~24 days
+   although timeval:tv_usec is an int, I'm not sure wether it is actually used as an unsigned int
+     (which would affect the wrap period) */
+int curtime;
+int Sys_Milliseconds (void)
+{
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+
+	if (!sys_timeBase)
+	{
+		sys_timeBase = tp.tv_sec;
+		return tp.tv_usec/1000;
+	}
+
+	curtime = (tp.tv_sec - sys_timeBase)*1000 + tp.tv_usec/1000;
+
+	return curtime;
+}
+
+
 
 void init()	{
 	textures = new TextureManager();
-	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);	// Create a new scene to feed me!
-	glClearDepth(1.0f);									// Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
-	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
+	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
   	glMatrixMode(GL_MODELVIEW);
@@ -117,8 +158,6 @@ void init()	{
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-
-
 }
 
 
@@ -168,13 +207,18 @@ void changeSize(int w, int h)	{
 	gluLookAt(	camOrigin[0], camOrigin[1], camOrigin[2],	// camera origin
 				camDirection[0], camDirection[1], camDirection[2],		// eye looking @ this vertex
 				camOrientation[0], camOrientation[1], camOrientation[2]);	// up direction
-
 }
 
 
 
 void draw(void)
 {
+	static int frameCount = 0;
+
+	// TODO put all of this in the Scene class inside the
+	// render function.  Camera will be inside the Scene class
+	// lighting is a Scene property too.
+
 	// Perform lighting on the scene
 	lighting();
 
@@ -186,46 +230,37 @@ void draw(void)
 				camDirection[0], camDirection[1], camDirection[2],		// eye looking @ this vertex
 				camOrientation[0], camOrientation[1], camOrientation[2]);	// up direction
 
+	// End stuff to put into the scene
+
 	// Advance scene's physical positioning and draw it
 	curScene->advance(SCENE_ADVANCE_RATE);
 	curScene->render();
+
+	int curFrameTime = Sys_Milliseconds();
+	frameCount++;
+	if( (lastFrameTime+1000) <= curFrameTime )	{
+		frameRate = frameCount;
+		frameCount = 0;
+		lastFrameTime = curFrameTime;
+//		cout << "Frame rate: " << frameRate << endl;
+	}
 }
 
 
 
 void processNormalKeys(unsigned char key, int x, int y)
 {
+	// TODO Push this into the Scene class
 	if (key == ESC_KEY)
-		exit(0);
+		cleanExit();
 
 	curScene->keyPressed(key);
-
-/*	if( key == A_KEY )	{
-		curScene->doItAgain();
-	}
-	else if( key == D_KEY )	{
-
-	}
-	else if( key == S_KEY )	{
-
-	}
-	else if( key == W_KEY )	{
-
-	}
-*/
 }
 
 void processSpecialKeys(int key, int x, int y) {
-
 	curScene->specialKeyPressed(key, x, y);
-//	cout << "kp: " << key << endl;
-
-	switch(key) {
-//		case GLUT_KEY_F1 : red = 1.0; green = 0.0; blue = 0.0; break;
-//		case GLUT_KEY_F2 : red = 0.0; green = 1.0; blue = 0.0; break;
-//		case GLUT_KEY_F3 : red = 0.0; green = 0.0; blue = 1.0; break;
-	}
 }
+
 
 
 int main(int argc, char **argv) {
