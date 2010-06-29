@@ -29,6 +29,7 @@
 #include "font.h"
 #include "Console.h"
 #include "keys.h"
+#include "strtools.h"
 #include <sstream>
 #include <GL/glut.h>
 
@@ -302,16 +303,53 @@ void Scene::keyPressed(unsigned char key)	{
 
 // handles keyboard input from special keys
 void Scene::specialKeyPressed(int key, int x, int y)	{
-	cout << "SKey Pressed: " << key << endl;
+	cout << "Special Key Pressed: " << key << endl;
 
 	if( consoleActive )	{	// send key input to console
 		switch(key)	{
-			case PAGE_UP_KEY:	// scroll up
+			case F1_KEY:
+				break;
+			case F2_KEY:
+				break;
+			case F3_KEY:
+				break;
+			case F4_KEY:
+				break;
+			case F5_KEY:
+				break;
+			case F6_KEY:
+				break;
+			case F7_KEY:
+				break;
+			case F8_KEY:
+				break;
+			case F9_KEY:
+				break;
+			case F10_KEY:
+				break;
+			case F11_KEY:
+				break;
+			case F12_KEY:
+				break;
+			case ARROW_UP_KEY:
+				break;
+			case ARROW_DOWN_KEY:
+				break;
+			case PAGE_UP_KEY:
 				con->scrollUp();
 				break;
-			case PAGE_DOWN_KEY:	// scroll down
+			case PAGE_DOWN_KEY:
 				con->scrollDown();
 				break;
+			case HOME_KEY:
+				break;
+			case END_KEY:
+				break;
+			case INSERT_KEY:
+				break;
+			case NUM_LOCK_KEY:
+				break;
+
 		}
 	}
 }

@@ -37,7 +37,6 @@ public:
 	void removeLastCharacter();
 	void clearInput();
 	void processConsoleCommand(const std::string conInput);
-	int TokenizeString(const string str, const char delim, list<string> *tokens);
 	void Draw();
 
 };

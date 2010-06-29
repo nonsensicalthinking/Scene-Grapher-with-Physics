@@ -64,6 +64,7 @@
 #include <ctime>
 #include <iostream>
 #include "scene.h"
+#include "texture.h"
 #include "keys.h"			// Key presses defined
 #include <GL/glut.h>
 
@@ -87,11 +88,22 @@ GLfloat camOrigin[] = {0.0, 10.0, 50.0};		// Base point of camera
 GLfloat camDirection[] = {-5.0, 10.0, 0.0 };	// A point some distance directly infront of camera
 GLfloat camOrientation[] = {0.0, 1.0, 0.0};	// Which way is up?? =P
 
-Scene *curScene;
+Scene* curScene;
+TextureManager* textures;
 
 float clearColor[] = {0.0, 0.0, 0.0, 0.0};
 
+TextureManager* getTextureManager()	{
+	return textures;
+}
+
+Scene* getScene()	{
+	return curScene;
+}
+
+
 void init()	{
+	textures = new TextureManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);	// Create a new scene to feed me!
 	glClearDepth(1.0f);									// Depth Buffer Setup
 	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
@@ -234,3 +246,9 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
+
+
+
+
+
+

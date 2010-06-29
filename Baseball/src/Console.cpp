@@ -5,6 +5,7 @@
  *      Author: brof
  */
 
+#include "strtools.h"
 #include "Console.h"
 #include "keys.h"
 #include <iostream>
@@ -76,19 +77,6 @@ void string_tolower ( std::string &str ) {
 	range_tolower( str.begin(), str.end() );
 }
 
-int Console::TokenizeString(const string str, const char delim, list<string> *tokens)
-{
-    string::size_type lastPos = str.find_first_not_of(delim, 0);
-    string::size_type pos = str.find_first_of(delim, lastPos);
-
-    while (string::npos != pos || string::npos != lastPos)	{
-    	tokens->push_back(str.substr(lastPos, pos - lastPos));
-        lastPos = str.find_first_not_of(delim, pos);
-        pos = str.find_first_of(delim, lastPos);
-    }
-
-    return tokens->size();
-}
 
 
 // TODO make these changeable and/or dependent upon environment

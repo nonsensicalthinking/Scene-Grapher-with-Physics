@@ -32,6 +32,7 @@ public:
 	void doItAgain();
 	void keyPressed(unsigned char key);
 	void specialKeyPressed(int key, int x, int y);
+	long Syscmd(string s);
 };
 
 

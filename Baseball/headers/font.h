@@ -25,6 +25,15 @@
 using namespace std;
 
 
+// NOTE: because of this extern declaration, remember that
+// things aren't the way they may seem, wasted 45m trying
+// to track down a segfault that was due to the object never
+// having been called, but for some reason we were able to
+// call one of its member functions without instantiation of
+// said object...wtf?  JUST REMEMBER! DANGER!
+extern TextureManager* getTextureManager();
+
+
 
 typedef struct dimension_s	{
 	float width;
@@ -40,23 +49,24 @@ private:
 	GLuint loop;            /* generic loop variable */
 	GLfloat cnt1, cnt2;     /* counters for movement and coloring */
 	dimention_t *windowDimention;
-	texture_t *fontTex;
+	TextureManager* textures;
+
+	string fontPath;
 
 public:
 	Font(dimention_t *dimention)	{
 		this->windowDimention = dimention;
 
-		fontTex = new texture_t;
+		textures = getTextureManager();
 
-		string fontName = "font.bmp";
+		fontPath = "font.bmp";
 
-		if( loadTextureIntoGL(fontName, fontTex) )	{
-//			texture = fontTex->texID;
+		if( textures->loadBitmap(fontPath) )	{
 			buildFont();
 			cout << "Font Build Complete." << endl;
 		}
 		else
-			cout << "Font build failed!" << endl;
+			cout << "Font build failed because of texture!" << endl;
 
 	}
 
@@ -67,18 +77,16 @@ public:
 		this->windowDimention->height = height;
 		this->windowDimention->width = width;
 
-		fontTex = new texture_t;
+		textures = getTextureManager();
 
-		string fontName = "font.bmp";
+		fontPath = "font.bmp";
 
-		if( loadTextureIntoGL(fontName, fontTex) )	{
-//			texture = fontTex->texID;
+		if( textures->loadBitmap(fontPath) )	{
 			buildFont();
 			cout << "Font Build Complete." << endl;
 		}
 		else
-			cout << "Font build failed!" << endl;
-
+			cout << "Font build failed because of texture!" << endl;
 	}
 
 
@@ -89,7 +97,10 @@ public:
 	void buildFont(void) {
 	    GLfloat cx, cy;         /* the character coordinates in our texture */
 	    base = glGenLists(256);
-	    glBindTexture(GL_TEXTURE_2D, fontTex->texID);
+
+	    if( !textures->bindTexture(fontPath) )
+	    	cout << "Failed to find font texture in texture manager." << endl;
+
 	    for (loop = 0; loop < 256; loop++)
 	    {
 	        cx = (float) (loop % 16) / 16.0f;
@@ -119,7 +130,7 @@ public:
 	    	set = 1;
 
 		glEnable(GL_TEXTURE_2D);
-	    glBindTexture(GL_TEXTURE_2D, fontTex->texID);
+		textures->bindTexture(fontPath);
 	    glDisable(GL_DEPTH_TEST);
 	    glMatrixMode(GL_PROJECTION);
 	    glPushMatrix();

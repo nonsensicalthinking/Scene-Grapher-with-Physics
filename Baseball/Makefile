@@ -5,7 +5,7 @@
 OBJS = src/*.cpp
 #OBJS = src/main.cpp src/scene.cpp src/bsptree.cpp src/Console.cpp src/Bitmap.cpp
 
-CXXFLAGS = -O2 -g -Wall -fmessage-length=0
+CXXFLAGS = -O2 -ggdb -Wall -fmessage-length=0
 LIBS =	-lGL -lGLU -lglut
 INCS =  -I"/usr/include/GL/" -I"./headers/"
 TARGET =	baseball
