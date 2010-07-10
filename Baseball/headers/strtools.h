@@ -9,8 +9,11 @@
 #include <string>
 #include <sstream>
 #include <list>
+#include <string.h>
 
 using namespace std;
+
+#define WHITESPACE " \t\n\r"
 
 #ifndef STRTOOLS_H__
 #define STRTOOLS_H__
@@ -27,6 +30,17 @@ inline int TokenizeString(const string str, const char delim, list<string> *toke
     }
 
     return tokens->size();
+}
+
+inline int countCharOccur(char str[], const char has)	{
+	int occur = 0;
+	int len = strlen(str);
+
+	for(int x=0;x<len; x++)
+		if( str[x] == has )
+			occur++;
+
+	return occur;
 }
 
 #endif /* STRTOOLS_H__ */

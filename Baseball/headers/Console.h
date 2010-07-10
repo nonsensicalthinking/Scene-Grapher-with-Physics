@@ -9,9 +9,12 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <stdarg.h>
 
 #ifndef CONSOLE_H_
 #define CONSOLE_H_
+
+#define MAX_CONSOLE_LINE_LEN	128
 
 using namespace std;
 
@@ -38,7 +41,7 @@ public:
 	void clearInput();
 	void processConsoleCommand(const std::string conInput);
 	void Draw();
-
+	void print(string s);
 };
 
 #endif /* CONSOLE_H_ */

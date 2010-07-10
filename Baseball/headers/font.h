@@ -6,7 +6,7 @@
  */
 
 
-#include "texture.h"
+#include "MaterialManager.h"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,8 @@
 #ifndef FONT_H_
 #define FONT_H_
 
+// distance between leading edges of letters in pixels
+#define LETTER_SPACING 13
 
 using namespace std;
 
@@ -31,7 +33,7 @@ using namespace std;
 // having been instantiated, but for some reason we were able to
 // call one of its member functions without instantiation of
 // said object...wtf?  JUST REMEMBER! DANGER!
-extern TextureManager* getTextureManager();
+extern MaterialManager* getTextureManager();
 
 
 
@@ -49,7 +51,7 @@ private:
 	GLuint loop;            /* generic loop variable */
 	GLfloat cnt1, cnt2;     /* counters for movement and coloring */
 	dimention_t *windowDimention;
-	TextureManager* textures;
+	MaterialManager* textures;
 
 	string fontPath;
 
@@ -115,7 +117,7 @@ public:
 	                glTexCoord2f(cx, 1 - cy);
 	                glVertex2i(0, 16);
 	            glEnd();
-	            glTranslated(12, 0, 0);
+	            glTranslated(LETTER_SPACING, 0, 0);
 	        glEndList();
 	    }
 	}

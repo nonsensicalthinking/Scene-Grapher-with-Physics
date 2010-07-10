@@ -4,7 +4,7 @@
  *  Created on: Jun 13, 2010
  *      Author: brof
  */
-
+#include "Scene.h"
 #include "strtools.h"
 #include "Console.h"
 #include "keys.h"
@@ -12,6 +12,9 @@
 #include <list>
 
 using namespace std;
+
+extern Scene* getScene();
+
 
 Console::Console(int width, int height) {
 	input = new list<string>;
@@ -106,77 +109,72 @@ void Console::Draw()	{
 	font->glPrint(left, screenHeight-((lines+1)*16), s.c_str(), 0);
 }
 
+void Console::print(string s)	{
+	output->push_back(s);
+}
 
 
 
 
 
-#define CMDCOUNT	3
 
 // Commands
 enum {
-	HERE=0,
-	THERE,
-	EVERYWHERE
+	QUIT=0,
+	CLEAR,
+	PUTCAM
 };
-
 
 // Commands need to be entered in lowercase
 string commands[] = {
-		"here",
-		"there",
-		"everywhere"
+		"quit",
+		"clear",
+		"putcam"
 };
-
 
 void Console::processConsoleCommand(const string conInput)	{
 
-	string cmd;
 
 	// Save command to history.
 	// and save to console output
 	this->input->push_front(conInput);
 	this->output->push_back(conInput);
 
-	list<string> *tokens = new list<string>;
+	string strin = conInput;
+	string_tolower(strin);
+	char line[MAX_CONSOLE_LINE_LEN];
+	strcpy(line, strin.c_str());
+	char *token = strtok(line, WHITESPACE);
+	string cmd = token;
 
-	if( TokenizeString(conInput, ' ', tokens) )	{
-		cmd = tokens->front();
-	}
-	else	{
-		if( conInput.size() )
-			cmd = conInput;
-		else
-			return;	// Can't do anything without input
-	}
-
-	string_tolower(cmd);
-//	cout << "ConInput CMD = " << cmd << endl;
-
-	int x;
 	int intCmd = -1;
-
-	for(x=0; x < CMDCOUNT; x++ )	{
-
+	int commandCount = sizeof(commands)/8;
+	for(int x=0; x < commandCount; x++ )	{
+		cout << "Command SIZE: " << sizeof(commands) << endl;
 		cout << "Command: " << commands[x] << endl;
 		if( cmd == commands[x] )	{
 			intCmd = x;
 			break;
 		}
 
-		if( x+1 == CMDCOUNT )
+		if( x+1 == commandCount )
 			intCmd = -1;
 	}
 
+	stringstream s;
+
 	switch(intCmd)	{
-	case HERE:
-		cout << "Here" << endl;
+	case QUIT:
+		getScene()->exit();
 		break;
-	case THERE:
-		cout << "There" << endl;
+	case CLEAR:
+		output->clear();
 		break;
-	case EVERYWHERE:
-		cout << "EVERYWHERE" << endl;
+	case PUTCAM:
+		vec3_t origin;
+		sscanf(conInput.c_str(), "putcam %f %f %f", &origin[0], &origin[1], &origin[2] );
+		s << "Putting camera: " << origin[0] << ", " << origin[1] << ", " << origin[2];
+		print(s.str());
 		break;
 	case -1:
 		cout << "NONE OF THEM" << endl;
@@ -184,6 +182,9 @@ void Console::processConsoleCommand(const string conInput)	{
 	}
 
 }
+
+
+
 
 
 

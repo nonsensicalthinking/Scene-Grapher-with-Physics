@@ -60,7 +60,7 @@
 
 
 #include "Scene.h"
-#include "texture.h"
+#include "MaterialManager.h"
 #include "keys.h"			// Key presses defined
 #include <stdlib.h>
 #include <ctime>
@@ -81,7 +81,7 @@
 
 // Global variables
 time_t lastFrameTime;
-double frameRate;
+int frameRate;
 
 // MAKE CLASS FOR CAMERA AND MOVEMENT
 GLfloat camOrigin[] = {0.0, 10.0, 50.0};		// Base point of camera
@@ -89,11 +89,11 @@ GLfloat camDirection[] = {-5.0, 10.0, 0.0 };	// A point some distance directly i
 GLfloat camOrientation[] = {0.0, 1.0, 0.0};	// Which way is up?? =P
 
 Scene* curScene;
-TextureManager* textures;
+MaterialManager* textures;
 
-float clearColor[] = {0.0, 0.0, 0.0, 0.0};
+float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
-TextureManager* getTextureManager()	{
+MaterialManager* getTextureManager()	{
 	return textures;
 }
 
@@ -107,7 +107,14 @@ void cleanExit()	{
 	exit(0);
 }
 
-/*
+int getFrameRate()	{
+	return frameRate;
+}
+
+// END GLOABLS!
+
+
+/* From Quake 3 Arena
 ================
 Sys_Milliseconds
 ================
@@ -143,44 +150,22 @@ int Sys_Milliseconds (void)
 
 
 void init()	{
-	textures = new TextureManager();
-	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
-
+	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
   	glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
+
+	textures = new MaterialManager();
+	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
+	curScene->LoadMap("mapname.obj");
 }
-
-
-void lighting()	{
-	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight of balls
-	GLfloat posl[]={0,400,0,1};               //position of ligth source
-	GLfloat amb[]={0.2f, 0.2f, 0.2f ,1.0f};   //global ambient
-	GLfloat amb2[]={0.3f, 0.3f, 0.3f ,1.0f};  //ambient of lightsource
-	GLfloat df = 100.0;
-
-	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
-	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
-
-	glEnable(GL_LIGHTING);
-	glLightfv(GL_LIGHT0,GL_POSITION,posl);
-	glLightfv(GL_LIGHT0,GL_AMBIENT,amb2);
-	glEnable(GL_LIGHT0);
-
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
-}
-
 
 
 
@@ -210,39 +195,21 @@ void changeSize(int w, int h)	{
 }
 
 
-
 void draw(void)
 {
 	static int frameCount = 0;
 
-	// TODO put all of this in the Scene class inside the
-	// render function.  Camera will be inside the Scene class
-	// lighting is a Scene property too.
-
-	// Perform lighting on the scene
-	lighting();
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	// position camera
-	gluLookAt(	camOrigin[0], camOrigin[1], camOrigin[2],	// camera origin
-				camDirection[0], camDirection[1], camDirection[2],		// eye looking @ this vertex
-				camOrientation[0], camOrientation[1], camOrientation[2]);	// up direction
-
-	// End stuff to put into the scene
-
-	// Advance scene's physical positioning and draw it
 	curScene->advance(SCENE_ADVANCE_RATE);
 	curScene->render();
 
 	int curFrameTime = Sys_Milliseconds();
+
 	frameCount++;
+
 	if( (lastFrameTime+1000) <= curFrameTime )	{
 		frameRate = frameCount;
 		frameCount = 0;
 		lastFrameTime = curFrameTime;
-//		cout << "Frame rate: " << frameRate << endl;
 	}
 }
 

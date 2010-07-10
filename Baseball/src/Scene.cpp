@@ -30,6 +30,7 @@
 #include "Console.h"
 #include "keys.h"
 #include "strtools.h"
+#include "objloader.h"	// TODO REMOVE THIS INCLUDE
 #include <sstream>
 #include <GL/glut.h>
 
@@ -55,6 +56,8 @@ vec3_t startAngle = {10.0, 15.0, 0.0};
 
 
 bsp_node_t* bspRoot;
+
+// End Globals
 
 
 void createSimpleBSP(bsp_node_t* root)	{
@@ -100,22 +103,26 @@ void createSimpleBSP(bsp_node_t* root)	{
 
 Scene::Scene(int width, int height)
 {
+	sceneWidth = width;
+	sceneHeight = height;
+
 	consoleActive = false;
 	con = new Console(width,height);
 
+	polygonList = new list<polygon_t*>;
+	matsManager = getTextureManager();
+
+	cam = new Camera();
+
+	// temp frame rate display
+	f = new Font(sceneWidth, sceneHeight);
 
 
 	//	m = MD2Model::load(MODEL);
 
 
-	bspRoot = new bsp_node_t;
-	createSimpleBSP(bspRoot);
-
-//	dimention_t* dim = new dimention_t;
-//	dim->width = 800;
-//	dim->height = 600;
-
-//	f = new Font(dim);
+//	bspRoot = new bsp_node_t;
+//	createSimpleBSP(bspRoot);
 
 
 	for(int x=0; x < 20; x++)	{
@@ -149,6 +156,11 @@ Scene::~Scene()
 }
 
 
+void Scene::LoadMap(string map)	{
+	ObjModel* obj = new ObjModel();
+	obj->loadObjFile("fenway.obj");
+}
+
 
 // TODO Test me
 // This should be used when "Loading the map"
@@ -165,30 +177,46 @@ void glCachePolygon(polygon_t* polygon)	{
 	glEndList();
 }
 
+void Scene::addPolygon(polygon_t* p)	{
+	polygonList->push_back(p);
+}
 
+void Scene::drawPolygon(polygon_t* poly)	{
+	glPushMatrix();
 
-void renderPolygonList(list<polygon_t*> polygons)
+		if( poly->hasMaterial )
+			matsManager->enableMaterial(poly->materialName);
+
+		glBegin(GL_POLYGON);
+		for(int x=0; x < poly->numPoints; x++)	{
+			if( poly->hasNormals )
+				glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+
+			if( poly->isTextured )
+				glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
+
+			glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+		}
+		glEnd();
+
+		if( poly->hasMaterial )
+			matsManager->disableMaterial(poly->materialName);
+
+	glPopMatrix();
+}
+
+void Scene::renderPolygonList(list<polygon_t*> polygons)
 {
 	list<polygon_t*>::iterator itr;
 
 	// for each polygon in the list
 	for(itr = polygons.begin(); itr != polygons.end(); itr++)	{
-		glColor3f(0.0, 0.0, 1.0);
-		glPushMatrix();
-		glBegin(GL_POLYGON);
-		for(int x=0; x < (*itr)->numPoints; x++)	{
-			vec3_t point;
-			VectorCopy((*itr)->points[x], point);
-			glVertex3f(point[0], point[1], point[2]);
-		}
-		glEnd();
-		glPopMatrix();
-
+		drawPolygon((*itr));
 	}
 }
 
 
-
+/*
 void renderBSPTree(bsp_node_t* tree)	{
 	if( tree->isLeaf() )	{
 		renderPolygonList(tree->getPolygonList());
@@ -200,6 +228,28 @@ void renderBSPTree(bsp_node_t* tree)	{
 	}
 }
 
+*/
+
+void Scene::performLighting()	{
+	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight of balls
+	GLfloat posl[]={0,400,0,1};               //position of ligth source
+	GLfloat amb[]={0.2f, 0.2f, 0.2f ,1.0f};   //global ambient
+	GLfloat amb2[]={0.3f, 0.3f, 0.3f ,1.0f};  //ambient of lightsource
+	GLfloat df = 100.0;
+
+	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
+	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
+
+	glEnable(GL_LIGHTING);
+	glLightfv(GL_LIGHT0,GL_POSITION,posl);
+	glLightfv(GL_LIGHT0,GL_AMBIENT,amb2);
+	glEnable(GL_LIGHT0);
+
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
+}
+
 
 
 
@@ -209,16 +259,30 @@ void Scene::render()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
-	if( bspRoot )	{
-		renderBSPTree(bspRoot);
-	}
+	performLighting();
 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// position camera
+	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
+				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
+				cam->up[0], cam->up[1], cam->up[2]);	// up direction
+
+	// End stuff to put into the scene
+
+	// Advance scene's physical positioning and draw it
+	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
+//	if( bspRoot )	{
+//		renderBSPTree(bspRoot);
+//	}
+
+	renderPolygonList(*polygonList);
 
 	glPushMatrix();
 
 	// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
-	glColor3ub(255, 255, 0);									// Draw In Yellow
+//	glColor3ub(255, 255, 0);									// Draw In Yellow
 
 	for (a = 0; a < motionUnderGravitation->numOfMasses; ++a)
 	{
@@ -238,7 +302,9 @@ void Scene::render()
 	// Draw the console if open
 	if( consoleActive )
 		con->Draw();
-
+	stringstream s;
+	s << "FPS: " << getFrameRate();
+	f->glPrint(0, 0, s.str().c_str(), 0);
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
@@ -271,11 +337,7 @@ void Scene::advance(long milliseconds)
 
 }
 
-// TODO REMOVE THIS TEST FUNCTION
-void Scene::doItAgain()
-{
-	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
-}
+#define CAM_MOVE_RATE	20.0
 
 // Handles keyboard input from normal text keys
 void Scene::keyPressed(unsigned char key)	{
@@ -295,11 +357,31 @@ void Scene::keyPressed(unsigned char key)	{
 				consoleActive = !consoleActive;
 				break;
 			case 'a':	// omg our first control over the scene!
+				cam->moveCameraLeft(CAM_MOVE_RATE);
+				break;
+			case 'd':	// omg our first control over the scene!
+				cam->moveCameraRight(CAM_MOVE_RATE);
+				break;
+			case 'w':	// omg our first control over the scene!
+				cam->moveCameraForward(CAM_MOVE_RATE);
+				break;
+			case 's':	// omg our first control over the scene!
+				cam->moveCameraBack(CAM_MOVE_RATE);
+				break;
+			case 'q':	// omg our first control over the scene!
+				cam->moveCameraUp(CAM_MOVE_RATE);
+				break;
+			case 'e':	// omg our first control over the scene!
+				cam->moveCameraDown(CAM_MOVE_RATE);
+				break;
+			case 'z':
 				doItAgain();
 				break;
 		}
 	}
 }
+
+
 
 // handles keyboard input from special keys
 void Scene::specialKeyPressed(int key, int x, int y)	{
@@ -355,6 +437,9 @@ void Scene::specialKeyPressed(int key, int x, int y)	{
 }
 
 
+void Scene::exit()	{
+	cleanExit();
+}
 
 // Example of animating md2 model
 /*
@@ -374,6 +459,11 @@ void Scene::specialKeyPressed(int key, int x, int y)	{
 
 
 
+// TODO REMOVE THIS TEST FUNCTION
+void Scene::doItAgain()
+{
+	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
+}
 
 
 

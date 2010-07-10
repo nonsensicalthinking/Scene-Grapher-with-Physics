@@ -22,6 +22,9 @@ using namespace std;
 #define EPSILON				0.0001f
 
 
+#define MAX_POLY_POINTS		10		// Max number of points in a polygon
+#define MAX_FILE_LENGTH		28		// Max length for a filename
+
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -39,16 +42,36 @@ typedef struct plane_s	{
 }plane_t;
 
 
-#define MAX_POLY_POINTS		10
+
 typedef struct polygon_s	{
+
 	int numPoints;
 	vec3_t points[MAX_POLY_POINTS];
+
+	// TODO When the BSP is partitioning polygons, we
+	// need to resize the texpts along with it, normals
+	// will stay the same, but texpts needs recalculation.
+	bool isTextured;
+	vec2_t texpts[MAX_POLY_POINTS];
+
+	bool hasNormals;
+	vec3_t normpts[MAX_POLY_POINTS];
+
 	int glCacheID;
 
-	// we can add:
-	// - texture coords (uv st)
-	// - texture id or name
+	// TODO Incorporate material properties
+	// into polygon, there should be one treemap
+	// that has one instance of each material type
+	// used so that we can reference that by name
+	// as opposed to copying it all over the place.
+	bool hasMaterial;
+	char materialName[MAX_FILE_LENGTH];
+
+
 }polygon_t;
+
+
+
 
 inline void VectorInit(vec3_t vec)	{
 	vec[0] = 0;
