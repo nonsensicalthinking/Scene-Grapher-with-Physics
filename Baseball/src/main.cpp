@@ -8,7 +8,7 @@
  *
  *
  *  Created on: Feb 24, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 
 // BRIGHT IDEA
@@ -17,15 +17,26 @@
 
 // The over all TODO list for the program
 //
-// TODO Make Camera class to store camera info and
-//		functions used to move camera about the scene
+// TODO Fix texture mapping
+//
+//
+// TODO Integrate the BSPTree into the scene
+//
+//
+// TODO Fix Camera Class so it can do all directions
+//		with focal point adjustment too.
+//
 //
 // TODO Implement collision detection
 //
-// TODO Implement texture mapping
 //
 // TODO Implement simple texturing system so we can texture
 //		parts of a texture on a particular polygon
+//
+//
+// TODO Devise strategy for sending network data, delta packets maybe?
+//		Select model for hosting games, design database for statistics.
+//
 //
 // TODO Implement programmable shaders
 //
@@ -44,12 +55,12 @@
  * meaning generic functions for loading textures, binding textures, sampling textures
  * etc...etc...
  *
- * From here we can bein drawing a scene and testing for collisions, meaning we can
+ * From here we can begin drawing a scene and testing for collisions, meaning we can
  * start working on collision detection and refraction for baseballs etc
  *
  * I think the best idea is obviously to keep as much of the rendering, loading, and
  * texturing seperate from the baseball game itself, meaning physics are part of baseball
- * model drawing is part of the renderer, etc...try your best to seperate these.
+ * model drawing is part of the renderer, etc...try your best to separate these.
  *
  * Once things are loaded and collisions work we can start playing with variables
  * which is where requiring the console will come into action

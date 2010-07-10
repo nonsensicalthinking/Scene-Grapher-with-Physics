@@ -2,7 +2,7 @@
  * Console.cpp
  *
  *  Created on: Jun 13, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 #include "Scene.h"
 #include "strtools.h"

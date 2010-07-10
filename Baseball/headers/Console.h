@@ -2,7 +2,7 @@
  * Console.h
  *
  *  Created on: Jun 13, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 #include "font.h"
 #include <iostream>

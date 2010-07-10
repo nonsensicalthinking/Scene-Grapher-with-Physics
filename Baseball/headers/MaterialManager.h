@@ -2,7 +2,7 @@
  * MaterialManager.h
  *
  *  Created on: Jun 22, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  *
  *
  *

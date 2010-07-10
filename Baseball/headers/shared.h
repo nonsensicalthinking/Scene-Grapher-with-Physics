@@ -2,7 +2,7 @@
  * shared.h
  *
  *  Created on: Jun 4, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 
 

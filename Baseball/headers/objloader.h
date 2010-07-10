@@ -2,7 +2,7 @@
  * objloader.h
  *
  *  Created on: Jul 4, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  *
  *
  *      This file is for loading Wavefront OBJ files into the scene.

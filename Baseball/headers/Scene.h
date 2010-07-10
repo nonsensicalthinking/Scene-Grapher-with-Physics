@@ -2,7 +2,7 @@
  * scene.h
  *
  *  Created on: Feb 25, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 
 #include "shared.h"

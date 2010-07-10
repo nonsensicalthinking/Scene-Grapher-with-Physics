@@ -2,7 +2,7 @@
  * strtools.h
  *
  *  Created on: Jun 29, 2010
- *      Author: brof
+ *      Author: Derek Brooks
  */
 
 #include <iostream>
