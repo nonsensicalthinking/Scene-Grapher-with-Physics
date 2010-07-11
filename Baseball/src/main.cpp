@@ -11,32 +11,21 @@
  *      Author: Derek Brooks
  */
 
-// BRIGHT IDEA
-// With regards to the mapping bsp split objects with one whole texture
-// the same principle is in effect for the texture mapped fonts
-
 // The over all TODO list for the program
 //
-// TODO Fix texture mapping
-//
-//
-// TODO Integrate the BSPTree into the scene
-//
+// PRIORITY *THIS WILL FIX TEXTURING OF BSP OBJECTS*
+// TODO When splitting polygons in the bsp routines
+//		the texture coordinates are not copied over
+//		also they must be re-calculated base on the
+//		new polygon.
 //
 // TODO Fix Camera Class so it can do all directions
 //		with focal point adjustment too.
 //
-//
 // TODO Implement collision detection
-//
-//
-// TODO Implement simple texturing system so we can texture
-//		parts of a texture on a particular polygon
-//
 //
 // TODO Devise strategy for sending network data, delta packets maybe?
 //		Select model for hosting games, design database for statistics.
-//
 //
 // TODO Implement programmable shaders
 //
@@ -79,7 +68,6 @@
 #include <sys/time.h>
 #include <GL/glut.h>
 
-
 // Definitions
 #define SCREEN_WIDTH 		800
 #define SCREEN_HEIGHT 		600
@@ -89,20 +77,14 @@
 // operations such as animation.
 #define SCENE_ADVANCE_RATE	5
 
+float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
 // Global variables
 time_t lastFrameTime;
 int frameRate;
 
-// MAKE CLASS FOR CAMERA AND MOVEMENT
-GLfloat camOrigin[] = {0.0, 10.0, 50.0};		// Base point of camera
-GLfloat camDirection[] = {-5.0, 10.0, 0.0 };	// A point some distance directly infront of camera
-GLfloat camOrientation[] = {0.0, 1.0, 0.0};	// Which way is up?? =P
-
 Scene* curScene;
 MaterialManager* textures;
-
-float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
 MaterialManager* getTextureManager()	{
 	return textures;
@@ -175,34 +157,13 @@ void init()	{
 
 	textures = new MaterialManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
-	curScene->LoadMap("mapname.obj");
+	curScene->createBSP();
 }
 
 
 
 void changeSize(int w, int h)	{
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window of zero width).
-	if(h == 0)
-		h = 1;
-
-	float ratio = 1.0* w / h;
-
-	// Reset the coordinate system before modifying
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	// Set the viewport to be the entire window
-    glViewport(0, 0, w, h);
-
-	// Set the correct perspective.
-	gluPerspective(45,ratio,1,1000);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	gluLookAt(	camOrigin[0], camOrigin[1], camOrigin[2],	// camera origin
-				camDirection[0], camDirection[1], camDirection[2],		// eye looking @ this vertex
-				camOrientation[0], camOrientation[1], camOrientation[2]);	// up direction
+	curScene->resizeSceneSize(w,h);
 }
 
 
@@ -210,13 +171,14 @@ void draw(void)
 {
 	static int frameCount = 0;
 
+	// Based on rate of change, advance the physical objects
+	// in the scene then draw 'em out.
 	curScene->advance(SCENE_ADVANCE_RATE);
 	curScene->render();
 
+	// Tabulate frame rate
 	int curFrameTime = Sys_Milliseconds();
-
 	frameCount++;
-
 	if( (lastFrameTime+1000) <= curFrameTime )	{
 		frameRate = frameCount;
 		frameCount = 0;

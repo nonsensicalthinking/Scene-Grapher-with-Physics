@@ -9,25 +9,23 @@
 /*
  * TODO LIST for this file
  *
- * TODO Remove constructs and rename file, BSPTree won't be a class after all.
- *
  * TODO Generate U and V texture coords when splitting polygons
  * idea behind doing it now lets us avoid more calculations later
  * in the program for determining texture mapping coords
  *
  */
 
-
 #include <iostream>
 #include <cmath>
+#include <string.h>
 #include "shared.h"
 #include "bsptree.h"
 
 using namespace std;
 
-#define FRONT 		1
+#define FRONT 		 1
 #define BACK 		-1
-#define COINCIDENT	0
+#define COINCIDENT	 0
 
 
 void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front, polygon_t *back)
@@ -68,8 +66,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 				// plane. This is a simple ray-plane intersection.
 
 				vec3_t intersection;
-
-				// split in this def is of type plane_g (a struct with plane info)
+				// split in this def is of type plane_t (a struct with plane info)
 				if( (findLinePlaneIntersect(split, pointA, pointB, intersection )) )	{
 					VectorCopy(intersection, frontPoints[frontCount++]);
 					VectorCopy(intersection, backPoints[backCount++]);
@@ -86,6 +83,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 #ifdef DEBUG_SPLIT
 				cout << "Line crosses plane." << endl;
 #endif
+				cout << "SIDE B: " << sideB << endl;
+
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a simple ray-plane intersection.
@@ -183,6 +182,17 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 
 				polygon_t* front_half = new polygon_t;
 				polygon_t* back_half = new polygon_t;
+
+				// share properties from parent polygon.
+				strcpy(front_half->materialName, curPoly->materialName);
+				front_half->hasMaterial = curPoly->hasMaterial;
+				front_half->hasNormals = curPoly->hasNormals;
+				front_half->isTextured = curPoly->isTextured;
+
+				strcpy(back_half->materialName, curPoly->materialName);
+				back_half->hasMaterial = curPoly->hasMaterial;
+				back_half->hasNormals = curPoly->hasNormals;
+				back_half->isTextured = curPoly->isTextured;
 
 				splitPolygon(curPoly, partition, front_half, back_half);
 
@@ -413,6 +423,8 @@ int main(void)
  * This func tests the working-ness of splitting polygons
  * oh, but you have to evaluate the results by paper =P
  */
+
+/*
 void testSplittingOperations()
 {
 	int x;
@@ -492,7 +504,7 @@ void testSplittingOperations()
 	}
 
 }
-
+*/
 
 
 

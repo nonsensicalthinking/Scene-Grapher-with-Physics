@@ -60,46 +60,12 @@ bsp_node_t* bspRoot;
 // End Globals
 
 
-void createSimpleBSP(bsp_node_t* root)	{
-	list<polygon_t*> polygonList;
+void Scene::createBSP()	{
+	LoadMap("fenway.obj");
 
-	polygon_t* p = new polygon_t;
-	p->numPoints = 4;
-
-	p->points[0][0] = -200;
-	p->points[0][1] = 0;
-	p->points[0][2] = -200;
-
-	p->points[1][0] = -200;
-	p->points[1][1] = 0;
-	p->points[1][2] = 200;
-
-	p->points[2][0] = 200;
-	p->points[2][1] = 0;
-	p->points[2][2] = 200;
-
-	p->points[3][0] = 200;
-	p->points[3][1] = 0;
-	p->points[3][2] = -200;
-
-	polygonList.push_back(p);
-
-	plane_t* partition = new plane_t;
-
-	partition->normal[0] = 1.0;
-	partition->normal[1] = 0.0;
-	partition->normal[2] = 0.0;
-
-	partition->origin[0] = 0.0;
-	partition->origin[1] = 0.0;
-	partition->origin[2] = 0.0;
-
-	root->setPolygonList(polygonList);
-
-
-	buildTree(400, partition, root);
+	bspRoot = new bsp_node_t;
+	generateBSP(bspRoot);
 }
-
 
 Scene::Scene(int width, int height)
 {
@@ -119,11 +85,6 @@ Scene::Scene(int width, int height)
 
 
 	//	m = MD2Model::load(MODEL);
-
-
-//	bspRoot = new bsp_node_t;
-//	createSimpleBSP(bspRoot);
-
 
 	for(int x=0; x < 20; x++)	{
 		ostringstream s;
@@ -155,10 +116,53 @@ Scene::~Scene()
 	delete con;
 }
 
+void Scene::resizeSceneSize(int width, int height)	{
+	// Prevent a divide by zero, when window is too short
+	// (you cant make a window of zero width).
+	if(height == 0)
+		height = 1;
+
+	float ratio = 1.0* width / height;
+
+	// Reset the coordinate system before modifying
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	// Set the viewport to be the entire window
+    glViewport(0, 0, width, height);
+
+	// Set the correct perspective.
+	gluPerspective(45,ratio,1,1000);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
+				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
+				cam->up[0], cam->up[1], cam->up[2]);	// up direction
+}
 
 void Scene::LoadMap(string map)	{
 	ObjModel* obj = new ObjModel();
 	obj->loadObjFile("fenway.obj");
+
+}
+
+void Scene::generateBSP(bsp_node_t* root)	{
+
+	plane_t* partition = new plane_t;
+
+	partition->normal[0] = 1.0;
+	partition->normal[1] = 0.0;
+	partition->normal[2] = 0.0;
+
+	partition->origin[0] = 0.0;
+	partition->origin[1] = 0.0;
+	partition->origin[2] = 0.0;
+
+	root->setPolygonList(*polygonList);
+
+	// 400 is the initial width of the surface
+	buildTree(400, partition, root);
 }
 
 
@@ -216,8 +220,8 @@ void Scene::renderPolygonList(list<polygon_t*> polygons)
 }
 
 
-/*
-void renderBSPTree(bsp_node_t* tree)	{
+
+void Scene::renderBSPTree(bsp_node_t* tree)	{
 	if( tree->isLeaf() )	{
 		renderPolygonList(tree->getPolygonList());
 	}
@@ -228,13 +232,12 @@ void renderBSPTree(bsp_node_t* tree)	{
 	}
 }
 
-*/
 
 void Scene::performLighting()	{
-	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight of balls
-	GLfloat posl[]={0,400,0,1};               //position of ligth source
+	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight
+	GLfloat posl[]={0,400,0,1};               //position of light source
 	GLfloat amb[]={0.2f, 0.2f, 0.2f ,1.0f};   //global ambient
-	GLfloat amb2[]={0.3f, 0.3f, 0.3f ,1.0f};  //ambient of lightsource
+	GLfloat amb2[]={0.3f, 0.3f, 0.3f ,1.0f};  //ambiance of light source
 	GLfloat df = 100.0;
 
 	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
@@ -248,6 +251,7 @@ void Scene::performLighting()	{
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
+
 }
 
 
@@ -259,36 +263,35 @@ void Scene::render()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	performLighting();
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	performLighting();
 
-	// position camera
 	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
 				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
+
+
 
 	// End stuff to put into the scene
 
 	// Advance scene's physical positioning and draw it
 	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
-//	if( bspRoot )	{
-//		renderBSPTree(bspRoot);
-//	}
+	if( bspRoot )	{
+		renderBSPTree(bspRoot);
+	}
 
-	renderPolygonList(*polygonList);
+//	renderPolygonList(*polygonList);
 
 	glPushMatrix();
 
 	// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
-//	glColor3ub(255, 255, 0);									// Draw In Yellow
+	glColor3f(255, 255, 0);									// Draw In Yellow
 
 	for (a = 0; a < motionUnderGravitation->numOfMasses; ++a)
 	{
 		Mass* mass = motionUnderGravitation->getMass(a);
-
-//		cout << mass->pos[0] << ", " << mass->pos[1] << ", " << mass->pos[2] << ", " << "Motion under gravitation\n";
 
 		glPointSize(4);
 		glBegin(GL_POINTS);
@@ -299,12 +302,19 @@ void Scene::render()
 
 
 
+
+	// Disable lighting for drawing text and huds to the screen.
+	// Lighting will be re-enabled next time through.
+	glDisable(GL_LIGHTING);
+
 	// Draw the console if open
 	if( consoleActive )
 		con->Draw();
+
 	stringstream s;
 	s << "FPS: " << getFrameRate();
 	f->glPrint(0, 0, s.str().c_str(), 0);
+
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }

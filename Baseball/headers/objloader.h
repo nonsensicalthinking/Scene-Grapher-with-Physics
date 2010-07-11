@@ -105,7 +105,6 @@ public:
 			tmpVT.push_back(input[0]);
 			tmpVT.push_back(input[1]);
 			vt.push_back(tmpVT);
-			cout << "TexCoord: " << input[0] << ", " << input[1];
 		}
 		else if( !strcmp(token, "vn") )	{
 			vec3_t input;

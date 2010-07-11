@@ -9,6 +9,7 @@
 #include "MaterialManager.h"
 #include "Console.h"
 #include "Camera.h"
+#include "bsptree.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -52,7 +53,10 @@ public:
 	void LoadMap(string map);
 	void performLighting();
 	void exit();
-
+	void generateBSP(bsp_node_t* root);
+	void renderBSPTree(bsp_node_t* tree);
+	void createBSP();
+	void resizeSceneSize(int width, int height);
 	// TO BE REMOVED
 	void doItAgain();
 };
