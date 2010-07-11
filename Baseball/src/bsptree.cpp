@@ -107,7 +107,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			VectorCopy(pointB, backPoints[backCount++]);
 			// FIXME: this is only a warning cause I don't
 			// know how it will react atm with coincidence
-			cout << "WARNING: COINCIDENT pointB: ";
+			cout << "BSP WARNING: COINCIDENT pointB: ";
 			VectorPrint(pointB);
 			cout << endl;
 		}
@@ -154,14 +154,16 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 
 	if( depth >= BSP_RECURSION_DEPTH )	{
 		leafCount++;
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << ": " << "END OF BRANCH (LEAF#" << leafCount << ")" << endl;
-
+#endif
 		depth--;
 		return;
 	}
 	else	{
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << ": " << "Splitting polygon list..." << endl;
-
+#endif
 		parent_node->partition = partition;
 
 		float sideOfPlane = 0;
@@ -169,8 +171,9 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		list<polygon_t*> front_list;
 		list<polygon_t*> back_list;
 
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << " Polygon count: " << parent_node->getPolygonCount() << endl;
-
+#endif
 		for(itr=parent_node->beginPolyListItr(); itr != parent_node->endPolyListItr(); itr++)	{
 			polygon_t* curPoly = (*itr);
 
@@ -178,8 +181,9 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 
 			if( polySide == SPANNING )	{
 
+#ifdef DEBUG_SPLIT
 				cout << "Polygon is SPANNING partition" << endl;
-
+#endif
 				polygon_t* front_half = new polygon_t;
 				polygon_t* back_half = new polygon_t;
 
@@ -201,18 +205,23 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			}
 			else	{	// Polygon is on one side or the other
 				if( polySide == FRONT )	{ // Front side of plane
-					cout << "Polygon in front of partition" << endl;
 					front_list.push_back(curPoly);
+#ifdef DEBUG_SPLIT
+					cout << "Polygon in front of partition" << endl;
+#endif
 				}
 				else	{// if( polySide == BACK )	// Back side of plane
-					cout << "Polygon in back of partition" << endl;
 					back_list.push_back(curPoly);
+#ifdef DEBUG_SPLIT
+					cout << "Polygon in back of partition" << endl;
+#endif
 				}
 			}
 		}
 
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << ": " << "Done splitting polygons" << endl;
-
+#endif
 		/*
 		 * Begin calculation of next partitioning plane
 		 */
@@ -222,8 +231,9 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		VectorCopy(partition->origin, new_front_partition->origin);
 		VectorCopy(partition->origin, new_back_partition->origin);
 
+#ifdef DEBUG_SPLIT
 		cout << "*** NEW DIMENSIONS ***" << endl;
-
+#endif
 // Changes the width dimensions every other split
 		static bool change = true;	// must be true to calc first coords
 		static float nextCenter;
@@ -250,6 +260,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			VectorCopy(NORMAL_X, new_front_partition->normal);
 			VectorCopy(NORMAL_X, new_back_partition->normal);
 
+#ifdef DEBUG_SPLIT
 			cout << "Next Partition Normal: ";
 			VectorPrint(new_front_partition->normal);
 			cout << endl;
@@ -258,7 +269,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			VectorPrint(new_front_partition->origin);
 			cout << endl;
 			cout << "Next Center = " << nextCenter << endl;
-
+#endif
 		}
 		else	{	// partition->normal[PLANE_NORMAL_Z] == 0.0
 			// make this one on the z axis, to do that
@@ -272,6 +283,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			VectorCopy(NORMAL_Z, new_front_partition->normal);
 			VectorCopy(NORMAL_Z, new_back_partition->normal);
 
+#ifdef DEBUG_SPLIT
 			cout << "Next Partition Normal: ";
 			VectorPrint(new_front_partition->normal);
 			cout << endl;
@@ -280,14 +292,16 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			VectorPrint(new_front_partition->origin);
 			cout << endl;
 			cout << "Next Center = " << nextCenter << endl;
+#endif
 		}
 
 		/*
 		 * End creation of new partitioning planes
 		 */
+#ifdef DEBUG_SPLIT
 		cout << "*** END DIMENSIONS ***" << endl;
 		cout << "Level " << depth << ": " << " Done creating new partitions." << endl;
-
+#endif
 
 
 		bsp_node_t* front_node = new bsp_node_t;
@@ -312,10 +326,14 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		front_node->setPolygonList(front_list);
 		back_node->setPolygonList(back_list);
 
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << ": " << " Done linking, calling next FRONT." << endl;
+#endif
 		buildTree(nextLength, new_front_partition, front_node);
 
+#ifdef DEBUG_SPLIT
 		cout << "Level " << depth << ": " << " Done linking, calling next BACK." << endl;
+#endif
 		buildTree(nextLength, new_back_partition, back_node);
 
 	}
@@ -340,7 +358,9 @@ void bspInOrderBackToFront(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
+#ifdef DEBUG_SPLIT
 		cout << "Leaf Polygon count: " << tree->getPolygonCount() << endl;
+#endif
 		return;
 	}
 
@@ -355,7 +375,9 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
+#ifdef DEBUG_SPLIT
 		cout << "Leaf Polygon count: " << tree->getPolygonCount() << endl;
+#endif
 		return;
 	}
 
