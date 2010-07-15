@@ -21,6 +21,8 @@
 #include "shared.h"
 #include "bsptree.h"
 
+#define DEBUG_SPLIT
+
 using namespace std;
 
 #define FRONT 		 1
@@ -34,6 +36,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 	int x;
 	vec3_t frontPoints[MAX_POLY_POINTS];
 	vec3_t backPoints[MAX_POLY_POINTS];
+	vec2_t frontTexPoints[MAX_POLY_POINTS];
+	vec2_t backTexPoints[MAX_POLY_POINTS];
 
 	vec3_t pointA;
 	vec3_t pointB;
@@ -43,68 +47,104 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 	float sideA = classifyPoint(split, pointA);
 	float sideB;
 
-#ifdef DEBUG_SPLIT
-	cout << "Num Points: " << poly->numPoints << endl;
-#endif
 	for(x=0; x < poly->numPoints; x++)	{
 		VectorCopy(poly->points[x], pointB);
 		sideB = classifyPoint(split, pointB);
 
-#ifdef DEBUG_SPLIT
-		cout << "Working on pointA " << x << ": [" << pointA[0] << ", " << pointA[1] << ", " << pointA[2] << "]" << endl;
-		cout << "Working on pointB " << x << ": [" << pointB[0] << ", " << pointB[1] << ", " << pointB[2] << "]" << endl;
-		cout << "sideA: " << sideA << endl;
-		cout << "sideB: " << sideB << endl;
-#endif
 		if( sideB > 0 )	{
 			if( sideA < 0 )	{
-#ifdef DEBUG_SPLIT
-				cout << "Line crosses plane." << endl;
-#endif
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a simple ray-plane intersection.
 
 				vec3_t intersection;
+				vec3_t fractSect;
 				// split in this def is of type plane_t (a struct with plane info)
-				if( (findLinePlaneIntersect(split, pointA, pointB, intersection )) )	{
-					VectorCopy(intersection, frontPoints[frontCount++]);
-					VectorCopy(intersection, backPoints[backCount++]);
+				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
+					VectorCopy(intersection, frontPoints[frontCount]);
+					VectorCopy(intersection, backPoints[backCount]);
+
+					vec2_t work;
+					vec2_t u;
+					VectorSubtract2f( poly->texpts[x-1], poly->texpts[x], u);
+					VectorMA2f(poly->texpts[x], u, fractSect[0], work);
+
+					if( poly->isTextured )	{
+						VectorCopy(work, frontTexPoints[frontCount]);
+						VectorCopy(work, backTexPoints[backCount]);
+					}
+
+					// TODO IMPLEMENT THIS FOR NORMALS AS WELL
+//					if( poly->hasNormals )	{
+//						VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
+//						VectorCopy(poly->normpts[x], backNormPoints[backCount]);
+//					}
+
+					frontCount++;
+					backCount++;
 				}
 			}
-#ifdef DEBUG_SPLIT
-			else
-				cout << "Same side of plane." << endl;
-#endif
-			VectorCopy(pointB, frontPoints[frontCount++]);
+
+			VectorCopy(pointB, frontPoints[frontCount]);
+			if( poly->isTextured )
+				VectorCopy(poly->texpts[x], frontTexPoints[frontCount]);
+			frontCount++;
+
 		}
 		else if( sideB < 0 )	{
 			if( sideA > 0 )	{
-#ifdef DEBUG_SPLIT
-				cout << "Line crosses plane." << endl;
-#endif
-				cout << "SIDE B: " << sideB << endl;
-
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a simple ray-plane intersection.
 
 				vec3_t intersection;
+				vec3_t fractSect;
+				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
+					VectorCopy(intersection, frontPoints[frontCount]);
+					VectorCopy(intersection, backPoints[backCount]);
 
-				if( (findLinePlaneIntersect(split, pointA, pointB, intersection )) )	{
-					VectorCopy(intersection, frontPoints[frontCount++]);
-					VectorCopy(intersection, backPoints[backCount++]);
+					// BEGIN ADDED TEXTURE WORK
+					vec2_t work;
+					vec2_t u;
+					VectorSubtract2f( poly->texpts[x-1], poly->texpts[x], u);
+					VectorMA2f(poly->texpts[x], u, fractSect[0], work);
+
+
+					if( poly->isTextured )	{
+						VectorCopy(work, frontTexPoints[frontCount]);
+						VectorCopy(work, backTexPoints[backCount]);
+					}
+					// END ADDED TEXTURE WORK
+
+					frontCount++;
+					backCount++;
 				}
 			}
-#ifdef DEBUG_SPLIT
-			else
-				cout << "Same side of plane." << endl;
-#endif
-			VectorCopy(pointB, backPoints[backCount++]);
+
+			VectorCopy(pointB, backPoints[backCount]);
+
+			// BEGIN ADDED TEXTURE WORK
+			if( poly->isTextured )
+				VectorCopy(poly->texpts[x], backTexPoints[backCount]);
+			// END ADDED TEXTURE WORK
+
+			backCount++;
+
 		}
 		else	{	// coincident ?
-			VectorCopy(pointB, frontPoints[frontCount++]);
-			VectorCopy(pointB, backPoints[backCount++]);
+			VectorCopy(pointB, frontPoints[frontCount]);
+			VectorCopy(pointB, backPoints[backCount]);
+
+			// BEGIN ADDED TEXTURE WORK
+			if( poly->isTextured )	{
+				VectorCopy(poly->texpts[x], frontPoints[frontCount]);
+				VectorCopy(poly->texpts[x], backPoints[backCount]);
+			}
+			// END ADDED TEXTURE WORK
+
+			frontCount++;
+			backCount++;
+
 			// FIXME: this is only a warning cause I don't
 			// know how it will react atm with coincidence
 			cout << "BSP WARNING: COINCIDENT pointB: ";
@@ -116,30 +156,25 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		sideA = sideB;
 	}
 
-#ifdef DEBUG_SPLIT
-	cout << "Front Point Count: " << frontCount << endl;
-	cout << "Back Point Count: " << backCount << endl;
-#endif
+
 	front->numPoints = frontCount;
 	for(x=0; x < frontCount; x++)	{
 		VectorCopy(frontPoints[x], front->points[x]);
 
-#ifdef DEBUG_SPLIT
-		cout << "front->points: ";
-		VectorPrint(front->points[x]);
-		cout << endl;
-#endif
+		// BEGIN ADDED TEXTURE WORK
+		if( poly->isTextured )
+			VectorCopy(frontTexPoints[x], front->texpts[x]);
+		// END ADDED TEXTURE WORK
 	}
 
 	back->numPoints = backCount;
 	for(x=0; x < backCount; x++)	{
 		VectorCopy(backPoints[x], back->points[x]);
 
-#ifdef DEBUG_SPLIT
-		cout << "back->points: ";
-		VectorPrint(back->points[x]);
-		cout << endl;
-#endif
+		// BEGIN ADDED TEXTURE WORK
+		if( poly->isTextured )
+			VectorCopy(backTexPoints[x], back->texpts[x]);
+		// END ADDED TEXTURE WORK
 	}
 
 }
@@ -150,20 +185,15 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 	static int depth = 0;
 	static int leafCount = 0;
 
+	// FIXME: isn't tree depth zero based?
 	depth++;
 
 	if( depth >= BSP_RECURSION_DEPTH )	{
 		leafCount++;
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << ": " << "END OF BRANCH (LEAF#" << leafCount << ")" << endl;
-#endif
 		depth--;
 		return;
 	}
 	else	{
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << ": " << "Splitting polygon list..." << endl;
-#endif
 		parent_node->partition = partition;
 
 		float sideOfPlane = 0;
@@ -171,19 +201,12 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		list<polygon_t*> front_list;
 		list<polygon_t*> back_list;
 
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << " Polygon count: " << parent_node->getPolygonCount() << endl;
-#endif
 		for(itr=parent_node->beginPolyListItr(); itr != parent_node->endPolyListItr(); itr++)	{
 			polygon_t* curPoly = (*itr);
 
 			int polySide = classifyPolygon(partition, curPoly);
 
 			if( polySide == SPANNING )	{
-
-#ifdef DEBUG_SPLIT
-				cout << "Polygon is SPANNING partition" << endl;
-#endif
 				polygon_t* front_half = new polygon_t;
 				polygon_t* back_half = new polygon_t;
 
@@ -206,22 +229,13 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 			else	{	// Polygon is on one side or the other
 				if( polySide == FRONT )	{ // Front side of plane
 					front_list.push_back(curPoly);
-#ifdef DEBUG_SPLIT
-					cout << "Polygon in front of partition" << endl;
-#endif
 				}
 				else	{// if( polySide == BACK )	// Back side of plane
 					back_list.push_back(curPoly);
-#ifdef DEBUG_SPLIT
-					cout << "Polygon in back of partition" << endl;
-#endif
 				}
 			}
 		}
 
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << ": " << "Done splitting polygons" << endl;
-#endif
 		/*
 		 * Begin calculation of next partitioning plane
 		 */
@@ -231,9 +245,6 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		VectorCopy(partition->origin, new_front_partition->origin);
 		VectorCopy(partition->origin, new_back_partition->origin);
 
-#ifdef DEBUG_SPLIT
-		cout << "*** NEW DIMENSIONS ***" << endl;
-#endif
 // Changes the width dimensions every other split
 		static bool change = true;	// must be true to calc first coords
 		static float nextCenter;
@@ -298,10 +309,6 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		/*
 		 * End creation of new partitioning planes
 		 */
-#ifdef DEBUG_SPLIT
-		cout << "*** END DIMENSIONS ***" << endl;
-		cout << "Level " << depth << ": " << " Done creating new partitions." << endl;
-#endif
 
 
 		bsp_node_t* front_node = new bsp_node_t;
@@ -326,14 +333,8 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		front_node->setPolygonList(front_list);
 		back_node->setPolygonList(back_list);
 
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << ": " << " Done linking, calling next FRONT." << endl;
-#endif
 		buildTree(nextLength, new_front_partition, front_node);
 
-#ifdef DEBUG_SPLIT
-		cout << "Level " << depth << ": " << " Done linking, calling next BACK." << endl;
-#endif
 		buildTree(nextLength, new_back_partition, back_node);
 
 	}
@@ -358,9 +359,6 @@ void bspInOrderBackToFront(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
-#ifdef DEBUG_SPLIT
-		cout << "Leaf Polygon count: " << tree->getPolygonCount() << endl;
-#endif
 		return;
 	}
 
@@ -375,9 +373,6 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
-#ifdef DEBUG_SPLIT
-		cout << "Leaf Polygon count: " << tree->getPolygonCount() << endl;
-#endif
 		return;
 	}
 

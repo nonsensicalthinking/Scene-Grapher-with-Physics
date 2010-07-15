@@ -30,10 +30,12 @@
 #ifndef MATERIAL_MANAGER_H_
 #define MATERIAL_MANAGER_H_
 
+#define MAX_MAT_NAME_LEN	128
+
 using namespace std;
 
 typedef struct material_s	{
-	char materialName[128];
+	char materialName[MAX_MAT_NAME_LEN];
 
 	vec3_t Ka;
 	vec3_t Kd;
@@ -80,13 +82,19 @@ public:
 		material_t* mat = materials[matName];
 
 		if( !mat )	{
-			cout << "No material." << endl;
+			cout << "Material not found: " << matName << endl;
 			return false;
 		}
 
 
 		bindTexture(mat->map_Kd);
-		// TODO Enable other effects
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat->Ka);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->Kd);
+		// TODO use mat->illum to define how specular is used
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat->Ks);
+		// TODO implement light emission materials
+//		glMaterialfv(GL_FRONT, GL_EMISSION, mat-> );
+		glMaterialf(GL_FRONT, GL_SHININESS, mat->Ns);
 
 		return true;
 	}
@@ -99,7 +107,6 @@ public:
 
 		if( strcmp(mat->map_Kd, "(null)") )	{	// If "(null)" isn't the string
 			glDisable(GL_TEXTURE_2D);
-
 		}
 
 	}
@@ -150,6 +157,12 @@ public:
 		materials.erase(matName);
 	}
 
+	bool hasMaterial(string matName)	{
+		if( !materials[matName] )
+			return false;
+
+		return true;
+	}
 };
 
 

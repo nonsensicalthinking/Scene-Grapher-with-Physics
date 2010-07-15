@@ -59,15 +59,8 @@ typedef struct polygon_s	{
 
 	int glCacheID;
 
-	// TODO Incorporate material properties
-	// into polygon, there should be one treemap
-	// that has one instance of each material type
-	// used so that we can reference that by name
-	// as opposed to copying it all over the place.
 	bool hasMaterial;
 	char materialName[MAX_FILE_LENGTH];
-
-
 }polygon_t;
 
 
@@ -103,6 +96,11 @@ inline void VectorSubtract(const vec3_t a, const vec3_t b, vec3_t result)	{
 	result[2] = a[2] - b[2];
 }
 
+inline void VectorSubtract2f(const vec2_t a, const vec2_t b, vec2_t result)	{
+	result[0] = a[0] - b[0];
+	result[1] = a[1] - b[1];
+}
+
 inline void VectorAdd(const vec3_t a, const vec3_t b, vec3_t result)	{
 	result[0] = a[0] + b[0];
 	result[1] = a[1] + b[1];
@@ -113,6 +111,11 @@ inline void VectorScale(const vec3_t a, const float scale, vec3_t result)	{
 	result[0] = a[0] * scale;
 	result[1] = a[1] * scale;
 	result[2] = a[2] * scale;
+}
+
+inline void VectorScale2f(const vec2_t a, const float scale, vec2_t result)	{
+	result[0] = a[0] * scale;
+	result[1] = a[1] * scale;
 }
 
 inline void VectorDivide(const vec3_t a, const float divisor, vec3_t result)	{
@@ -126,6 +129,11 @@ inline void VectorMA(const vec3_t a, const vec3_t b, const float scale, vec3_t r
 	result[0] = a[0] + (b[0] * scale);
 	result[1] = a[1] + (b[1] * scale);
 	result[2] = a[2] + (b[2] * scale);
+}
+
+inline void VectorMA2f(const vec2_t a, const vec2_t b, const float scale, vec2_t result)	{
+	result[0] = a[0] + (b[0] * scale);
+	result[1] = a[1] + (b[1] * scale);
 }
 
 // FIXME: this seems costly
@@ -191,7 +199,7 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	return -99;	// Error of sorts happened.
 }
 
-inline int findLinePlaneIntersect( const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect )	{
+inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect, vec3_t fractSect)	{
 	vec3_t u;
 	vec3_t w;
 
@@ -210,12 +218,12 @@ inline int findLinePlaneIntersect( const plane_t *plane, const vec3_t pointA, co
 
 	// they are not parallel
 	// compute intersect param
-	float fractSect = numerator / denominator;
+	fractSect[0] = numerator / denominator;
 
-	if( fractSect < 0 || fractSect > 1 )
+	if( fractSect[0] < 0 || fractSect[0] > 1 )
 		return 0;                       // no intersection
 
-	VectorMA( pointA, u, fractSect, intersect);
+	VectorMA( pointA, u, fractSect[0], intersect);
 
 	return 1;	// Indicate that we had an intersection
 }

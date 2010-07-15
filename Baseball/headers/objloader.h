@@ -37,6 +37,8 @@ extern Scene* getScene();
 #ifndef OBJLOADER_CPP_
 #define OBJLOADER_CPP_
 
+#define MAX_OBJ_LINE_LEN	256
+
 
 class ObjModel	{
 	vector<vector<float> > v;
@@ -45,7 +47,7 @@ class ObjModel	{
 
 	string error;
 
-	char curMat[128];
+	char curMat[MAX_MAT_NAME_LEN];
 
 public:
 	ObjModel()	{
@@ -64,8 +66,8 @@ public:
 		}
 
 		while( !feof(fp) )	{
-			char in[256];
-			fgets(in, 256, fp);
+			char in[MAX_OBJ_LINE_LEN];
+			fgets(in, MAX_OBJ_LINE_LEN, fp);
 #ifdef OBJDEBUG
 			cout << "OBJ Line: " << in << endl;
 #endif
@@ -76,7 +78,7 @@ public:
 		}
 	}
 
-	void processOBJLine(char line[256])	{
+	void processOBJLine(char line[MAX_OBJ_LINE_LEN])	{
 		char *token;
 		char linecpy[256];
 
@@ -240,7 +242,9 @@ public:
 	void initializeMaterial(material_t* mat)	{
 		strcpy(mat->materialName, "");
 
+		// These values are apparently opengl defualts
 		mat->Ns = 0;
+
 		mat->Ka[0] = 0.2;
 		mat->Ka[1] = 0.2;
 		mat->Ka[2] = 0.2;
@@ -269,17 +273,19 @@ public:
 		material_t* mat;
 
 		while( !feof(fp) )	{
-			char in[256];
-			fgets(in, 256, fp);
-			char incpy[256];
+			char in[MAX_OBJ_LINE_LEN];
+			fgets(in, MAX_OBJ_LINE_LEN, fp);
+			char incpy[MAX_OBJ_LINE_LEN];
 #ifdef OBJDEBUG
 			cout << "MAT Line: " << in << endl;
 #endif
 			strcpy(incpy, in);
 
-			if( in[0] == '#' || in[0] == ' ')
+			// if its a comment or whitespace skip it
+			if( in[0] == '#' || in[0] == ' ' || in[0] == '\n' ||
+					in[0] == '\r'  || in[0] == '\t')
 				continue;
-			else	{
+			else	{	// otherwise we need to process some data
 				char* token = strtok(in, WHITESPACE);
 
 				if( token == NULL )
@@ -290,8 +296,18 @@ public:
 					initializeMaterial(newmat);
 
 					token = strtok(NULL, WHITESPACE);
-					tm->addMaterial(token, newmat);
-					mat = newmat;
+					if( !tm->hasMaterial(token) )	{
+						tm->addMaterial(token, newmat);
+						mat = newmat;
+#ifdef OBJDEBUG
+						cout << "New material created: " << token << endl;
+#endif
+					}
+					else	{
+#ifdef OBJDEBUG
+						cout << "MTL Error: Material redefinition: " << token << endl;
+#endif
+					}
 				}
 				else if( !strcmp(token, "Ns") )	{
 					sscanf(incpy, "Ns %f", &mat->Ns);
