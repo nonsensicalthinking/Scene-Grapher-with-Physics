@@ -65,7 +65,61 @@ void Scene::createBSP()	{
 
 	bspRoot = new bsp_node_t;
 	generateBSP(bspRoot);
+	namePolygons(bspRoot);
+	buildPolygonByNameMap(bspRoot);
 }
+
+void Scene::generateBSP(bsp_node_t* root)	{
+
+	plane_t* partition = new plane_t;
+
+	partition->normal[0] = 1.0;
+	partition->normal[1] = 0.0;
+	partition->normal[2] = 0.0;
+
+	partition->origin[0] = 0.0;
+	partition->origin[1] = 0.0;
+	partition->origin[2] = 0.0;
+
+	root->setPolygonList(*polygonList);
+
+	// 400 is the initial width of the surface
+	buildTree(400, partition, root);
+}
+
+
+void Scene::buildPolygonByNameMap(bsp_node_t* bspRootNode)	{
+	if( bspRootNode->isLeaf() )	{
+		list<polygon_t*>::iterator itr;
+		for(itr = bspRootNode->beginPolyListItr(); itr != bspRootNode->endPolyListItr(); itr++)
+			polygonByName[(*itr)->polyID] = (*itr);
+	}
+	else	{
+		buildPolygonByNameMap(bspRootNode->front);
+		buildPolygonByNameMap(bspRootNode->back);
+	}
+}
+
+void Scene::namePolygons(bsp_node_t* bspNode)	{
+	list<polygon_t*>::iterator itr;
+
+	if( bspNode->isLeaf() )	{
+		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
+			(*itr)->polyID = polygonCount++;
+		}
+	}
+	else	{
+		namePolygons(bspNode->front);
+		namePolygons(bspNode->back);
+	}
+}
+
+void Scene::LoadMap(string map)	{
+	ObjModel* obj = new ObjModel();
+	obj->loadObjFile("fenway.obj");
+
+}
+
 
 Scene::Scene(int width, int height)
 {
@@ -79,6 +133,12 @@ Scene::Scene(int width, int height)
 	matsManager = getTextureManager();
 
 	cam = new Camera();
+
+	// For naming polygons
+	polygonCount = 0;
+
+	// PICKING STUFF TEMPORARY
+	isPicking = false;
 
 	// temp frame rate display
 	f = new Font(sceneWidth, sceneHeight);
@@ -141,98 +201,6 @@ void Scene::resizeSceneSize(int width, int height)	{
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 }
 
-void Scene::LoadMap(string map)	{
-	ObjModel* obj = new ObjModel();
-	obj->loadObjFile("fenway.obj");
-
-}
-
-void Scene::generateBSP(bsp_node_t* root)	{
-
-	plane_t* partition = new plane_t;
-
-	partition->normal[0] = 1.0;
-	partition->normal[1] = 0.0;
-	partition->normal[2] = 0.0;
-
-	partition->origin[0] = 0.0;
-	partition->origin[1] = 0.0;
-	partition->origin[2] = 0.0;
-
-	root->setPolygonList(*polygonList);
-
-	// 400 is the initial width of the surface
-	buildTree(400, partition, root);
-}
-
-
-// TODO Test me
-// This should be used when "Loading the map"
-void glCachePolygon(polygon_t* polygon)	{
-    polygon->glCacheID = glGenLists(1);
-    glNewList(polygon->glCacheID, GL_COMPILE);
-//    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glBegin(GL_POLYGON);
-    for(int loop = 0; loop < polygon->numPoints ; loop++)	{
-//		glTexCoord2f(u_coord, v_coord);
-		glVertex3f(polygon->points[loop][0], polygon->points[loop][1], polygon->points[loop][2]);
-    }
-    glEnd();
-	glEndList();
-}
-
-void Scene::addPolygon(polygon_t* p)	{
-	polygonList->push_back(p);
-}
-
-void Scene::drawPolygon(polygon_t* poly)	{
-	glPushMatrix();
-
-		if( poly->hasMaterial )
-			matsManager->enableMaterial(poly->materialName);
-
-		glBegin(GL_POLYGON);
-		for(int x=0; x < poly->numPoints; x++)	{
-			if( poly->hasNormals )
-				glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
-
-			if( poly->isTextured )
-				glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
-
-			glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
-		}
-		glEnd();
-
-		if( poly->hasMaterial )
-			matsManager->disableMaterial(poly->materialName);
-
-	glPopMatrix();
-}
-
-void Scene::renderPolygonList(list<polygon_t*> polygons)
-{
-	list<polygon_t*>::iterator itr;
-
-	// for each polygon in the list
-	for(itr = polygons.begin(); itr != polygons.end(); itr++)	{
-		drawPolygon((*itr));
-	}
-}
-
-
-
-void Scene::renderBSPTree(bsp_node_t* tree)	{
-	if( tree->isLeaf() )	{
-		renderPolygonList(tree->getPolygonList());
-	}
-	else	{
-		// perform render back to front
-		renderBSPTree(tree->back);
-		renderBSPTree(tree->front);
-	}
-}
-
-
 void Scene::performLighting()	{
 	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight
 	GLfloat posl[]={0,400,0,1};               //position of light source
@@ -254,8 +222,84 @@ void Scene::performLighting()	{
 
 }
 
+void Scene::addPolygon(polygon_t* p)	{
+	polygonList->push_back(p);
+}
+
+// TODO Test me
+// This should be used when "Loading the map"
+void glCachePolygon(polygon_t* polygon)	{
+    polygon->glCacheID = glGenLists(1);
+    glNewList(polygon->glCacheID, GL_COMPILE);
+//    glBindTexture(GL_TEXTURE_2D, texture[0]);
+    glBegin(GL_POLYGON);
+    for(int loop = 0; loop < polygon->numPoints ; loop++)	{
+//		glTexCoord2f(u_coord, v_coord);
+		glVertex3f(polygon->points[loop][0], polygon->points[loop][1], polygon->points[loop][2]);
+    }
+    glEnd();
+	glEndList();
+}
+
+void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
+	if( selectMode )	{
+		glPushName(poly->polyID);
+		glBegin(GL_POLYGON);
+		for(int x=0; x < poly->numPoints; x++)	{
+			if( poly->selected )
+				glColor3f(poly->polygonDrawColor[0], poly->polygonDrawColor[1], poly->polygonDrawColor[2]);
+			else
+				glColor3f(0.5, 0.5, 0.5);
+
+			glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+		}
+		glEnd();
+		glPopName();
+	} else	{	// normal rendering
+		glPushMatrix();
+			if( poly->hasMaterial )
+				matsManager->enableMaterial(poly->materialName);
+
+			glBegin(GL_POLYGON);
+			for(int x=0; x < poly->numPoints; x++)	{
+				if( poly->hasNormals )
+					glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+
+				if( poly->isTextured )
+					glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
+
+				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+			}
+			glEnd();
+
+			if( poly->hasMaterial )
+				matsManager->disableMaterial(poly->materialName);
+
+		glPopMatrix();
+	}
+}
+
+void Scene::renderPolygonList(list<polygon_t*> polygons, bool selectionMode)
+{
+	list<polygon_t*>::iterator itr;
+
+	// for each polygon in the list
+	for(itr = polygons.begin(); itr != polygons.end(); itr++)	{
+		drawPolygon((*itr), selectionMode);
+	}
+}
 
 
+void Scene::renderBSPTree(bsp_node_t* tree)	{
+	if( tree->isLeaf() )	{
+		renderPolygonList(tree->getPolygonList(), isPicking);
+	}
+	else	{
+		// perform render back to front
+		renderBSPTree(tree->back);
+		renderBSPTree(tree->front);
+	}
+}
 
 void Scene::render()
 {
@@ -274,33 +318,26 @@ void Scene::render()
 
 
 
-	// End stuff to put into the scene
-
 	// Advance scene's physical positioning and draw it
 	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
 	if( bspRoot )	{
 		renderBSPTree(bspRoot);
 	}
 
-//	renderPolygonList(*polygonList);
-
 	glPushMatrix();
+		// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
+		glColor3f(255, 255, 0);									// Draw In Yellow
 
-	// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
-	glColor3f(255, 255, 0);									// Draw In Yellow
+		for (a = 0; a < motionUnderGravitation->numOfMasses; ++a)
+		{
+			Mass* mass = motionUnderGravitation->getMass(a);
 
-	for (a = 0; a < motionUnderGravitation->numOfMasses; ++a)
-	{
-		Mass* mass = motionUnderGravitation->getMass(a);
-
-		glPointSize(4);
-		glBegin(GL_POINTS);
-			glVertex3f(mass->pos[0], mass->pos[1], mass->pos[2]);
-		glEnd();
-	}
+			glPointSize(4);
+			glBegin(GL_POINTS);
+				glVertex3f(mass->pos[0], mass->pos[1], mass->pos[2]);
+			glEnd();
+		}
 	glPopMatrix();
-
-
 
 
 	// Disable lighting for drawing text and huds to the screen.
@@ -312,14 +349,12 @@ void Scene::render()
 		con->Draw();
 
 	stringstream s;
-	s << "FPS: " << getFrameRate();
+	s << "FPS: " << frameRate;
 	f->glPrint(0, 0, s.str().c_str(), 0);
 
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
-
-
 
 
 
@@ -350,12 +385,15 @@ void Scene::advance(long milliseconds)
 #define CAM_MOVE_RATE	20.0
 
 // Handles keyboard input from normal text keys
-void Scene::keyPressed(unsigned char key)	{
+void Scene::keyPressedEvent(unsigned char key, int x, int y)	{
 //	cout << "Key pressed: " << key << endl;
 	if( consoleActive )	{	// send key input to console
 		switch(key)	{
 			case CONSOLE_KEY:	// deactivate console
 				consoleActive = !consoleActive;
+				break;
+			case ESC_KEY:
+				con->clearInput();
 				break;
 			default:	// add to input line
 				con->appendToInput(key);
@@ -387,6 +425,9 @@ void Scene::keyPressed(unsigned char key)	{
 			case 'z':
 				doItAgain();
 				break;
+			case ESC_KEY:
+				cleanExit();
+				break;
 		}
 	}
 }
@@ -394,7 +435,7 @@ void Scene::keyPressed(unsigned char key)	{
 
 
 // handles keyboard input from special keys
-void Scene::specialKeyPressed(int key, int x, int y)	{
+void Scene::specialKeyPressedEvent(int key, int x, int y)	{
 //	cout << "Special Key Pressed: " << key << endl;
 
 	if( consoleActive )	{	// send key input to console
@@ -445,6 +486,93 @@ void Scene::specialKeyPressed(int key, int x, int y)	{
 		}
 	}
 }
+
+void Scene::mouseEvent(int button, int state, int x, int y)	{
+	if( isPicking )	{
+		if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN )	{
+			cout << "Entering pick mode." << endl;
+			startPicking(x, y);
+			renderBSPTree(bspRoot);
+			int hits = stopPicking();
+
+			if( hits )	{
+				processHits(hits, selectBuf);
+			}
+			else
+				cout << "No hits occurred." << endl;
+		}
+	}
+}
+
+
+// BEGIN PICKING SHIT
+
+void Scene::startPicking(int cursorX, int cursorY) {
+	GLint viewport[4];
+
+	glSelectBuffer(BUFSIZE,selectBuf);
+	glRenderMode(GL_SELECT);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glGetIntegerv(GL_VIEWPORT,viewport);
+	gluPickMatrix(cursorX,viewport[3]-cursorY,
+			5,5,viewport);
+
+	float ratio = 1.0 * sceneWidth / sceneHeight;
+
+	gluPerspective(45,ratio,0.1,1000);
+	glMatrixMode(GL_MODELVIEW);
+	glInitNames();
+}
+
+
+int Scene::stopPicking() {
+	int hits;
+
+	// restoring the original projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glFlush();
+
+	// returning to normal rendering mode
+	hits = glRenderMode(GL_RENDER);
+
+	return hits;
+}
+
+void Scene::processHits(int hits, GLuint selectBuf[])	{
+	cout << "Selection hits: " << hits << endl;
+	if( hits )	{
+		cout << "Number of names for this polygon: " << selectBuf[0] << endl;
+		if( selectBuf[0] >= 1 )	{
+			cout << "Polygon Name: " << selectBuf[3] << endl;
+			polygon_t* p = polygonByName[selectBuf[3]];
+			if( p )	{
+//				if( p->selected )
+//					p->selected = false;
+//				else	{
+					p->selected = true;
+					p->polygonDrawColor[0] = 0;
+					p->polygonDrawColor[1] = 0;
+					p->polygonDrawColor[2] = 1;
+//				}
+			}
+			else	{
+				cout << "Error: couldn't find polygon's reference." << endl;
+			}
+
+		}
+		else
+			cout << "Unnamed polygon." << endl;
+	}
+}
+
+// END PICKING SHIT
+
 
 
 void Scene::exit()	{

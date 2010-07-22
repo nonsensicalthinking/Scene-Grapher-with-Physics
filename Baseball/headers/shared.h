@@ -44,7 +44,7 @@ typedef struct plane_s	{
 
 
 typedef struct polygon_s	{
-
+	unsigned int polyID;
 	int numPoints;
 	vec3_t points[MAX_POLY_POINTS];
 
@@ -61,6 +61,9 @@ typedef struct polygon_s	{
 
 	bool hasMaterial;
 	char materialName[MAX_FILE_LENGTH];
+
+	bool selected;
+	vec3_t polygonDrawColor;
 }polygon_t;
 
 

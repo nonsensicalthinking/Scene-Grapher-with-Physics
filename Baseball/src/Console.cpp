@@ -68,6 +68,7 @@ void Console::removeLastCharacter()	{
 void Console::clearInput()	{
 	delete instr;
 	instr = new ostringstream;
+	inputString = "";
 }
 
 void range_tolower ( string::iterator beg, string::iterator end ) {
@@ -122,14 +123,16 @@ void Console::print(string s)	{
 enum {
 	QUIT=0,
 	CLEAR,
-	PUTCAM
+	PUTCAM,
+	PICKING
 };
 
 // Commands need to be entered in lowercase
 string commands[] = {
 		"quit",
 		"clear",
-		"putcam"
+		"putcam",
+		"picking"
 };
 
 void Console::processConsoleCommand(const string conInput)	{
@@ -150,8 +153,8 @@ void Console::processConsoleCommand(const string conInput)	{
 	int intCmd = -1;
 	int commandCount = sizeof(commands)/8;
 	for(int x=0; x < commandCount; x++ )	{
-		cout << "Command SIZE: " << sizeof(commands) << endl;
-		cout << "Command: " << commands[x] << endl;
+//		cout << "Command SIZE: " << sizeof(commands) << endl;
+//		cout << "Command: " << commands[x] << endl;
 		if( cmd == commands[x] )	{
 			intCmd = x;
 			break;
@@ -175,6 +178,19 @@ void Console::processConsoleCommand(const string conInput)	{
 		sscanf(conInput.c_str(), "putcam %f %f %f", &origin[0], &origin[1], &origin[2] );
 		s << "Putting camera: " << origin[0] << ", " << origin[1] << ", " << origin[2];
 		print(s.str());
+		break;
+	case PICKING:
+		int p;
+		sscanf(conInput.c_str(), "picking %i", &p);
+		cout << "Polygonal picking: ";
+		if( p )	{
+			cout << "Enabled." << endl;
+			getScene()->isPicking = true;
+		}
+		else	{
+			cout << "Disabled." << endl;
+			getScene()->isPicking = false;
+		}
 		break;
 	case -1:
 		cout << "NONE OF THEM" << endl;

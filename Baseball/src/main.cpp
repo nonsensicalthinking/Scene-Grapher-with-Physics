@@ -100,10 +100,6 @@ void cleanExit()	{
 	exit(0);
 }
 
-int getFrameRate()	{
-	return frameRate;
-}
-
 // END GLOABLS!
 
 
@@ -180,25 +176,23 @@ void draw(void)
 	int curFrameTime = Sys_Milliseconds();
 	frameCount++;
 	if( (lastFrameTime+1000) <= curFrameTime )	{
-		frameRate = frameCount;
+		curScene->frameRate = frameCount;
 		frameCount = 0;
 		lastFrameTime = curFrameTime;
 	}
 }
 
-
+void processMouse(int button, int state, int x, int y)	{
+	curScene->mouseEvent(button, state, x, y);
+}
 
 void processNormalKeys(unsigned char key, int x, int y)
 {
-	// TODO Push this into the Scene class
-	if (key == ESC_KEY)
-		cleanExit();
-
-	curScene->keyPressed(key);
+	curScene->keyPressedEvent(key, x, y);
 }
 
 void processSpecialKeys(int key, int x, int y) {
-	curScene->specialKeyPressed(key, x, y);
+	curScene->specialKeyPressedEvent(key, x, y);
 }
 
 
@@ -214,6 +208,7 @@ int main(int argc, char **argv) {
 	glutReshapeFunc(changeSize);
 
 	//adding here the setting of keyboard processing
+	glutMouseFunc(processMouse);
 	glutKeyboardFunc(processNormalKeys);
 	glutSpecialFunc(processSpecialKeys);
 	init();

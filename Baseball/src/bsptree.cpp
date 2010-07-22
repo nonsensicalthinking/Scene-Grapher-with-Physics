@@ -41,35 +41,46 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 	vec3_t pointA;
 	vec3_t pointB;
+	vec3_t texPointA;
+	vec3_t texPointB;
+
 
 	VectorCopy(poly->points[poly->numPoints-1], pointA);
+
+	if( poly->isTextured )
+		VectorCopy(poly->points[poly->numPoints-1], texPointA);
+
 
 	float sideA = classifyPoint(split, pointA);
 	float sideB;
 
 	for(x=0; x < poly->numPoints; x++)	{
 		VectorCopy(poly->points[x], pointB);
+
+		if( poly->isTextured )
+			VectorCopy(poly->texpts[x], texPointB);
+
 		sideB = classifyPoint(split, pointB);
 
 		if( sideB > 0 )	{
 			if( sideA < 0 )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
-				// plane. This is a simple ray-plane intersection.
+				// plane. This is a ray-plane intersection.
 
 				vec3_t intersection;
 				vec3_t fractSect;
-				// split in this def is of type plane_t (a struct with plane info)
+
 				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
 					VectorCopy(intersection, frontPoints[frontCount]);
 					VectorCopy(intersection, backPoints[backCount]);
 
 					vec2_t work;
 					vec2_t u;
-					VectorSubtract2f( poly->texpts[x-1], poly->texpts[x], u);
-					VectorMA2f(poly->texpts[x], u, fractSect[0], work);
 
 					if( poly->isTextured )	{
+						VectorSubtract2f(texPointB, texPointA, u);
+						VectorMA2f(texPointA, u, fractSect[0], work);
 						VectorCopy(work, frontTexPoints[frontCount]);
 						VectorCopy(work, backTexPoints[backCount]);
 					}
@@ -86,8 +97,10 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			}
 
 			VectorCopy(pointB, frontPoints[frontCount]);
+
 			if( poly->isTextured )
-				VectorCopy(poly->texpts[x], frontTexPoints[frontCount]);
+				VectorCopy(texPointB, frontTexPoints[frontCount]);
+
 			frontCount++;
 
 		}
@@ -95,10 +108,11 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			if( sideA > 0 )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
-				// plane. This is a simple ray-plane intersection.
+				// plane. This is a ray-plane intersection.
 
 				vec3_t intersection;
 				vec3_t fractSect;
+
 				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
 					VectorCopy(intersection, frontPoints[frontCount]);
 					VectorCopy(intersection, backPoints[backCount]);
@@ -106,11 +120,10 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 					// BEGIN ADDED TEXTURE WORK
 					vec2_t work;
 					vec2_t u;
-					VectorSubtract2f( poly->texpts[x-1], poly->texpts[x], u);
-					VectorMA2f(poly->texpts[x], u, fractSect[0], work);
-
 
 					if( poly->isTextured )	{
+						VectorSubtract2f(texPointB, texPointA, u);
+						VectorMA2f(texPointA, u, fractSect[0], work);
 						VectorCopy(work, frontTexPoints[frontCount]);
 						VectorCopy(work, backTexPoints[backCount]);
 					}
@@ -125,20 +138,19 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )
-				VectorCopy(poly->texpts[x], backTexPoints[backCount]);
+				VectorCopy(texPointB, backTexPoints[backCount]);
 			// END ADDED TEXTURE WORK
 
 			backCount++;
-
 		}
-		else	{	// coincident ?
+		else	{	// coincident point
 			VectorCopy(pointB, frontPoints[frontCount]);
 			VectorCopy(pointB, backPoints[backCount]);
 
 			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )	{
-				VectorCopy(poly->texpts[x], frontPoints[frontCount]);
-				VectorCopy(poly->texpts[x], backPoints[backCount]);
+				VectorCopy(texPointB, frontPoints[frontCount]);
+				VectorCopy(texPointB, backPoints[backCount]);
 			}
 			// END ADDED TEXTURE WORK
 
@@ -152,7 +164,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			cout << endl;
 		}
 
-		VectorCopy(pointB, pointA); // pointA = pointB
+		VectorCopy(pointB, pointA); 		// pointA = pointB
+		VectorCopy(texPointB, texPointA);	// texPointA = texPointB
 		sideA = sideB;
 	}
 

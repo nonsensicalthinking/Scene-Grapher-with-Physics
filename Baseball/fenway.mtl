@@ -1,5 +1,5 @@
 # Blender3D MTL File: fenway.blend
-# Material Count: 3
+# Material Count: 5
 newmtl None_fenway-wall-blank.bmp
 Ns 0
 Ka 0.000000 0.000000 0.000000
@@ -8,6 +8,17 @@ Ks 0.8 0.8 0.8
 d 1
 illum 2
 map_Kd fenway-wall-blank.bmp
+
+
+newmtl None_green-monster-sheered
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd green-monster-sheered.bmp
+
 
 newmtl Material_fenway.bmp
 Ns 96.078431
@@ -20,13 +31,24 @@ illum 2
 map_Kd fenway.bmp
 
 
-newmtl None_green-monster-sheered
-Ns 0
+newmtl Material.002
+Ns 96.078431
 Ka 0.000000 0.000000 0.000000
-Kd 0.8 0.8 0.8
-Ks 0.8 0.8 0.8
-d 1
+Kd 0.640000 0.640000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
 illum 2
-map_Kd green-monster-sheered.bmp
+
+
+newmtl Material.002_foul-pole-yellow.bmp
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd foul-pole-yellow.bmp
 
 
