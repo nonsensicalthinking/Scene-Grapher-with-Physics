@@ -34,35 +34,27 @@
 #include <sstream>
 #include <GL/glut.h>
 
-Font* f;
 
 #define MODEL 			"models/tallguy.md2"
-#define FLOOR_RADIUS 	100
-
-using namespace std;
-
-
+#define CAM_MOVE_RATE	20.0
 const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
+using namespace std;
 
 // Scene Globals
 float timeElapsed 		= 0.0;
 float slowMotionRatio 	= 1.0;
-
-
-MotionUnderGravitation* motionUnderGravitation;
 vec3_t startPos = {0.0, 0.0, 0.0};
 vec3_t startAngle = {10.0, 15.0, 0.0};
-
-
+MotionUnderGravitation* motionUnderGravitation;
 bsp_node_t* bspRoot;
+Font* f;
 
 // End Globals
 
 
 void Scene::createBSP()	{
 	LoadMap("fenway.obj");
-
 	bspRoot = new bsp_node_t;
 	generateBSP(bspRoot);
 	namePolygons(bspRoot);
@@ -83,8 +75,8 @@ void Scene::generateBSP(bsp_node_t* root)	{
 
 	root->setPolygonList(*polygonList);
 
-	// 400 is the initial width of the surface
-	buildTree(400, partition, root);
+	// the first argument must be double the width of the largest surface
+	buildTree(400, 0, partition, root);
 }
 
 
@@ -105,6 +97,7 @@ void Scene::namePolygons(bsp_node_t* bspNode)	{
 
 	if( bspNode->isLeaf() )	{
 		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
+			(*itr)->selected = false;
 			(*itr)->polyID = polygonCount++;
 		}
 	}
@@ -117,7 +110,6 @@ void Scene::namePolygons(bsp_node_t* bspNode)	{
 void Scene::LoadMap(string map)	{
 	ObjModel* obj = new ObjModel();
 	obj->loadObjFile("fenway.obj");
-
 }
 
 
@@ -125,32 +117,18 @@ Scene::Scene(int width, int height)
 {
 	sceneWidth = width;
 	sceneHeight = height;
-
 	consoleActive = false;
 	con = new Console(width,height);
-
 	polygonList = new list<polygon_t*>;
 	matsManager = getTextureManager();
-
 	cam = new Camera();
-
-	// For naming polygons
-	polygonCount = 0;
-
-	// PICKING STUFF TEMPORARY
-	isPicking = false;
-
-	// temp frame rate display
-	f = new Font(sceneWidth, sceneHeight);
+	polygonCount = 0;	// For naming polygons
+	isPicking = false;	// Picking flag, is temporary
+	f = new Font(sceneWidth, sceneHeight);	// temp frame rate display
 
 
 	//	m = MD2Model::load(MODEL);
 
-	for(int x=0; x < 20; x++)	{
-		ostringstream s;
-		s << "this is line #" << x << "\n";
-		con->output->push_back(s.str());
-	}
 
 	// TODO REMOVE, This is just a test object for which to test the physics header
 	vec3_t startVel;
@@ -161,13 +139,14 @@ Scene::Scene(int width, int height)
 	VectorSubtract(startAngle, startPos, heading);
 	VectorUnitVector(heading, heading);
 
-	cout << "Heading: [" << heading[0] << ", " << heading[1] << ", " << heading[2] << "] ";
-	cout << "Speed: " << len << endl;
+//	cout << "Heading: [" << heading[0] << ", " << heading[1] << ", " << heading[2] << "] ";
+//	cout << "Speed: " << len << endl;
 
 //	VectorScale( heading, len, startVel);
 	VectorCopy(startAngle, startVel);
 
 	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startVel );
+	// END TODO REMOVE
 }
 
 
@@ -203,13 +182,13 @@ void Scene::resizeSceneSize(int width, int height)	{
 
 void Scene::performLighting()	{
 	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight
-	GLfloat posl[]={0,400,0,1};               //position of light source
-	GLfloat amb[]={0.2f, 0.2f, 0.2f ,1.0f};   //global ambient
-	GLfloat amb2[]={0.3f, 0.3f, 0.3f ,1.0f};  //ambiance of light source
+	GLfloat posl[]={0,700,0,0};               //position of light source
+	GLfloat amb[]={0.8f, 0.8f, 0.8f ,1.0f};   //global ambient
+	GLfloat amb2[]={0.8f, 0.8f, 0.8f ,1.0f};  //ambiance of light source
 	GLfloat df = 100.0;
 
-	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
-	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
+//	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
+//	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
 
 	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0,GL_POSITION,posl);
@@ -217,6 +196,7 @@ void Scene::performLighting()	{
 	glEnable(GL_LIGHT0);
 
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
+
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
 
@@ -242,41 +222,45 @@ void glCachePolygon(polygon_t* polygon)	{
 }
 
 void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
-	if( selectMode )	{
+	if( selectMode )
 		glPushName(poly->polyID);
+
+	glPushMatrix();
+		if( selectMode && poly->selected )	{
+			vec3_t Ka = {0,0,1};
+			vec3_t Kd = {0,0,1};
+			vec3_t Ks = {0,0,1};
+			int Ns = 0;
+
+			glMaterialfv(GL_FRONT, GL_AMBIENT, Ka);
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, Kd);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, Ks);
+			glMaterialf(GL_FRONT, GL_SHININESS, Ns);
+		}
+		else	{
+			if( poly->hasMaterial )
+				matsManager->enableMaterial(poly->materialName);
+		}
+
 		glBegin(GL_POLYGON);
 		for(int x=0; x < poly->numPoints; x++)	{
-			if( poly->selected )
-				glColor3f(poly->polygonDrawColor[0], poly->polygonDrawColor[1], poly->polygonDrawColor[2]);
-			else
-				glColor3f(0.5, 0.5, 0.5);
+			if( poly->hasNormals )
+				glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+
+			if( poly->isTextured )
+				glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
 
 			glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
 		}
 		glEnd();
+
+		if( poly->hasMaterial )
+			matsManager->disableMaterial(poly->materialName);
+
+	glPopMatrix();
+
+	if( selectMode )
 		glPopName();
-	} else	{	// normal rendering
-		glPushMatrix();
-			if( poly->hasMaterial )
-				matsManager->enableMaterial(poly->materialName);
-
-			glBegin(GL_POLYGON);
-			for(int x=0; x < poly->numPoints; x++)	{
-				if( poly->hasNormals )
-					glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
-
-				if( poly->isTextured )
-					glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
-
-				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
-			}
-			glEnd();
-
-			if( poly->hasMaterial )
-				matsManager->disableMaterial(poly->materialName);
-
-		glPopMatrix();
-	}
 }
 
 void Scene::renderPolygonList(list<polygon_t*> polygons, bool selectionMode)
@@ -381,8 +365,6 @@ void Scene::advance(long milliseconds)
 	}
 
 }
-
-#define CAM_MOVE_RATE	20.0
 
 // Handles keyboard input from normal text keys
 void Scene::keyPressedEvent(unsigned char key, int x, int y)	{
@@ -546,20 +528,26 @@ int Scene::stopPicking() {
 
 void Scene::processHits(int hits, GLuint selectBuf[])	{
 	cout << "Selection hits: " << hits << endl;
+
 	if( hits )	{
 		cout << "Number of names for this polygon: " << selectBuf[0] << endl;
+
 		if( selectBuf[0] >= 1 )	{
 			cout << "Polygon Name: " << selectBuf[3] << endl;
+
 			polygon_t* p = polygonByName[selectBuf[3]];
+
 			if( p )	{
-//				if( p->selected )
-//					p->selected = false;
-//				else	{
+				if( p->selected )
+					p->selected = false;
+				else	{
 					p->selected = true;
-					p->polygonDrawColor[0] = 0;
-					p->polygonDrawColor[1] = 0;
-					p->polygonDrawColor[2] = 1;
-//				}
+					for(int x=0; x < p->numPoints; x++)	{
+						cout << "Texture Point [" << x << "]: ";
+						VectorPrint2f(p->texpts[x]);
+						cout << endl;
+					}
+				}
 			}
 			else	{
 				cout << "Error: couldn't find polygon's reference." << endl;

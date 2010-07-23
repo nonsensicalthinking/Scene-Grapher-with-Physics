@@ -81,6 +81,11 @@ inline void VectorCopy(const vec3_t a, vec3_t b)	{
 	b[2] = a[2];
 }
 
+inline void VectorCopy2f(const vec2_t a, vec2_t b)	{
+	b[0] = a[0];
+	b[1] = a[1];
+}
+
 inline float DotProduct(const vec3_t a, const vec3_t b)	{
 	return ( (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]) );
 }
@@ -159,6 +164,10 @@ inline void VectorNegate(const vec3_t a, vec3_t result)	{
 
 inline void VectorPrint(const vec3_t v)	{
 	cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
+}
+
+inline void VectorPrint2f(const vec2_t v)	{
+	cout << "[" << v[0] << ", " << v[1] << "]";
 }
 
 inline float classifyPoint(const plane_t *plane, const vec3_t point)	{

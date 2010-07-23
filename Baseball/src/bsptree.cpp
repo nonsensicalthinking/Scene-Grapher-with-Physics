@@ -21,7 +21,7 @@
 #include "shared.h"
 #include "bsptree.h"
 
-#define DEBUG_SPLIT
+//#define DEBUG_SPLIT	// for debugging the bsp partitions
 
 using namespace std;
 
@@ -41,14 +41,14 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 	vec3_t pointA;
 	vec3_t pointB;
-	vec3_t texPointA;
-	vec3_t texPointB;
+	vec2_t texPointA;
+	vec2_t texPointB;
 
 
 	VectorCopy(poly->points[poly->numPoints-1], pointA);
 
 	if( poly->isTextured )
-		VectorCopy(poly->points[poly->numPoints-1], texPointA);
+		VectorCopy(poly->texpts[poly->numPoints-1], texPointA);
 
 
 	float sideA = classifyPoint(split, pointA);
@@ -58,7 +58,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		VectorCopy(poly->points[x], pointB);
 
 		if( poly->isTextured )
-			VectorCopy(poly->texpts[x], texPointB);
+			VectorCopy2f(poly->texpts[x], texPointB);
 
 		sideB = classifyPoint(split, pointB);
 
@@ -81,8 +81,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 					if( poly->isTextured )	{
 						VectorSubtract2f(texPointB, texPointA, u);
 						VectorMA2f(texPointA, u, fractSect[0], work);
-						VectorCopy(work, frontTexPoints[frontCount]);
-						VectorCopy(work, backTexPoints[backCount]);
+						VectorCopy2f(work, frontTexPoints[frontCount]);
+						VectorCopy2f(work, backTexPoints[backCount]);
 					}
 
 					// TODO IMPLEMENT THIS FOR NORMALS AS WELL
@@ -99,7 +99,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			VectorCopy(pointB, frontPoints[frontCount]);
 
 			if( poly->isTextured )
-				VectorCopy(texPointB, frontTexPoints[frontCount]);
+				VectorCopy2f(texPointB, frontTexPoints[frontCount]);
 
 			frontCount++;
 
@@ -124,8 +124,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 					if( poly->isTextured )	{
 						VectorSubtract2f(texPointB, texPointA, u);
 						VectorMA2f(texPointA, u, fractSect[0], work);
-						VectorCopy(work, frontTexPoints[frontCount]);
-						VectorCopy(work, backTexPoints[backCount]);
+						VectorCopy2f(work, frontTexPoints[frontCount]);
+						VectorCopy2f(work, backTexPoints[backCount]);
 					}
 					// END ADDED TEXTURE WORK
 
@@ -138,7 +138,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )
-				VectorCopy(texPointB, backTexPoints[backCount]);
+				VectorCopy2f(texPointB, backTexPoints[backCount]);
 			// END ADDED TEXTURE WORK
 
 			backCount++;
@@ -149,8 +149,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )	{
-				VectorCopy(texPointB, frontPoints[frontCount]);
-				VectorCopy(texPointB, backPoints[backCount]);
+				VectorCopy2f(texPointB, frontPoints[frontCount]);
+				VectorCopy2f(texPointB, backPoints[backCount]);
 			}
 			// END ADDED TEXTURE WORK
 
@@ -165,7 +165,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		}
 
 		VectorCopy(pointB, pointA); 		// pointA = pointB
-		VectorCopy(texPointB, texPointA);	// texPointA = texPointB
+		VectorCopy2f(texPointB, texPointA);	// texPointA = texPointB
 		sideA = sideB;
 	}
 
@@ -193,7 +193,7 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 }
 
 
-void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node)
+void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node)
 {
 	static int depth = 0;
 	static int leafCount = 0;
@@ -201,7 +201,7 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 	// FIXME: isn't tree depth zero based?
 	depth++;
 
-	if( depth >= BSP_RECURSION_DEPTH )	{
+	if( depth == BSP_RECURSION_DEPTH )	{
 		leafCount++;
 		depth--;
 		return;
@@ -260,64 +260,67 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 
 // Changes the width dimensions every other split
 		static bool change = true;	// must be true to calc first coords
-		static float nextCenter;
+		float newNextCenter = 0;
 		float nextLength;
+		// NOTE: nextCenter is changed every other
+		// call to this function.
 
 		if( change )	{
 			nextLength = planeLen / 2;
-			nextCenter = nextLength / 2;
+			newNextCenter = nextLength / 2;
 			change = false;
 		}
 		else	{
+			newNextCenter = nextCenter;
 			nextLength = planeLen;
 			change = true;
 		}
+
 // End change over stuff
+
+
 
 		if( partition->normal[PLANE_NORMAL_X] == 0.0 )	{
 			// if the last partition was on the z axis
 			// make this one on the x axis, to do that
 			// we add nextCenter to the z axis origin
-			new_front_partition->origin[PLANE_NORMAL_Z] += nextCenter;
-			new_back_partition->origin[PLANE_NORMAL_Z] -= nextCenter;
+			new_front_partition->origin[PLANE_NORMAL_Z] += newNextCenter;
+			new_back_partition->origin[PLANE_NORMAL_Z] -= newNextCenter;
 
 			VectorCopy(NORMAL_X, new_front_partition->normal);
 			VectorCopy(NORMAL_X, new_back_partition->normal);
-
-#ifdef DEBUG_SPLIT
-			cout << "Next Partition Normal: ";
-			VectorPrint(new_front_partition->normal);
-			cout << endl;
-
-			cout << "Next Partition Origin: ";
-			VectorPrint(new_front_partition->origin);
-			cout << endl;
-			cout << "Next Center = " << nextCenter << endl;
-#endif
 		}
 		else	{	// partition->normal[PLANE_NORMAL_Z] == 0.0
 			// make this one on the z axis, to do that
 			// we add nextCenter to the x axis origin
 
-			// NOTE: nextCenter is only changed every other
-			// call to this function.
-			new_front_partition->origin[PLANE_NORMAL_X] += nextCenter;
-			new_back_partition->origin[PLANE_NORMAL_X] -= nextCenter;
+			new_front_partition->origin[PLANE_NORMAL_X] += newNextCenter;
+			new_back_partition->origin[PLANE_NORMAL_X] -= newNextCenter;
 
 			VectorCopy(NORMAL_Z, new_front_partition->normal);
 			VectorCopy(NORMAL_Z, new_back_partition->normal);
+		}
 
 #ifdef DEBUG_SPLIT
-			cout << "Next Partition Normal: ";
+			cout << "********************" << endl;
+			cout << "Next Front Partition" << endl;
+			cout << "-Normal: ";
 			VectorPrint(new_front_partition->normal);
 			cout << endl;
-
-			cout << "Next Partition Origin: ";
+			cout << "-Origin: ";
 			VectorPrint(new_front_partition->origin);
+			cout << endl;
+			cout << "Next Back Partition" << endl;
+			cout << "-Normal: ";
+			VectorPrint(new_back_partition->normal);
+			cout << endl;
+			cout << "-Origin: ";
+			VectorPrint(new_back_partition->origin);
 			cout << endl;
 			cout << "Next Center = " << nextCenter << endl;
 #endif
-		}
+
+
 
 		/*
 		 * End creation of new partitioning planes
@@ -346,19 +349,9 @@ void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node
 		front_node->setPolygonList(front_list);
 		back_node->setPolygonList(back_list);
 
-		buildTree(nextLength, new_front_partition, front_node);
-
-		buildTree(nextLength, new_back_partition, back_node);
-
+		buildTree(nextLength, newNextCenter, new_front_partition, front_node);
+		buildTree(nextLength, newNextCenter, new_back_partition, back_node);
 	}
-
-//	cout << "BACK UP ONE" << endl;
-//	cout << "Partition Norm: ";
-//	VectorPrint(parent_node->partition->normal);
-//	cout << endl;
-//	cout << "Partition Origin: ";
-//	VectorPrint(parent_node->partition->origin);
-//	cout << endl;
 
 	depth--;
 }

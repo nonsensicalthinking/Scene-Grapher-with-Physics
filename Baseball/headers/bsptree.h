@@ -10,8 +10,10 @@
 #include <list>
 
 
-// FIXME GET TEXTURES WORKING AT HIGHER DEPTS OF RECURSION THAN 2
-#define BSP_RECURSION_DEPTH		2
+// MAYBE FIXME
+// Recursion depth now works up to but not including 7
+// don't know why, don't care at the moment.
+#define BSP_RECURSION_DEPTH		5
 
 #define		PLANE_NORMAL_X		0
 #define 	PLANE_NORMAL_Y		1
@@ -76,6 +78,6 @@ typedef struct bsp_node_s	{
 }bsp_node_t;
 
 
-void buildTree(const float planeLen, plane_t* partition, bsp_node_t* parent_node);
+void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node);
 
 #endif /* BSPTREE_H_ */
