@@ -200,7 +200,7 @@ public:
 	}
 
 	void makeFace(vec3_t face[], int numPts, bool isTextured)	{
-		polygon_t* poly = new polygon_t;
+		polygon_t* poly = createPolygon();
 
 		// set the material name
 		strcpy(poly->materialName, curMat);

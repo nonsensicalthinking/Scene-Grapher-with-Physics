@@ -13,7 +13,7 @@
 /*
  * TODO LIST for this file
  *
- * TODO: Generate display lists for polygons
+ * Empty for now, certainly not done with this file yet though.
  *
  *
  */
@@ -30,7 +30,7 @@
 #include "Console.h"
 #include "keys.h"
 #include "strtools.h"
-#include "objloader.h"	// TODO REMOVE THIS INCLUDE
+#include "objloader.h"
 #include <sstream>
 #include <GL/glut.h>
 
@@ -52,7 +52,8 @@ Font* f;
 
 // End Globals
 
-
+// Things are things that need to be done when
+// "loading a map"
 void Scene::createBSP()	{
 	LoadMap("fenway.obj");
 	bspRoot = new bsp_node_t;
@@ -79,7 +80,6 @@ void Scene::generateBSP(bsp_node_t* root)	{
 	buildTree(400, 0, partition, root);
 }
 
-
 void Scene::buildPolygonByNameMap(bsp_node_t* bspRootNode)	{
 	if( bspRootNode->isLeaf() )	{
 		list<polygon_t*>::iterator itr;
@@ -92,6 +92,7 @@ void Scene::buildPolygonByNameMap(bsp_node_t* bspRootNode)	{
 	}
 }
 
+// DO THIS AND CACHE THE POLYGON TOO
 void Scene::namePolygons(bsp_node_t* bspNode)	{
 	list<polygon_t*>::iterator itr;
 
@@ -99,6 +100,7 @@ void Scene::namePolygons(bsp_node_t* bspNode)	{
 		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
 			(*itr)->selected = false;
 			(*itr)->polyID = polygonCount++;
+			glCachePolygon(*itr);
 		}
 	}
 	else	{
@@ -180,6 +182,7 @@ void Scene::resizeSceneSize(int width, int height)	{
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 }
 
+
 void Scene::performLighting()	{
 	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight
 	GLfloat posl[]={0,700,0,0};               //position of light source
@@ -187,8 +190,8 @@ void Scene::performLighting()	{
 	GLfloat amb2[]={0.8f, 0.8f, 0.8f ,1.0f};  //ambiance of light source
 	GLfloat df = 100.0;
 
-//	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
-//	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
+	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
+	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
 
 	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0,GL_POSITION,posl);
@@ -199,68 +202,76 @@ void Scene::performLighting()	{
 
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
-
 }
+
 
 void Scene::addPolygon(polygon_t* p)	{
 	polygonList->push_back(p);
 }
 
-// TODO Test me
-// This should be used when "Loading the map"
-void glCachePolygon(polygon_t* polygon)	{
+
+void Scene::glCachePolygon(polygon_t* polygon)	{
     polygon->glCacheID = glGenLists(1);
     glNewList(polygon->glCacheID, GL_COMPILE);
-//    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glBegin(GL_POLYGON);
-    for(int loop = 0; loop < polygon->numPoints ; loop++)	{
-//		glTexCoord2f(u_coord, v_coord);
-		glVertex3f(polygon->points[loop][0], polygon->points[loop][1], polygon->points[loop][2]);
-    }
-    glEnd();
-	glEndList();
+    drawPolygon(polygon, false);
+    glEndList();
+    polygon->glCached = true;
 }
 
+
 void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
-	if( selectMode )
-		glPushName(poly->polyID);
+	if( poly->glCached )	{
+// try it out if you don't believe me...
+//		cout << "Rendering cached polygons" << endl;
+		if( selectMode )
+			glPushName(poly->polyID);
 
-	glPushMatrix();
-		if( selectMode && poly->selected )	{
-			vec3_t Ka = {0,0,1};
-			vec3_t Kd = {0,0,1};
-			vec3_t Ks = {0,0,1};
-			int Ns = 0;
+		glCallList(poly->glCacheID);
 
-			glMaterialfv(GL_FRONT, GL_AMBIENT, Ka);
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, Kd);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, Ks);
-			glMaterialf(GL_FRONT, GL_SHININESS, Ns);
-		}
-		else	{
+		if( selectMode )
+			glPopName();
+	}
+	else	{
+		if( selectMode )
+			glPushName(poly->polyID);
+
+		glPushMatrix();
+			if( selectMode && poly->selected )	{
+				vec3_t Ka = {0,0,1};
+				vec3_t Kd = {0,0,1};
+				vec3_t Ks = {0,0,1};
+				int Ns = 0;
+
+				glMaterialfv(GL_FRONT, GL_AMBIENT, Ka);
+				glMaterialfv(GL_FRONT, GL_DIFFUSE, Kd);
+				glMaterialfv(GL_FRONT, GL_SPECULAR, Ks);
+				glMaterialf(GL_FRONT, GL_SHININESS, Ns);
+			}
+			else	{
+				if( poly->hasMaterial )
+					matsManager->enableMaterial(poly->materialName);
+			}
+
+			glBegin(GL_POLYGON);
+			for(int x=0; x < poly->numPoints; x++)	{
+				if( poly->hasNormals )
+					glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+
+				if( poly->isTextured )
+					glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
+
+				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+			}
+			glEnd();
+
 			if( poly->hasMaterial )
-				matsManager->enableMaterial(poly->materialName);
-		}
+				matsManager->disableMaterial(poly->materialName);
 
-		glBegin(GL_POLYGON);
-		for(int x=0; x < poly->numPoints; x++)	{
-			if( poly->hasNormals )
-				glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+		glPopMatrix();
 
-			if( poly->isTextured )
-				glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
-
-			glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
-		}
-		glEnd();
-
-		if( poly->hasMaterial )
-			matsManager->disableMaterial(poly->materialName);
-
-	glPopMatrix();
-
-	if( selectMode )
-		glPopName();
+		if( selectMode )
+			glPopName();
+	}
 }
 
 void Scene::renderPolygonList(list<polygon_t*> polygons, bool selectionMode)

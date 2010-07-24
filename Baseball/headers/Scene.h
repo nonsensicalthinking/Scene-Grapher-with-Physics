@@ -54,6 +54,7 @@ public:
 	Scene(int width, int height);
 	~Scene(void);
 	void render(void);
+	void glCachePolygon(polygon_t* polygon);
 	void drawPolygon(polygon_t* poly, bool selectMode);
 	void renderPolygonList(list<polygon_t*> polygons, bool selectionMode);
 	void advance(clock_t milliseconds);

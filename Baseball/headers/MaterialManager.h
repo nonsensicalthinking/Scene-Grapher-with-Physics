@@ -10,9 +10,6 @@
  *	TODO Make loadJPEG function so we can use alpha layers
  *	TODO Make loadPNG function so we can use alpha layers
  *
- *	TODO Incorporate this class into a Material manager instead
- *		 of texture manager so that we can enable materials from
- *		 here as well.
  *
  *
  *

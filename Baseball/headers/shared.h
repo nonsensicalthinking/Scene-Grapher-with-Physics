@@ -23,7 +23,7 @@ using namespace std;
 
 
 #define MAX_POLY_POINTS		10		// Max number of points in a polygon
-#define MAX_FILE_LENGTH		28		// Max length for a filename
+#define MAX_FILE_LENGTH		64		// Max length for a filename
 
 
 typedef float vec_t;
@@ -57,6 +57,7 @@ typedef struct polygon_s	{
 	bool hasNormals;
 	vec3_t normpts[MAX_POLY_POINTS];
 
+	bool glCached;
 	int glCacheID;
 
 	bool hasMaterial;
@@ -66,6 +67,18 @@ typedef struct polygon_s	{
 	vec3_t polygonDrawColor;
 }polygon_t;
 
+// This should be used anytime we want to create a new polygon
+inline polygon_t* createPolygon()	{
+	polygon_t* poly = new polygon_t;
+
+	// any initialization should be done here
+
+	poly->selected = false;
+	poly->glCached = false;
+	poly->isTextured = false;
+
+	return poly;
+}
 
 
 

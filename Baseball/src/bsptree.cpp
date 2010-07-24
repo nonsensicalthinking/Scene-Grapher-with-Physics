@@ -9,9 +9,7 @@
 /*
  * TODO LIST for this file
  *
- * TODO Generate U and V texture coords when splitting polygons
- * idea behind doing it now lets us avoid more calculations later
- * in the program for determining texture mapping coords
+ * Empty for now, but I'm certainly not done with this file yet.
  *
  */
 
@@ -220,8 +218,8 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 			int polySide = classifyPolygon(partition, curPoly);
 
 			if( polySide == SPANNING )	{
-				polygon_t* front_half = new polygon_t;
-				polygon_t* back_half = new polygon_t;
+				polygon_t* front_half = createPolygon();
+				polygon_t* back_half = createPolygon();
 
 				// share properties from parent polygon.
 				strcpy(front_half->materialName, curPoly->materialName);
