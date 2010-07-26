@@ -31,12 +31,14 @@
 #include "keys.h"
 #include "strtools.h"
 #include "objloader.h"
+
+#include "GameTest.h"
+
 #include <sstream>
 #include <GL/glut.h>
 
 
 #define MODEL 			"models/tallguy.md2"
-#define CAM_MOVE_RATE	20.0
 const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 using namespace std;
@@ -59,7 +61,7 @@ void Scene::createBSP()	{
 	bspRoot = new bsp_node_t;
 	generateBSP(bspRoot);
 	namePolygons(bspRoot);
-	buildPolygonByNameMap(bspRoot);
+	buildPolygonMapByName(bspRoot);
 }
 
 void Scene::generateBSP(bsp_node_t* root)	{
@@ -80,47 +82,13 @@ void Scene::generateBSP(bsp_node_t* root)	{
 	buildTree(400, 0, partition, root);
 }
 
-void Scene::buildPolygonByNameMap(bsp_node_t* bspRootNode)	{
-	if( bspRootNode->isLeaf() )	{
-		list<polygon_t*>::iterator itr;
-		for(itr = bspRootNode->beginPolyListItr(); itr != bspRootNode->endPolyListItr(); itr++)
-			polygonByName[(*itr)->polyID] = (*itr);
-	}
-	else	{
-		buildPolygonByNameMap(bspRootNode->front);
-		buildPolygonByNameMap(bspRootNode->back);
-	}
-}
-
-// DO THIS AND CACHE THE POLYGON TOO
-void Scene::namePolygons(bsp_node_t* bspNode)	{
-	list<polygon_t*>::iterator itr;
-
-	if( bspNode->isLeaf() )	{
-		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
-			(*itr)->selected = false;
-			(*itr)->polyID = polygonCount++;
-			glCachePolygon(*itr);
-		}
-	}
-	else	{
-		namePolygons(bspNode->front);
-		namePolygons(bspNode->back);
-	}
-}
-
-void Scene::LoadMap(string map)	{
-	ObjModel* obj = new ObjModel();
-	obj->loadObjFile("fenway.obj");
-}
-
 
 Scene::Scene(int width, int height)
 {
 	sceneWidth = width;
 	sceneHeight = height;
-	consoleActive = false;
 	con = new Console(width,height);
+	con->consoleActive = false;
 	polygonList = new list<polygon_t*>;
 	matsManager = getTextureManager();
 	cam = new Camera();
@@ -128,6 +96,10 @@ Scene::Scene(int width, int height)
 	isPicking = false;	// Picking flag, is temporary
 	f = new Font(sceneWidth, sceneHeight);	// temp frame rate display
 
+
+	SpecialGame *sg = new SpecialGame();
+
+	delete sg;
 
 	//	m = MD2Model::load(MODEL);
 
@@ -204,6 +176,10 @@ void Scene::performLighting()	{
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
 }
 
+void Scene::LoadMap(string map)	{
+	ObjModel* obj = new ObjModel();
+	obj->loadObjFile("fenway.obj");
+}
 
 void Scene::addPolygon(polygon_t* p)	{
 	polygonList->push_back(p);
@@ -340,7 +316,7 @@ void Scene::render()
 	glDisable(GL_LIGHTING);
 
 	// Draw the console if open
-	if( consoleActive )
+	if( con->consoleActive )
 		con->Draw();
 
 	stringstream s;
@@ -353,134 +329,39 @@ void Scene::render()
 
 
 
-void Scene::advance(long milliseconds)
-{
-	// Time work, used for Simulation work
-	// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
-	// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
-	float dt = milliseconds / 1000.0f;							// Let's Convert Milliseconds To Seconds
-	dt /= slowMotionRatio;										// Divide dt By slowMotionRatio And Obtain The New dt
-	timeElapsed += dt;											// Iterate Elapsed Time
-	float maxPossible_dt = 0.1f;								// Say That The Maximum Possible dt Is 0.1 Seconds
-																// This Is Needed So We Do Not Pass Over A Non Precise dt Value
-  	int numOfIterations = (int)(dt / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
-	if (numOfIterations != 0)									// Avoid Division By Zero
-		dt = dt / numOfIterations;								// dt Should Be Updated According To numOfIterations
 
-
-	// Simulation work from here down
-
-	for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
-	{
-		motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
+// BEGIN PICKING SHIT
+void Scene::buildPolygonMapByName(bsp_node_t* bspRootNode)	{
+	if( bspRootNode->isLeaf() )	{
+		list<polygon_t*>::iterator itr;
+		for(itr = bspRootNode->beginPolyListItr(); itr != bspRootNode->endPolyListItr(); itr++)
+			polygonByName[(*itr)->polyID] = (*itr);
 	}
-
+	else	{
+		buildPolygonMapByName(bspRootNode->front);
+		buildPolygonMapByName(bspRootNode->back);
+	}
 }
 
-// Handles keyboard input from normal text keys
-void Scene::keyPressedEvent(unsigned char key, int x, int y)	{
-//	cout << "Key pressed: " << key << endl;
-	if( consoleActive )	{	// send key input to console
-		switch(key)	{
-			case CONSOLE_KEY:	// deactivate console
-				consoleActive = !consoleActive;
-				break;
-			case ESC_KEY:
-				con->clearInput();
-				break;
-			default:	// add to input line
-				con->appendToInput(key);
+// DO THIS AND CACHE THE POLYGON TOO
+void Scene::namePolygons(bsp_node_t* bspNode)	{
+	list<polygon_t*>::iterator itr;
+
+	if( bspNode->isLeaf() )	{
+		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
+			(*itr)->selected = false;
+			(*itr)->polyID = polygonCount++;
+			glCachePolygon(*itr);
 		}
 	}
-	else	{	// Don't send key input to console
-		switch(key)	{
-			case '`':	// active console
-				consoleActive = !consoleActive;
-				break;
-			case 'a':	// omg our first control over the scene!
-				cam->moveCameraLeft(CAM_MOVE_RATE);
-				break;
-			case 'd':	// omg our first control over the scene!
-				cam->moveCameraRight(CAM_MOVE_RATE);
-				break;
-			case 'w':	// omg our first control over the scene!
-				cam->moveCameraForward(CAM_MOVE_RATE);
-				break;
-			case 's':	// omg our first control over the scene!
-				cam->moveCameraBack(CAM_MOVE_RATE);
-				break;
-			case 'q':	// omg our first control over the scene!
-				cam->moveCameraUp(CAM_MOVE_RATE);
-				break;
-			case 'e':	// omg our first control over the scene!
-				cam->moveCameraDown(CAM_MOVE_RATE);
-				break;
-			case 'z':
-				doItAgain();
-				break;
-			case ESC_KEY:
-				cleanExit();
-				break;
-		}
+	else	{
+		namePolygons(bspNode->front);
+		namePolygons(bspNode->back);
 	}
 }
 
 
-
-// handles keyboard input from special keys
-void Scene::specialKeyPressedEvent(int key, int x, int y)	{
-//	cout << "Special Key Pressed: " << key << endl;
-
-	if( consoleActive )	{	// send key input to console
-		switch(key)	{
-			case F1_KEY:
-				break;
-			case F2_KEY:
-				break;
-			case F3_KEY:
-				break;
-			case F4_KEY:
-				break;
-			case F5_KEY:
-				break;
-			case F6_KEY:
-				break;
-			case F7_KEY:
-				break;
-			case F8_KEY:
-				break;
-			case F9_KEY:
-				break;
-			case F10_KEY:
-				break;
-			case F11_KEY:
-				break;
-			case F12_KEY:
-				break;
-			case ARROW_UP_KEY:
-				break;
-			case ARROW_DOWN_KEY:
-				break;
-			case PAGE_UP_KEY:
-				con->scrollUp();
-				break;
-			case PAGE_DOWN_KEY:
-				con->scrollDown();
-				break;
-			case HOME_KEY:
-				break;
-			case END_KEY:
-				break;
-			case INSERT_KEY:
-				break;
-			case NUM_LOCK_KEY:
-				break;
-
-		}
-	}
-}
-
-void Scene::mouseEvent(int button, int state, int x, int y)	{
+void Scene::doPick(int button, int state, int x, int y)	{
 	if( isPicking )	{
 		if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN )	{
 			cout << "Entering pick mode." << endl;
@@ -497,8 +378,6 @@ void Scene::mouseEvent(int button, int state, int x, int y)	{
 	}
 }
 
-
-// BEGIN PICKING SHIT
 
 void Scene::startPicking(int cursorX, int cursorY) {
 	GLint viewport[4];
@@ -569,7 +448,6 @@ void Scene::processHits(int hits, GLuint selectBuf[])	{
 			cout << "Unnamed polygon." << endl;
 	}
 }
-
 // END PICKING SHIT
 
 
@@ -596,10 +474,35 @@ void Scene::exit()	{
 
 
 
-// TODO REMOVE THIS TEST FUNCTION
+// TODO REMOVE THESE FUNCTIONS
 void Scene::doItAgain()
 {
 	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
+}
+
+
+void Scene::advance(long milliseconds)
+{
+	// Time work, used for Simulation work
+	// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
+	// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
+	float dt = milliseconds / 1000.0f;							// Let's Convert Milliseconds To Seconds
+	dt /= slowMotionRatio;										// Divide dt By slowMotionRatio And Obtain The New dt
+	timeElapsed += dt;											// Iterate Elapsed Time
+	float maxPossible_dt = 0.1f;								// Say That The Maximum Possible dt Is 0.1 Seconds
+																// This Is Needed So We Do Not Pass Over A Non Precise dt Value
+  	int numOfIterations = (int)(dt / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
+	if (numOfIterations != 0)									// Avoid Division By Zero
+		dt = dt / numOfIterations;								// dt Should Be Updated According To numOfIterations
+
+
+	// Simulation work from here down
+
+	for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
+	{
+		motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
+	}
+
 }
 
 

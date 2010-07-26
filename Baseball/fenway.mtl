@@ -1,5 +1,5 @@
 # Blender3D MTL File: fenway.blend
-# Material Count: 8
+# Material Count: 9
 newmtl None_penguin-ad.bmp
 Ns 0
 Ka 0.000000 0.000000 0.000000
@@ -30,6 +30,16 @@ Ni 1.000000
 d 1.000000
 illum 2
 map_Kd foul-pole-yellow.bmp
+
+
+newmtl None_bright_clouds.bmp
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd bright_clouds.bmp
 
 
 newmtl Material.002

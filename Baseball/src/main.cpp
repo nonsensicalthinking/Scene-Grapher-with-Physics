@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * This file should strictly contain opengl functions any
+ * This file should strictly contain OpenGL and GLUT functions any
  * simulations or movement are done in other files.
  *
  * Primary OpenGL drawing file.
@@ -9,16 +9,22 @@
  *
  *  Created on: Feb 24, 2010
  *      Author: Derek Brooks
+ *
+ *
+ *	ATTENTION ANYONE CREATING A GAME WITH THIS RENDERING ENGINE
+ *	ATTENTION There is only a couple small modifications you need to do
+ *	ATTENTION to this file to get what you want.
+ *	ATTENTION The function is called LoadGame and everything between the
+ *	ATTENTION clearly defined editing area around that is free game.
+ *	ATTENTION You must derive a new class from the Game class and overload
+ *	ATTENTION its functions to make it all work but there you go.
+ *
+ *
  */
 
 // The over all TODO list for the program
 //
 // PRIORITY *THIS WILL FIX TEXTURING OF BSP OBJECTS*
-// TODO When splitting polygons in the bsp routines
-//		the texture coordinates are not copied over
-//		also they must be re-calculated base on the
-//		new polygon.
-//
 // TODO Fix Camera Class so it can do all directions
 //		with focal point adjustment too.
 //
@@ -31,42 +37,17 @@
 //
 // End the TODO List...for now.
 
-/*
- * Ideas on how this might all fit together.
- *
- * Obviously you need some sort of map builder, when the map is built it is textured
- * then when the map is complete then "compile" the BSP, this will involve splitting
- * the larger polygons into smaller ones that fit in the division spaces, when we cut
- * up the polygons we should be able to get its relative position on the over all
- * texture, we should save this information for loading and texturing the split polygon
- *
- * From what I've seen, be it as it may drunk, things are kept modular in the q1 engine
- * meaning generic functions for loading textures, binding textures, sampling textures
- * etc...etc...
- *
- * From here we can begin drawing a scene and testing for collisions, meaning we can
- * start working on collision detection and refraction for baseballs etc
- *
- * I think the best idea is obviously to keep as much of the rendering, loading, and
- * texturing seperate from the baseball game itself, meaning physics are part of baseball
- * model drawing is part of the renderer, etc...try your best to separate these.
- *
- * Once things are loaded and collisions work we can start playing with variables
- * which is where requiring the console will come into action
- *
- *
- *
- */
-
 
 #include "Scene.h"
 #include "MaterialManager.h"
 #include "keys.h"			// Key presses defined
+#include "GameTest.h"		// INCLUDE GAME HEADER HERE
 #include <stdlib.h>
 #include <ctime>
 #include <iostream>
 #include <sys/time.h>
 #include <GL/glut.h>
+#include <pthread.h>
 
 // Definitions
 #define SCREEN_WIDTH 		800
@@ -76,6 +57,45 @@
 // FIXME: This might have implications in other
 // operations such as animation.
 #define SCENE_ADVANCE_RATE	5
+
+pthread_t gameThread;
+Game* game;	// C++ gives us inheritance, hooray!
+
+void* start_game_thread(void* args);	// Func defined below this
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE ABOVE THIS LINE //
+///////////////////////////////////////////////////////////////////////////////////////
+
+#define GAME_TITLE	"Baseball something or other, no name given yet."
+
+void LoadGame()	{
+	// GAME CODE GOES HERE!
+
+	// load game
+	game = new SpecialGame();
+
+	int args;
+	int errcode;
+
+///////////////////////////////////////////////////////////////////////////////////////
+// IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE BELOW THIS LINE //
+///////////////////////////////////////////////////////////////////////////////////////
+	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
+		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
+}
+
+
+
+void* start_game_thread(void* args)	{
+	cout << "Starting game thread..." << endl;
+	game->run();
+	cout << "Game thread finished." << endl;
+}
+
+
 
 float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
@@ -136,8 +156,6 @@ int Sys_Milliseconds (void)
 	return curtime;
 }
 
-
-
 void init()	{
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	glClearDepth(1.0f);
@@ -154,14 +172,14 @@ void init()	{
 	textures = new MaterialManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
 	curScene->createBSP();
+
+	LoadGame();	// End user game code loaded here
+				// see the function at the top of file.
 }
-
-
 
 void changeSize(int w, int h)	{
 	curScene->resizeSceneSize(w,h);
 }
-
 
 void draw(void)
 {
@@ -183,35 +201,35 @@ void draw(void)
 }
 
 void processMouse(int button, int state, int x, int y)	{
-	curScene->mouseEvent(button, state, x, y);
+	game->mouseEvent(button, state, x, y);
 }
 
-void processNormalKeys(unsigned char key, int x, int y)
-{
-	curScene->keyPressedEvent(key, x, y);
+void processNormalKeys(unsigned char key, int x, int y)	{
+	game->keyPressedEvent(key, x, y);
 }
 
 void processSpecialKeys(int key, int x, int y) {
-	curScene->specialKeyPressedEvent(key, x, y);
+	game->specialKeyPressedEvent(key, x, y);
 }
-
-
 
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100,100);
 	glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-	glutCreateWindow("Not Yet Titled, baseball something or other.");
+
+	glutCreateWindow(GAME_TITLE);
+
+	// Set GLUT Call backs
 	glutDisplayFunc(draw);
 	glutIdleFunc(draw);
 	glutReshapeFunc(changeSize);
-
-	//adding here the setting of keyboard processing
 	glutMouseFunc(processMouse);
 	glutKeyboardFunc(processNormalKeys);
 	glutSpecialFunc(processSpecialKeys);
+
 	init();
+
 	glutMainLoop();
 
 	return 0;

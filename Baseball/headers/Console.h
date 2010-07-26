@@ -21,6 +21,7 @@ using namespace std;
 
 class Console {
 public:
+	bool consoleActive;
 	string inputString;
 	ostringstream* instr;
 	list<string> *input;

@@ -84,6 +84,7 @@ void string_tolower ( std::string &str ) {
 
 
 // TODO make these changeable and/or dependent upon environment
+#define left 		0
 #define lines		20	// number of visible lines on the screen? this has to be wrong...
 #define lineHeight	16	// line hight in pixels
 
