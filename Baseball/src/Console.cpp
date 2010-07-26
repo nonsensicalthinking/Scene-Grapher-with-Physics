@@ -84,16 +84,38 @@ void string_tolower ( std::string &str ) {
 
 
 // TODO make these changeable and/or dependent upon environment
-//#define screenHeight 600
-#define left 0
-#define lines		20
+#define lines		20	// number of visible lines on the screen? this has to be wrong...
+#define lineHeight	16	// line hight in pixels
 
 void Console::Draw()	{
 	int lineNumber = lines;
 	list<string>::iterator strItr;
 
-	// TODO Give console a background and outline the input line
-	// Draw it before drawing any console text.
+	// TODO The background for the console is super ghetto
+	// won't change with any other variables atm, -3 modifier
+	// used to get a "decent" shape.
+
+	// Console's background
+	glDisable(GL_DEPTH_TEST);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0, screenWidth, 0, screenHeight, -1, 1);
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+			glLoadIdentity();
+			glColor3f(0.0, 0.0, 0.0);
+			glBegin(GL_QUADS);
+			glVertex2i(0,(lines-4)*lineHeight);
+			glVertex2i(screenWidth, (lines-4)*lineHeight);
+			glVertex2i(screenWidth, screenHeight);
+			glVertex2i(0,screenHeight);
+			glEnd();
+			glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glEnable(GL_DEPTH_TEST);
 
 	// Seek scroll position
 	strItr = output->end();
@@ -108,14 +130,12 @@ void Console::Draw()	{
 
 	// draw input line
 	font->glPrint(left, screenHeight-((lines+1)*16), s.c_str(), 0);
+
 }
 
-void Console::print(string s)	{
+void Console::con_print(string s)	{
 	output->push_back(s);
 }
-
-
-
 
 
 
@@ -136,7 +156,11 @@ string commands[] = {
 };
 
 void Console::processConsoleCommand(const string conInput)	{
+	// Don't proceed without real input
+	if( conInput[0] == '\n' || conInput[0] == '\r' )
+		return;
 
+	ostringstream oss;
 
 	// Save command to history.
 	// and save to console output
@@ -153,8 +177,6 @@ void Console::processConsoleCommand(const string conInput)	{
 	int intCmd = -1;
 	int commandCount = sizeof(commands)/8;
 	for(int x=0; x < commandCount; x++ )	{
-//		cout << "Command SIZE: " << sizeof(commands) << endl;
-//		cout << "Command: " << commands[x] << endl;
 		if( cmd == commands[x] )	{
 			intCmd = x;
 			break;
@@ -164,7 +186,6 @@ void Console::processConsoleCommand(const string conInput)	{
 			intCmd = -1;
 	}
 
-	stringstream s;
 
 	switch(intCmd)	{
 	case QUIT:
@@ -176,24 +197,26 @@ void Console::processConsoleCommand(const string conInput)	{
 	case PUTCAM:
 		vec3_t origin;
 		sscanf(conInput.c_str(), "putcam %f %f %f", &origin[0], &origin[1], &origin[2] );
-		s << "Putting camera: " << origin[0] << ", " << origin[1] << ", " << origin[2];
-		print(s.str());
+		oss << "Putting camera: " << origin[0] << ", " << origin[1] << ", " << origin[2];
+		con_print(oss.str());
 		break;
 	case PICKING:
 		int p;
 		sscanf(conInput.c_str(), "picking %i", &p);
-		cout << "Polygonal picking: ";
+		oss << "Polygon picking: ";
 		if( p )	{
-			cout << "Enabled." << endl;
+			oss << "Enabled." << endl;
 			getScene()->isPicking = true;
 		}
 		else	{
-			cout << "Disabled." << endl;
+			oss << "Disabled." << endl;
 			getScene()->isPicking = false;
 		}
+		con_print(oss.str());
 		break;
 	case -1:
-		cout << "NONE OF THEM" << endl;
+		oss << "Unrecognized command: " << token << endl;
+		con_print(oss.str());
 		break;
 	}
 

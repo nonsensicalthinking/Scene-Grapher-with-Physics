@@ -41,7 +41,7 @@ public:
 	void clearInput();
 	void processConsoleCommand(const std::string conInput);
 	void Draw();
-	void print(string s);
+	void con_print(string s);
 };
 
 #endif /* CONSOLE_H_ */
