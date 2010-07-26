@@ -56,7 +56,7 @@ public:
 	// Handles keyboard input from normal text keys
 	virtual void keyPressed(unsigned char key, int x, int y)	{
 		Scene* curScene = getScene();
-		cout << "Key pressed" << endl;
+
 		switch(key)	{
 			case '`':	// active console
 				curScene->con->consoleActive = !curScene->con->consoleActive;
@@ -92,7 +92,7 @@ public:
 
 	// handles keyboard input from special keys
 	virtual void specialKeyPressed(int key, int x, int y)	{
-		cout << "Special Key Pressed: " << key << endl;
+
 	}
 
 	virtual void mouseEvent(int button, int state, int x, int y)	{
