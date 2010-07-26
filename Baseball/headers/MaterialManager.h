@@ -10,6 +10,7 @@
  *	TODO Make loadJPEG function so we can use alpha layers
  *	TODO Make loadPNG function so we can use alpha layers
  *
+ *	TODO Make it so loading can be done with any type of mipmap filter
  *
  *
  *
@@ -125,8 +126,8 @@ public:
 
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // GL_LINEAR_MIPMAP_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // GL_LINEAR_MIPMAP_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
 		gluBuild2DMipmaps( GL_TEXTURE_2D, 3, bmp->width, bmp->height,
 		                       GL_RGB, GL_UNSIGNED_BYTE, bmp->data );

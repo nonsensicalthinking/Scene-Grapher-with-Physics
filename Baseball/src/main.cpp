@@ -115,6 +115,10 @@ Scene* getScene()	{
 }
 
 void cleanExit()	{
+
+	game->killGame();	// stop game thread first
+
+	delete game;
 	delete textures;
 	delete curScene;
 	exit(0);

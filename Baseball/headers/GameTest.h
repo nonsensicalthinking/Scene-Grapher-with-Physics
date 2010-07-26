@@ -3,11 +3,17 @@
  *
  *  Created on: Jul 26, 2010
  *      Author: brof
+ *
+ *
+ *  TODO This particular todo may belong in the Game class but oh well...
+ *  TODO Continued: Make it so resources can be unloaded and reloaded (vid_restart style)
+ *
+ *
+ *
  */
 #include "Game.h"
 #include "Scene.h"
 
-#define CAM_MOVE_RATE 20
 
 
 
@@ -25,10 +31,7 @@ public:
 
 	}
 
-	virtual void run()	{
-		cout << "Called special run function" << endl;
-	}
-
+	// This is called once every time around the game loop.
 	virtual void advance(long ms)	{
 /*		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
@@ -87,8 +90,6 @@ public:
 				break;
 		}
 	}
-
-
 
 	// handles keyboard input from special keys
 	virtual void specialKeyPressed(int key, int x, int y)	{

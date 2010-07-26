@@ -8,12 +8,19 @@
 #include "Scene.h"
 #include <iostream>
 
+#define CAM_MOVE_RATE 20
+
+#define SCENE_ADVANCE_RATE	5
+
 using namespace std;
 
 extern Scene* getScene();
 
 
 class Game	{
+
+private:
+	bool gameOn;
 
 public:
 
@@ -25,13 +32,20 @@ public:
 
 	}
 
-	virtual void run()	{
-
+	void killGame()	{
+		gameOn = false;
 	}
 
-	virtual void advance(long ms)	{
+	void run()	{
+		gameOn = true;
 
+		while( gameOn )	{
+			advance(SCENE_ADVANCE_RATE);
+		}
+
+		cout << "Game thread ended." << endl;
 	}
+
 
 	// Event handlers
 	void keyPressedEvent(unsigned char key, int x, int y)	{
@@ -107,6 +121,14 @@ public:
 		else	{
 			specialKeyPressed(key, x, y);
 		}
+	}
+
+
+	// Function stubs from here down.
+
+	// This is to be overridden
+	virtual void advance(long ms)	{
+
 	}
 
 	// This is to be overridden
