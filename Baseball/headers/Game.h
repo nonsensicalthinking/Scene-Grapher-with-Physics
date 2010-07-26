@@ -36,7 +36,9 @@ public:
 		gameOn = false;
 	}
 
+	// Run will call load, this is where the maps are loaded from
 	void run()	{
+		load();
 		gameOn = true;
 
 		while( gameOn )	{
@@ -125,6 +127,11 @@ public:
 
 
 	// Function stubs from here down.
+
+	// This is to be overridden
+	virtual void load()	{
+
+	}
 
 	// This is to be overridden
 	virtual void advance(long ms)	{

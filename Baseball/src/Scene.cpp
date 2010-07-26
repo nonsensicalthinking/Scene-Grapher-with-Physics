@@ -39,6 +39,8 @@
 
 
 #define MODEL 			"models/tallguy.md2"
+
+// TODO move this into the Game you extend
 const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 using namespace std;
@@ -46,23 +48,35 @@ using namespace std;
 // Scene Globals
 float timeElapsed 		= 0.0;
 float slowMotionRatio 	= 1.0;
+
+
+Font* f;	// This is for the FPS display I think??
+
+// TODO Remove these 3 whence the game is up and going
 vec3_t startPos = {0.0, 0.0, 0.0};
 vec3_t startAngle = {10.0, 15.0, 0.0};
 MotionUnderGravitation* motionUnderGravitation;
-bsp_node_t* bspRoot;
-Font* f;
+
 
 // End Globals
 
 // Things are things that need to be done when
 // "loading a map"
-void Scene::createBSP()	{
-	LoadMap("fenway.obj");
+
+
+void Scene::createBSP(string mapName)	{
+	LoadMap(mapName);
 	bspRoot = new bsp_node_t;
 	generateBSP(bspRoot);
-	namePolygons(bspRoot);
+	nameAndCachePolygons(bspRoot);
 	buildPolygonMapByName(bspRoot);
 }
+
+void Scene::LoadMap(string map)	{
+	ObjModel* obj = new ObjModel();
+	obj->loadObjFile(map);
+}
+
 
 void Scene::generateBSP(bsp_node_t* root)	{
 
@@ -92,14 +106,8 @@ Scene::Scene(int width, int height)
 	polygonList = new list<polygon_t*>;
 	matsManager = getTextureManager();
 	cam = new Camera();
-	polygonCount = 0;	// For naming polygons
+	polygonCount = 0;	// count of static polygons in the entire scene
 	isPicking = false;	// Picking flag, is temporary
-	f = new Font(sceneWidth, sceneHeight);	// temp frame rate display
-
-
-	SpecialGame *sg = new SpecialGame();
-
-	delete sg;
 
 	//	m = MD2Model::load(MODEL);
 
@@ -174,11 +182,6 @@ void Scene::performLighting()	{
 
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
-}
-
-void Scene::LoadMap(string map)	{
-	ObjModel* obj = new ObjModel();
-	obj->loadObjFile("fenway.obj");
 }
 
 void Scene::addPolygon(polygon_t* p)	{
@@ -274,32 +277,33 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 
 void Scene::render()
 {
-	int a;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+
+	// configure the scene's lighting
+	// TODO Find out if this has to be called every time or
+	// as a state system (probably as a state system right?)
 	performLighting();
 
+	// position camera
 	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
 				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 
 
-
-	// Advance scene's physical positioning and draw it
-	// CYCLE ENTITIES AND DRAW WHAT WE NEED TO
+	// Draw static polygons in the scene
 	if( bspRoot )	{
 		renderBSPTree(bspRoot);
 	}
+
 
 	glPushMatrix();
 		// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
 		glColor3f(255, 255, 0);									// Draw In Yellow
 
-		for (a = 0; a < motionUnderGravitation->numOfMasses; ++a)
+		for (int a = 0; a < motionUnderGravitation->numOfMasses; ++a)
 		{
 			Mass* mass = motionUnderGravitation->getMass(a);
 
@@ -319,18 +323,31 @@ void Scene::render()
 	if( con->consoleActive )
 		con->Draw();
 
+	// FIXME TEMPORARY, FIND A BETTER WAY TO DO THIS
 	stringstream s;
 	s << "FPS: " << frameRate;
-	f->glPrint(0, 0, s.str().c_str(), 0);
-
+	con->font->glPrint(0, 0, s.str().c_str(), 0);
+	// END FIXME
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
 
+void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
+	list<polygon_t*>::iterator itr;
 
+	if( bspNode->isLeaf() )	{
+		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
+			glCachePolygon(*itr);
+			(*itr)->polyID = (*itr)->glCacheID;
+			polygonCount++;	// just for stats, may be removed later
+		}
+	}
+	else	{
+		nameAndCachePolygons(bspNode->front);
+		nameAndCachePolygons(bspNode->back);
+	}
+}
 
-
-// BEGIN PICKING SHIT
 void Scene::buildPolygonMapByName(bsp_node_t* bspRootNode)	{
 	if( bspRootNode->isLeaf() )	{
 		list<polygon_t*>::iterator itr;
@@ -343,24 +360,7 @@ void Scene::buildPolygonMapByName(bsp_node_t* bspRootNode)	{
 	}
 }
 
-// DO THIS AND CACHE THE POLYGON TOO
-void Scene::namePolygons(bsp_node_t* bspNode)	{
-	list<polygon_t*>::iterator itr;
-
-	if( bspNode->isLeaf() )	{
-		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
-			(*itr)->selected = false;
-			(*itr)->polyID = polygonCount++;
-			glCachePolygon(*itr);
-		}
-	}
-	else	{
-		namePolygons(bspNode->front);
-		namePolygons(bspNode->back);
-	}
-}
-
-
+// BEGIN PICKING SHIT
 void Scene::doPick(int button, int state, int x, int y)	{
 	if( isPicking )	{
 		if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN )	{

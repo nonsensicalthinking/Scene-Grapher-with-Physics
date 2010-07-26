@@ -31,6 +31,13 @@ public:
 
 	}
 
+	// call this function to load different maps
+	virtual void load()	{
+//		Scene* curScene = getScene();
+		// TODO push this some place else, this isn't mod friendly
+//		curScene->createBSP("fenway.obj");
+	}
+
 	// This is called once every time around the game loop.
 	virtual void advance(long ms)	{
 /*		// Time work, used for Simulation work

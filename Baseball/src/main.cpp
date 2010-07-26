@@ -45,9 +45,14 @@
 #include <stdlib.h>
 #include <ctime>
 #include <iostream>
+
+#define __LINUX__
+
+#ifdef __LINUX__
+#include <pthread.h>
 #include <sys/time.h>
 #include <GL/glut.h>
-#include <pthread.h>
+#endif // __LINUX__
 
 // Definitions
 #define SCREEN_WIDTH 		800
@@ -58,7 +63,10 @@
 // operations such as animation.
 #define SCENE_ADVANCE_RATE	5
 
+#ifdef __LINUX__
 pthread_t gameThread;
+#endif // __LINUX__
+
 Game* game;	// C++ gives us inheritance, hooray!
 
 void* start_game_thread(void* args);	// Func defined below this
@@ -83,8 +91,11 @@ void LoadGame()	{
 ///////////////////////////////////////////////////////////////////////////////////////
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE BELOW THIS LINE //
 ///////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef __LINUX__
 	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
 		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
+#endif // __LINUX__
 }
 
 
@@ -126,7 +137,7 @@ void cleanExit()	{
 
 // END GLOABLS!
 
-
+#ifdef __LINUX__
 /* From Quake 3 Arena
 ================
 Sys_Milliseconds
@@ -159,6 +170,7 @@ int Sys_Milliseconds (void)
 
 	return curtime;
 }
+#endif // __LINUX__
 
 void init()	{
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
@@ -175,10 +187,13 @@ void init()	{
 
 	textures = new MaterialManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
-	curScene->createBSP();
+
+	// TODO Push this into the Game class. have each game do it in the load()
+	curScene->createBSP("fenway.obj");
 
 	LoadGame();	// End user game code loaded here
 				// see the function at the top of file.
+
 }
 
 void changeSize(int w, int h)	{

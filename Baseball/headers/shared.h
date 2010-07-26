@@ -42,7 +42,8 @@ typedef struct plane_s	{
 }plane_t;
 
 
-
+// NOTICE: TO CREATE A NEW POLYGON YOU SHOULD USE
+// THE createPolygon() FUNCTION.
 typedef struct polygon_s	{
 	unsigned int polyID;
 	int numPoints;
@@ -58,7 +59,7 @@ typedef struct polygon_s	{
 	vec3_t normpts[MAX_POLY_POINTS];
 
 	bool glCached;
-	int glCacheID;
+	unsigned int glCacheID;
 
 	bool hasMaterial;
 	char materialName[MAX_FILE_LENGTH];

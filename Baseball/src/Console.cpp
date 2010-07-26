@@ -145,7 +145,8 @@ enum {
 	QUIT=0,
 	CLEAR,
 	PUTCAM,
-	PICKING
+	PICKING,
+	POLYCOUNT
 };
 
 // Commands need to be entered in lowercase
@@ -153,7 +154,8 @@ string commands[] = {
 		"quit",
 		"clear",
 		"putcam",
-		"picking"
+		"picking",
+		"polycount"
 };
 
 void Console::processConsoleCommand(const string conInput)	{
@@ -213,6 +215,10 @@ void Console::processConsoleCommand(const string conInput)	{
 			oss << "Disabled." << endl;
 			getScene()->isPicking = false;
 		}
+		con_print(oss.str());
+		break;
+	case POLYCOUNT:
+		oss << "Polygons in scene: " << getScene()->polygonCount << endl;
 		con_print(oss.str());
 		break;
 	case -1:
