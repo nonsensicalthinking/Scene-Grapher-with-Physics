@@ -33,7 +33,7 @@ using namespace std;
 // having been instantiated, but for some reason we were able to
 // call one of its member functions without instantiation of
 // said object...wtf?  JUST REMEMBER! DANGER!
-extern MaterialManager* getTextureManager();
+extern MaterialManager* getMaterialManager();
 
 
 
@@ -62,7 +62,7 @@ public:
 		this->windowDimention->height = height;
 		this->windowDimention->width = width;
 
-		textures = getTextureManager();
+		textures = getMaterialManager();
 
 		fontPath = "font.bmp";
 
@@ -75,7 +75,7 @@ public:
 		windowDimention->height = height;
 		windowDimention->width = width;
 
-		textures = getTextureManager();
+		textures = getMaterialManager();
 
 		fontPath = font;
 
@@ -89,7 +89,7 @@ public:
 	void loadFont()	{
 		if( textures->loadBitmap(fontPath) )	{
 			buildFont();
-			cout << "Font Build Complete." << endl;
+//			cout << "Font Build Complete." << endl;
 		}
 		else
 			cout << "Font build failed because of texture!" << endl;

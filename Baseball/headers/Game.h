@@ -6,9 +6,11 @@
  */
 
 #include "Scene.h"
+#include "physics.h"
 #include <iostream>
 
-#define CAM_MOVE_RATE 20
+// TODO REMOVE THIS, THIS DOES NOT BELONG HERE
+#define CAM_MOVE_RATE 6
 
 #define SCENE_ADVANCE_RATE	5
 
@@ -21,6 +23,10 @@ class Game	{
 
 private:
 	bool gameOn;
+
+protected:
+	list<Simulation*>	dynamicObjects;
+
 
 public:
 
@@ -38,7 +44,7 @@ public:
 
 	// Run will call load, this is where the maps are loaded from
 	void run()	{
-		load();
+//		load();
 		gameOn = true;
 
 		while( gameOn )	{
@@ -56,7 +62,7 @@ public:
 		if( curScene->con->consoleActive )	{	// send key input to console
 			switch(key)	{
 				case CONSOLE_KEY:	// deactivate console
-					curScene->con->consoleActive = !curScene->con->consoleActive;
+						curScene->con->consoleActive = !curScene->con->consoleActive;
 					break;
 				case ESC_KEY:
 					curScene->con->clearInput();
@@ -129,7 +135,7 @@ public:
 	// Function stubs from here down.
 
 	// This is to be overridden
-	virtual void load()	{
+	virtual void load(string mapname)	{
 
 	}
 

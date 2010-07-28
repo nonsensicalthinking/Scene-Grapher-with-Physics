@@ -27,7 +27,7 @@ using namespace std;
 // unpredicted things happen otherwise and the resulting
 // errors will be difficult to track down.
 // Needed to load textures into the GL instance
-extern MaterialManager* getTextureManager();
+extern MaterialManager* getMaterialManager();
 // Needed to load polygons into scene instance
 extern Scene* getScene();
 
@@ -268,7 +268,7 @@ public:
 			return false;
 		}
 
-		MaterialManager* tm = getTextureManager();
+		MaterialManager* tm = getMaterialManager();
 
 		material_t* mat;
 

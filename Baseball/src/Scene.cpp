@@ -37,11 +37,12 @@
 #include <sstream>
 #include <GL/glut.h>
 
+// Model for MD2 model testing
+//#define MODEL 			"models/tallguy.md2"
 
-#define MODEL 			"models/tallguy.md2"
+// Field of view for frustrum
+#define FOV		90
 
-// TODO move this into the Game you extend
-const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 using namespace std;
 
@@ -49,13 +50,6 @@ using namespace std;
 float timeElapsed 		= 0.0;
 float slowMotionRatio 	= 1.0;
 
-
-Font* f;	// This is for the FPS display I think??
-
-// TODO Remove these 3 whence the game is up and going
-vec3_t startPos = {0.0, 0.0, 0.0};
-vec3_t startAngle = {10.0, 15.0, 0.0};
-MotionUnderGravitation* motionUnderGravitation;
 
 
 // End Globals
@@ -104,15 +98,16 @@ Scene::Scene(int width, int height)
 	con = new Console(width,height);
 	con->consoleActive = false;
 	polygonList = new list<polygon_t*>;
-	matsManager = getTextureManager();
+	matsManager = getMaterialManager();
 	cam = new Camera();
 	polygonCount = 0;	// count of static polygons in the entire scene
 	isPicking = false;	// Picking flag, is temporary
+	bspRoot = NULL;
 
 	//	m = MD2Model::load(MODEL);
 
 
-	// TODO REMOVE, This is just a test object for which to test the physics header
+/*	// TODO REMOVE, This is just a test object for which to test the physics header
 	vec3_t startVel;
 	VectorSubtract(startPos, startAngle, startVel);
 	float len = VectorLength(startVel);
@@ -129,6 +124,7 @@ Scene::Scene(int width, int height)
 
 	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startVel );
 	// END TODO REMOVE
+*/
 }
 
 
@@ -153,12 +149,12 @@ void Scene::resizeSceneSize(int width, int height)	{
     glViewport(0, 0, width, height);
 
 	// Set the correct perspective.
-	gluPerspective(45,ratio,1,1000);
+	gluPerspective(FOV,ratio,1,1000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
-				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
+				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 }
 
@@ -289,7 +285,7 @@ void Scene::render()
 
 	// position camera
 	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
-				cam->direction[0], cam->direction[1], cam->direction[2],		// eye looking @ this vertex
+				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 
 
@@ -299,6 +295,7 @@ void Scene::render()
 	}
 
 
+/*	// TODO This codeblock needs to be replaced with something to draw the game's dynamic objects.
 	glPushMatrix();
 		// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
 		glColor3f(255, 255, 0);									// Draw In Yellow
@@ -313,7 +310,7 @@ void Scene::render()
 			glEnd();
 		}
 	glPopMatrix();
-
+*/
 
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
@@ -472,18 +469,9 @@ void Scene::exit()	{
 */
 
 
-
-
-// TODO REMOVE THESE FUNCTIONS
-void Scene::doItAgain()
-{
-	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startAngle);
-}
-
-
 void Scene::advance(long milliseconds)
 {
-	// Time work, used for Simulation work
+/*	// Time work, used for Simulation work
 	// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 	// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
 	float dt = milliseconds / 1000.0f;							// Let's Convert Milliseconds To Seconds
@@ -502,6 +490,7 @@ void Scene::advance(long milliseconds)
 	{
 		motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
 	}
+*/
 
 }
 

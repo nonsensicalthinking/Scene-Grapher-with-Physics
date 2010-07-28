@@ -12,44 +12,98 @@
 #include "Camera.h"
 
 Camera::Camera() {
+	constDir[0] = 0.0;
+	constDir[1] = 0.0;
+	constDir[2] = 1.0;
+
 	origin[0] = 0.0;
-	origin[1] = 6.0;
+	origin[1] = 0.0;
 	origin[2] = 0.0;
 
-	direction[0] = 0.0;
-	direction[1] = 6.0;
-	direction[2] = -5.0;
+	dir[0] = 0.0;
+	dir[1] = 0.0;
+	dir[2] = 1.0;
 
 	up[0] = 0.0;
 	up[1] = 1.0;
 	up[2] = 0.0;
+
+	angles[0] = 0;
+	angles[1] = 0;
+	angles[2] = 0;
+
+	pitch_rate = 0.22;
+	yaw_rate = 0.22;
+	roll_rate = 0.2;
+
+	calcDirectionVector();
+	lookAtDir();
 }
 
 Camera::~Camera() {
 	// TODO Auto-generated destructor stub
 }
 
-void Camera::moveCameraLeft(double units)	{
+void Camera::moveCameraLeft(float units)	{
 	origin[0]-=units;
+	lookAtDir();
 }
 
-void Camera::moveCameraRight(double units)	{
+void Camera::moveCameraRight(float units)	{
 	origin[0]+=units;
+	lookAtDir();
 }
 
-void Camera::moveCameraUp(double units)		{
+void Camera::moveCameraUp(float units)		{
 	origin[1]+=units;
+	lookAtDir();
 }
 
-void Camera::moveCameraDown(double units)	{
+void Camera::moveCameraDown(float units)	{
 	origin[1]-=units;
+	lookAtDir();
 }
 
-void Camera::moveCameraForward(double units)	{
+void Camera::moveCameraForward(float units)	{
 	origin[2]+=units;
+	lookAtDir();
 }
 
-void Camera::moveCameraBack(double units)	{
+void Camera::moveCameraBack(float units)	{
 	origin[2]-=units;
+	lookAtDir();
 }
+
+void Camera::rotateAboutX(float rad)	{
+	angles[0] += rad;
+	calcDirectionVector();
+	lookAtDir();
+}
+
+void Camera::rotateAboutY(float rad)	{
+	angles[1] += rad;
+	calcDirectionVector();
+	lookAtDir();
+}
+
+void Camera::rotateAboutZ(float rad)	{
+	angles[2] += rad;
+	calcDirectionVector();
+	lookAtDir();
+}
+
+void Camera::lookAtDir()	{
+	VectorAdd(origin, normDir, dir);
+}
+
+void Camera::calcDirectionVector()	{
+	float rotMatrix[3][3];
+	getRotationMatrix(angles, rotMatrix);
+
+	float result[3];
+	float o[3];
+	VectorCopy(constDir, o);
+	MatrixMultiply1x3(&o, rotMatrix, &normDir);
+}
+
 

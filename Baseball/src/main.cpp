@@ -24,7 +24,6 @@
 
 // The over all TODO list for the program
 //
-// PRIORITY *THIS WILL FIX TEXTURING OF BSP OBJECTS*
 // TODO Fix Camera Class so it can do all directions
 //		with focal point adjustment too.
 //
@@ -63,10 +62,20 @@
 // operations such as animation.
 #define SCENE_ADVANCE_RATE	5
 
+
+
 #ifdef __LINUX__
 pthread_t gameThread;
 #endif // __LINUX__
 
+float clearColor[] = {0.0, 0.12, 0.24, 0.0};
+
+// Global variables
+time_t lastFrameTime;
+int frameRate;
+
+Scene* curScene;
+MaterialManager* materials;
 Game* game;	// C++ gives us inheritance, hooray!
 
 void* start_game_thread(void* args);	// Func defined below this
@@ -106,23 +115,16 @@ void* start_game_thread(void* args)	{
 	cout << "Game thread finished." << endl;
 }
 
-
-
-float clearColor[] = {0.0, 0.12, 0.24, 0.0};
-
-// Global variables
-time_t lastFrameTime;
-int frameRate;
-
-Scene* curScene;
-MaterialManager* textures;
-
-MaterialManager* getTextureManager()	{
-	return textures;
+MaterialManager* getMaterialManager()	{
+	return materials;
 }
 
 Scene* getScene()	{
 	return curScene;
+}
+
+Game* getGame()	{
+	return game;
 }
 
 void cleanExit()	{
@@ -130,7 +132,7 @@ void cleanExit()	{
 	game->killGame();	// stop game thread first
 
 	delete game;
-	delete textures;
+	delete materials;
 	delete curScene;
 	exit(0);
 }
@@ -185,16 +187,22 @@ void init()	{
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_CULL_FACE);
 
-	textures = new MaterialManager();
+	materials = new MaterialManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	// TODO Push this into the Game class. have each game do it in the load()
-	curScene->createBSP("fenway.obj");
 
 	LoadGame();	// End user game code loaded here
 				// see the function at the top of file.
-
 }
+
+void vid_restart()	{
+	game->killGame();	// stop game thread first
+
+	delete game;
+	delete materials;
+	delete curScene;
+	init();
+}
+
 
 void changeSize(int w, int h)	{
 	curScene->resizeSceneSize(w,h);

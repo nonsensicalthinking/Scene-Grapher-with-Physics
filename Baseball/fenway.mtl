@@ -1,5 +1,15 @@
 # Blender3D MTL File: fenway.blend
-# Material Count: 9
+# Material Count: 10
+newmtl None_fenway-mediabox-blank
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd fenway-mediabox-blank.bmp
+
+
 newmtl None_penguin-ad.bmp
 Ns 0
 Ka 0.000000 0.000000 0.000000
@@ -8,6 +18,16 @@ Ks 0.8 0.8 0.8
 d 1
 illum 2
 map_Kd penguin-ad.bmp
+
+
+newmtl None_fenway-mediabox.bmp
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd fenway-mediabox.bmp
 
 
 newmtl Material_fenway.bmp
@@ -21,6 +41,16 @@ illum 2
 map_Kd fenway.bmp
 
 
+newmtl Material.002
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+
+
 newmtl Material.002_foul-pole-yellow.bmp
 Ns 96.078431
 Ka 0.000000 0.000000 0.000000
@@ -30,26 +60,6 @@ Ni 1.000000
 d 1.000000
 illum 2
 map_Kd foul-pole-yellow.bmp
-
-
-newmtl None_bright_clouds.bmp
-Ns 0
-Ka 0.000000 0.000000 0.000000
-Kd 0.8 0.8 0.8
-Ks 0.8 0.8 0.8
-d 1
-illum 2
-map_Kd bright_clouds.bmp
-
-
-newmtl Material.002
-Ns 96.078431
-Ka 0.000000 0.000000 0.000000
-Kd 0.640000 0.640000 0.000000
-Ks 0.500000 0.500000 0.500000
-Ni 1.000000
-d 1.000000
-illum 2
 
 
 newmtl None_crowd.bmp

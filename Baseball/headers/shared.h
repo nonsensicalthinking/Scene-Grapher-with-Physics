@@ -254,10 +254,95 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	return 1;	// Indicate that we had an intersection
 }
 
+/*	Taken from the q3 source
+================
+MatrixMultiply
+================
+*/
+inline void MatrixMultiply3x3(float in1[3][3], float in2[3][3], float out[3][3]) {
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
+				in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
+				in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
+				in1[0][2] * in2[2][2];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
+				in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
+				in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
+				in1[1][2] * in2[2][2];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
+				in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
+				in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
+				in1[2][2] * in2[2][2];
+}
 
+inline void MatrixMultiply1x3(float in1[1][3], float in2[3][3], float out[1][3]) {
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
+				in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
+				in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
+				in1[0][2] * in2[2][2];
+}
 
+inline void XRotationMatrix(float in[3], float out[3][3])	{
+	out[0][0] = 1;
+	out[0][1] = 0;
+	out[0][2] = 0;
 
+	out[1][0] = 0;
+	out[1][1] = cos(in[0]);
+	out[1][2] = -sin(in[0]);
 
+	out[2][0] = 0;
+	out[2][1] = sin(in[0]);
+	out[2][2] = cos(in[0]);
+}
+
+inline void YRotationMatrix(float in[3], float out[3][3])	{
+	out[0][0] = cos(in[1]);
+	out[0][1] = 0;
+	out[0][2] = sin(in[1]);
+
+	out[1][0] = 0;
+	out[1][1] = 1;
+	out[1][2] = 0;
+
+	out[2][0] = -sin(in[1]);
+	out[2][1] = 0;
+	out[2][2] = cos(in[1]);
+}
+
+inline void ZRotationMatrix(float in[3], float out[3][3])	{
+	out[0][0] = cos(in[2]);
+	out[0][1] = -sin(in[2]);
+	out[0][2] = 0;
+
+	out[1][0] = sin(in[2]);
+	out[1][1] = cos(in[2]);
+	out[1][2] = 0;
+
+	out[2][0] = 0;
+	out[2][1] = 0;
+	out[2][2] = 1;
+}
+
+inline void getRotationMatrix(float rot[3], float result[3][3])	{
+	float xrot[3][3];
+	float yrot[3][3];
+	float zrot[3][3];
+	XRotationMatrix(rot, xrot);
+	YRotationMatrix(rot, yrot);
+	ZRotationMatrix(rot, zrot);
+
+	float resultMatrix[3][3];
+	MatrixMultiply3x3(xrot, yrot, result);
+	MatrixMultiply3x3(result, zrot, result);
+}
 
 
 #endif /* SHARED_H_ */

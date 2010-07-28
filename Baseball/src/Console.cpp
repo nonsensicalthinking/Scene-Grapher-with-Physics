@@ -8,12 +8,14 @@
 #include "strtools.h"
 #include "Console.h"
 #include "keys.h"
+#include "Game.h"
 #include <iostream>
 #include <list>
 
 using namespace std;
 
 extern Scene* getScene();
+extern Game* getGame();
 
 
 Console::Console(int width, int height) {
@@ -46,17 +48,22 @@ void Console::scrollUp()	{
 void Console::appendToInput(unsigned char s)	{
 	if( s == ENTER_KEY )	{
 		(*instr) << s;
-		processConsoleCommand(instr->str());
+
+		string coninput = instr->str();
+
 		clearInput();
+
+		processConsoleCommand(coninput);
 	}
 	else if( s == BACKSPACE_KEY )	{
 		removeLastCharacter();
+		inputString = instr->str();
 	}
 	else	{	// just append
 		(*instr) << s;
+		inputString = instr->str();
 	}
 
-	inputString = instr->str();
 }
 
 void Console::removeLastCharacter()	{
@@ -66,7 +73,7 @@ void Console::removeLastCharacter()	{
 }
 
 void Console::clearInput()	{
-	delete instr;
+//	delete instr;
 	instr = new ostringstream;
 	inputString = "";
 }
@@ -93,7 +100,7 @@ void Console::Draw()	{
 	list<string>::iterator strItr;
 
 	// TODO The background for the console is super ghetto
-	// won't change with any other variables atm, -3 modifier
+	// won't change with any other variables atm, -4 modifier
 	// used to get a "decent" shape.
 
 	// Console's background
@@ -146,7 +153,12 @@ enum {
 	CLEAR,
 	PUTCAM,
 	PICKING,
-	POLYCOUNT
+	POLYCOUNT,
+	LOAD,
+	VID_RESTART,
+	PITCH,
+	YAW,
+	ROLL
 };
 
 // Commands need to be entered in lowercase
@@ -155,8 +167,15 @@ string commands[] = {
 		"clear",
 		"putcam",
 		"picking",
-		"polycount"
+		"polycount",
+		"load",
+		"vid_restart",
+		"pitch",
+		"yaw",
+		"roll"
 };
+
+extern void vid_restart();
 
 void Console::processConsoleCommand(const string conInput)	{
 	// Don't proceed without real input
@@ -169,6 +188,8 @@ void Console::processConsoleCommand(const string conInput)	{
 	// and save to console output
 	this->input->push_front(conInput);
 	this->output->push_back(conInput);
+
+	Scene* curScene = getScene();
 
 	string strin = conInput;
 	string_tolower(strin);
@@ -220,6 +241,24 @@ void Console::processConsoleCommand(const string conInput)	{
 	case POLYCOUNT:
 		oss << "Polygons in scene: " << getScene()->polygonCount << endl;
 		con_print(oss.str());
+		break;
+	case LOAD:
+		char mapname[128];
+		sscanf(conInput.c_str(), "load %s", mapname);
+		oss << mapname;
+		getGame()->load(oss.str().c_str());
+		break;
+	case VID_RESTART:
+		vid_restart();
+		break;
+	case PITCH:
+		sscanf(conInput.c_str(), "pitch %f", &curScene->cam->pitch_rate);
+		break;
+	case YAW:
+		sscanf(conInput.c_str(), "yaw %f", &curScene->cam->yaw_rate);
+		break;
+	case ROLL:
+		sscanf(conInput.c_str(), "roll %f", &curScene->cam->roll_rate);
 		break;
 	case -1:
 		oss << "Unrecognized command: " << token << endl;
