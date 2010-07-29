@@ -9,6 +9,9 @@
 //The file Bitmap.h goes along with this file
 //
 #include "Bitmap.h"
+#include <unistd.h>
+
+#define IMAGE_DIRECTORY		"images/"
 
 //#define BITMAPDEBUG
 
@@ -50,6 +53,12 @@ bool Bitmap::loadBMP(string file) {
     if(data!=0) {
         delete[] data;
     }
+
+    // SET CURRENT WORKING DIRECTORY
+    // DB added
+    // TODO don't make this such a hack ffs.
+    chdir(IMAGE_DIRECTORY);
+    // End DB added
 
     //open the file for reading in binary mode
     in=fopen(file.c_str(),"rb");

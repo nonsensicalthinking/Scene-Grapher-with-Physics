@@ -67,6 +67,10 @@ void Scene::createBSP(string mapName)	{
 }
 
 void Scene::LoadMap(string map)	{
+	// TODO FIX THIS SLOPPYNESS AND THE STUFF WHEN LOADING
+	// BMP FILES TOO, THIS IS JUST A TEMP HACK TO CLEAN UP
+	// THE ROOT FOLDER OF THIS PROJECT.
+	chdir("..");
 	ObjModel* obj = new ObjModel();
 	obj->loadObjFile(map);
 }
