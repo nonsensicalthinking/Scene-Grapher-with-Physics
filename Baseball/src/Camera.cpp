@@ -92,6 +92,11 @@ void Camera::rotateAboutZ(float rad)	{
 	lookAtDir();
 }
 
+void Camera::goTo(vec3_t o)	{
+	VectorCopy(o, origin);
+	lookAtDir();
+}
+
 void Camera::lookAtDir()	{
 	VectorAdd(origin, normDir, dir);
 }
@@ -105,5 +110,6 @@ void Camera::calcDirectionVector()	{
 	VectorCopy(constDir, o);
 	MatrixMultiply1x3(&o, rotMatrix, &normDir);
 }
+
 
 

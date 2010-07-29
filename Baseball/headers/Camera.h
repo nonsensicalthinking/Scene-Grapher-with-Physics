@@ -5,7 +5,7 @@
  *      Author: Derek Brooks
  */
 #include "shared.h"
-
+#include "matrix.h"
 
 #ifndef CAMERA_H_
 #define CAMERA_H_
@@ -13,9 +13,6 @@
 #define MOVESPEED	6
 
 class Camera {
-
-
-
 public:
 	vec3_t origin;
 	vec3_t dir;
@@ -42,6 +39,7 @@ public:
 	void rotateAboutZ(float rad);	// Look Roll (useful?)
 	void calcDirectionVector();
 	void lookAtDir();
+	void goTo(vec3_t o);
 };
 
 #endif /* CAMERA_H_ */

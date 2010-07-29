@@ -156,9 +156,9 @@ enum {
 	POLYCOUNT,
 	LOAD,
 	VID_RESTART,
-	PITCH,
-	YAW,
-	ROLL
+	SET_PITCH,
+	SET_YAW,
+	SET_ROLL
 };
 
 // Commands need to be entered in lowercase
@@ -215,51 +215,89 @@ void Console::processConsoleCommand(const string conInput)	{
 	case QUIT:
 		getScene()->exit();
 		break;
+
 	case CLEAR:
 		output->clear();
 		break;
+
 	case PUTCAM:
 		vec3_t origin;
-		sscanf(conInput.c_str(), "putcam %f %f %f", &origin[0], &origin[1], &origin[2] );
-		oss << "Putting camera: " << origin[0] << ", " << origin[1] << ", " << origin[2];
-		con_print(oss.str());
-		break;
-	case PICKING:
-		int p;
-		sscanf(conInput.c_str(), "picking %i", &p);
-		oss << "Polygon picking: ";
-		if( p )	{
-			oss << "Enabled." << endl;
-			getScene()->isPicking = true;
+		if( sscanf(conInput.c_str(), "putcam %f %f %f", &origin[0], &origin[1], &origin[2] ) > 0 )	{
+			curScene->cam->goTo(origin);
+			oss << "Camera placed @ [" << origin[0] << ", " << origin[1] << ", " << origin[2] << "]";
+			con_print(oss.str());
 		}
 		else	{
-			oss << "Disabled." << endl;
-			getScene()->isPicking = false;
+			oss << "Camera @ [" << curScene->cam->origin[0] << ", " << curScene->cam->origin[1] << ", " << curScene->cam->origin[2] << "]";
+			con_print(oss.str());
 		}
+		break;
+
+	case PICKING:
+		int p;
+		if( sscanf(conInput.c_str(), "picking %i", &p) > 0 )	{
+			oss << "Polygon picking: ";
+			if( p )	{
+				oss << "Enabled." << endl;
+				getScene()->isPicking = true;
+			}
+			else	{
+				oss << "Disabled." << endl;
+				getScene()->isPicking = false;
+			}
+		}
+		else	{
+			oss << "Polygon picking: " << getScene()->isPicking;
+		}
+
 		con_print(oss.str());
 		break;
+
 	case POLYCOUNT:
 		oss << "Polygons in scene: " << getScene()->polygonCount << endl;
 		con_print(oss.str());
 		break;
+
 	case LOAD:
 		char mapname[128];
-		sscanf(conInput.c_str(), "load %s", mapname);
-		oss << mapname;
-		getGame()->load(oss.str().c_str());
+		if( sscanf(conInput.c_str(), "load %s", mapname) > 0 )	{
+			oss << "Loading map: " << mapname;
+			con_print(oss.str().c_str());
+			getGame()->load(mapname);
+		}
 		break;
+
 	case VID_RESTART:
 		vid_restart();
 		break;
-	case PITCH:
-		sscanf(conInput.c_str(), "pitch %f", &curScene->cam->pitch_rate);
+
+	case SET_PITCH:
+		float pitch;
+		if( sscanf(conInput.c_str(), "pitch %f", &pitch) > 0 )
+			curScene->cam->pitch_rate = pitch;
+
+		oss << "pitch rate = " << curScene->cam->pitch_rate << "(rad)";
+		con_print(oss.str());
 		break;
-	case YAW:
-		sscanf(conInput.c_str(), "yaw %f", &curScene->cam->yaw_rate);
+
+	case SET_YAW:
+		float yaw;
+		if( sscanf(conInput.c_str(), "yaw %f", &yaw) > 0 )
+			curScene->cam->yaw_rate = yaw;
+
+		oss << "yaw rate = " << curScene->cam->yaw_rate << "(rad)";
+		con_print(oss.str());
 		break;
-	case ROLL:
-		sscanf(conInput.c_str(), "roll %f", &curScene->cam->roll_rate);
+
+	case SET_ROLL:
+		float roll;
+		if( sscanf(conInput.c_str(), "roll %f", &roll) > 0 )
+			curScene->cam->roll_rate = roll;
+
+		oss << "roll rate = " << curScene->cam->roll_rate << "(rad)";
+		con_print(oss.str());
 		break;
+
 	case -1:
 		oss << "Unrecognized command: " << token << endl;
 		con_print(oss.str());

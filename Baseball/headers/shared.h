@@ -25,6 +25,8 @@ using namespace std;
 #define MAX_POLY_POINTS		10		// Max number of points in a polygon
 #define MAX_FILE_LENGTH		64		// Max length for a filename
 
+#define PI					3.14159265
+#define PI_DIV_BY_180		PI/180.0
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -40,7 +42,6 @@ typedef struct plane_s	{
 	vec3_t origin;
 	vec3_t normal;
 }plane_t;
-
 
 // NOTICE: TO CREATE A NEW POLYGON YOU SHOULD USE
 // THE createPolygon() FUNCTION.
@@ -68,6 +69,12 @@ typedef struct polygon_s	{
 	vec3_t polygonDrawColor;
 }polygon_t;
 
+
+
+// Begin functions
+
+
+
 // This should be used anytime we want to create a new polygon
 inline polygon_t* createPolygon()	{
 	polygon_t* poly = new polygon_t;
@@ -79,6 +86,11 @@ inline polygon_t* createPolygon()	{
 	poly->isTextured = false;
 
 	return poly;
+}
+
+
+inline float degToRad(float deg)	{
+	return deg * PI_DIV_BY_180;
 }
 
 
@@ -196,7 +208,6 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 
 	for(x=0; x < poly->numPoints; x++)	{
 		float classification = classifyPoint(partition, poly->points[x]);
-
 		// we can do the returns below because if any point on the
 		// polygon is on the opposite side there will be a split
 		// we don't care to check every point, the splitting routines
@@ -206,7 +217,6 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 
 			if( hasBack )
 				return SPANNING;
-
 		}
 		else	{ // if( classification < 0 )
 			hasBack = true;
@@ -225,7 +235,7 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	return -99;	// Error of sorts happened.
 }
 
-inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect, vec3_t fractSect)	{
+inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect, float *fractSect)	{
 	vec3_t u;
 	vec3_t w;
 
@@ -244,105 +254,16 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 
 	// they are not parallel
 	// compute intersect param
-	fractSect[0] = numerator / denominator;
+	(*fractSect) = numerator / denominator;
 
-	if( fractSect[0] < 0 || fractSect[0] > 1 )
+	if( (*fractSect) < 0 || (*fractSect) > 1 )
 		return 0;                       // no intersection
 
-	VectorMA( pointA, u, fractSect[0], intersect);
+	VectorMA( pointA, u, (*fractSect), intersect);
 
 	return 1;	// Indicate that we had an intersection
 }
 
-/*	Taken from the q3 source
-================
-MatrixMultiply
-================
-*/
-inline void MatrixMultiply3x3(float in1[3][3], float in2[3][3], float out[3][3]) {
-	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
-				in1[0][2] * in2[2][0];
-	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
-				in1[0][2] * in2[2][1];
-	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
-				in1[0][2] * in2[2][2];
-	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
-				in1[1][2] * in2[2][0];
-	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
-				in1[1][2] * in2[2][1];
-	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
-				in1[1][2] * in2[2][2];
-	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
-				in1[2][2] * in2[2][0];
-	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
-				in1[2][2] * in2[2][1];
-	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
-				in1[2][2] * in2[2][2];
-}
-
-inline void MatrixMultiply1x3(float in1[1][3], float in2[3][3], float out[1][3]) {
-	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
-				in1[0][2] * in2[2][0];
-	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
-				in1[0][2] * in2[2][1];
-	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
-				in1[0][2] * in2[2][2];
-}
-
-inline void XRotationMatrix(float in[3], float out[3][3])	{
-	out[0][0] = 1;
-	out[0][1] = 0;
-	out[0][2] = 0;
-
-	out[1][0] = 0;
-	out[1][1] = cos(in[0]);
-	out[1][2] = -sin(in[0]);
-
-	out[2][0] = 0;
-	out[2][1] = sin(in[0]);
-	out[2][2] = cos(in[0]);
-}
-
-inline void YRotationMatrix(float in[3], float out[3][3])	{
-	out[0][0] = cos(in[1]);
-	out[0][1] = 0;
-	out[0][2] = sin(in[1]);
-
-	out[1][0] = 0;
-	out[1][1] = 1;
-	out[1][2] = 0;
-
-	out[2][0] = -sin(in[1]);
-	out[2][1] = 0;
-	out[2][2] = cos(in[1]);
-}
-
-inline void ZRotationMatrix(float in[3], float out[3][3])	{
-	out[0][0] = cos(in[2]);
-	out[0][1] = -sin(in[2]);
-	out[0][2] = 0;
-
-	out[1][0] = sin(in[2]);
-	out[1][1] = cos(in[2]);
-	out[1][2] = 0;
-
-	out[2][0] = 0;
-	out[2][1] = 0;
-	out[2][2] = 1;
-}
-
-inline void getRotationMatrix(float rot[3], float result[3][3])	{
-	float xrot[3][3];
-	float yrot[3][3];
-	float zrot[3][3];
-	XRotationMatrix(rot, xrot);
-	YRotationMatrix(rot, yrot);
-	ZRotationMatrix(rot, zrot);
-
-	float resultMatrix[3][3];
-	MatrixMultiply3x3(xrot, yrot, result);
-	MatrixMultiply3x3(result, zrot, result);
-}
 
 
 #endif /* SHARED_H_ */

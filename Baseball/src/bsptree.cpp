@@ -28,129 +28,151 @@ using namespace std;
 #define COINCIDENT	 0
 
 
+//	splitPolygon is one of those long and messy functions that needs a
+// 	good solid re-write, but because it works for now it will remain
+//	in this state.  When we slice the polygon "poly" with the plane "split"
+//	we also calculate if any, the intersection with the plane and any texture
+// 	present on the polygon.  This has to be done in two different ways, there
+//	is an if statement with an else if and an else, the two if statements are
+//	nearly identical, but actually aren't.  Just a thought.
 void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front, polygon_t *back)
 {
-	int frontCount = 0, backCount = 0;
 	int x;
+	int frontCount = 0, backCount = 0;
+
 	vec3_t frontPoints[MAX_POLY_POINTS];
-	vec3_t backPoints[MAX_POLY_POINTS];
 	vec2_t frontTexPoints[MAX_POLY_POINTS];
+	vec3_t frontNormPoints[MAX_POLY_POINTS];
+
+	vec3_t backPoints[MAX_POLY_POINTS];
 	vec2_t backTexPoints[MAX_POLY_POINTS];
+	vec3_t backNormPoints[MAX_POLY_POINTS];
 
 	vec3_t pointA;
 	vec3_t pointB;
+
 	vec2_t texPointA;
 	vec2_t texPointB;
 
 
+	// Begin with the last point on the polygon
 	VectorCopy(poly->points[poly->numPoints-1], pointA);
-
 	if( poly->isTextured )
 		VectorCopy(poly->texpts[poly->numPoints-1], texPointA);
 
 
+	// Classify it (the last point on the polygon), and loop the
+	// rest of the points looking for two points on opposite sides of the plane.
 	float sideA = classifyPoint(split, pointA);
 	float sideB;
 
 	for(x=0; x < poly->numPoints; x++)	{
-		VectorCopy(poly->points[x], pointB);
 
+		VectorCopy(poly->points[x], pointB);
 		if( poly->isTextured )
 			VectorCopy2f(poly->texpts[x], texPointB);
 
 		sideB = classifyPoint(split, pointB);
+
 
 		if( sideB > 0 )	{
 			if( sideA < 0 )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a ray-plane intersection.
-
 				vec3_t intersection;
-				vec3_t fractSect;
+				float fractSect;
 
-				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
+				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, &fractSect)) )	{
 					VectorCopy(intersection, frontPoints[frontCount]);
 					VectorCopy(intersection, backPoints[backCount]);
 
-					vec2_t work;
-					vec2_t u;
-
 					if( poly->isTextured )	{
+						vec2_t work;
+						vec2_t u;
+						// Compute the texture intersection coords
 						VectorSubtract2f(texPointB, texPointA, u);
-						VectorMA2f(texPointA, u, fractSect[0], work);
+						VectorMA2f(texPointA, u, fractSect, work);
 						VectorCopy2f(work, frontTexPoints[frontCount]);
 						VectorCopy2f(work, backTexPoints[backCount]);
 					}
 
-					// TODO IMPLEMENT THIS FOR NORMALS AS WELL
-//					if( poly->hasNormals )	{
-//						VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
-//						VectorCopy(poly->normpts[x], backNormPoints[backCount]);
-//					}
+					if( poly->hasNormals )	{
+						VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
+						VectorCopy(poly->normpts[x], backNormPoints[backCount]);
+					}
 
 					frontCount++;
 					backCount++;
 				}
 			}
 
+			// These points are added to the FRONT no matter what
 			VectorCopy(pointB, frontPoints[frontCount]);
-
 			if( poly->isTextured )
 				VectorCopy2f(texPointB, frontTexPoints[frontCount]);
+			if( poly->hasNormals )
+				VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
 
+			// jack up the front count
 			frontCount++;
-
 		}
 		else if( sideB < 0 )	{
 			if( sideA > 0 )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a ray-plane intersection.
-
 				vec3_t intersection;
-				vec3_t fractSect;
+				float fractSect;
 
-				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, fractSect)) )	{
+				if( (findLinePlaneIntersect(split, pointA, pointB, intersection, &fractSect)) )	{
 					VectorCopy(intersection, frontPoints[frontCount]);
 					VectorCopy(intersection, backPoints[backCount]);
 
-					// BEGIN ADDED TEXTURE WORK
-					vec2_t work;
-					vec2_t u;
-
 					if( poly->isTextured )	{
+						vec2_t work;
+						vec2_t u;
+						// Compute the texture intersection coords
 						VectorSubtract2f(texPointB, texPointA, u);
-						VectorMA2f(texPointA, u, fractSect[0], work);
+						VectorMA2f(texPointA, u, fractSect, work);
 						VectorCopy2f(work, frontTexPoints[frontCount]);
 						VectorCopy2f(work, backTexPoints[backCount]);
 					}
-					// END ADDED TEXTURE WORK
+
+					if( poly->hasNormals )	{
+						VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
+						VectorCopy(poly->normpts[x], backNormPoints[backCount]);
+					}
 
 					frontCount++;
 					backCount++;
 				}
 			}
 
+			// These points are added to the BACK no matter what
 			VectorCopy(pointB, backPoints[backCount]);
-
-			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )
 				VectorCopy2f(texPointB, backTexPoints[backCount]);
-			// END ADDED TEXTURE WORK
+			if( poly->hasNormals )
+				VectorCopy(poly->normpts[x], backNormPoints[backCount]);
 
+
+			// jack up the back count
 			backCount++;
 		}
 		else	{	// coincident point
 			VectorCopy(pointB, frontPoints[frontCount]);
 			VectorCopy(pointB, backPoints[backCount]);
 
-			// BEGIN ADDED TEXTURE WORK
 			if( poly->isTextured )	{
-				VectorCopy2f(texPointB, frontPoints[frontCount]);
-				VectorCopy2f(texPointB, backPoints[backCount]);
+				VectorCopy2f(texPointB, frontTexPoints[frontCount]);
+				VectorCopy2f(texPointB, backTexPoints[backCount]);
 			}
-			// END ADDED TEXTURE WORK
+
+			if( poly->hasNormals )	{
+				VectorCopy(poly->normpts[x], frontNormPoints[frontCount]);
+				VectorCopy(poly->normpts[x], backNormPoints[backCount]);
+			}
 
 			frontCount++;
 			backCount++;
@@ -164,28 +186,26 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 		VectorCopy(pointB, pointA); 		// pointA = pointB
 		VectorCopy2f(texPointB, texPointA);	// texPointA = texPointB
-		sideA = sideB;
+		sideA = sideB;						// iterate son!
 	}
 
-
+	// put the points in the new polygons
 	front->numPoints = frontCount;
 	for(x=0; x < frontCount; x++)	{
 		VectorCopy(frontPoints[x], front->points[x]);
-
-		// BEGIN ADDED TEXTURE WORK
 		if( poly->isTextured )
 			VectorCopy(frontTexPoints[x], front->texpts[x]);
-		// END ADDED TEXTURE WORK
+		if( poly->hasNormals )
+			VectorCopy(frontNormPoints[x], front->normpts[x]);
 	}
 
 	back->numPoints = backCount;
 	for(x=0; x < backCount; x++)	{
 		VectorCopy(backPoints[x], back->points[x]);
-
-		// BEGIN ADDED TEXTURE WORK
 		if( poly->isTextured )
 			VectorCopy(backTexPoints[x], back->texpts[x]);
-		// END ADDED TEXTURE WORK
+		if( poly->hasNormals )
+			VectorCopy(backNormPoints[x], back->normpts[x]);
 	}
 
 }
@@ -273,7 +293,6 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 			nextLength = planeLen;
 			change = true;
 		}
-
 // End change over stuff
 
 
@@ -317,8 +336,6 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 			cout << endl;
 			cout << "Next Center = " << nextCenter << endl;
 #endif
-
-
 
 		/*
 		 * End creation of new partitioning planes
@@ -441,7 +458,7 @@ int main(void)
 
 
 /*
- * This func tests the working-ness of splitting polygons
+ * This function tests the working-ness of splitting polygons
  * oh, but you have to evaluate the results by paper =P
  */
 
