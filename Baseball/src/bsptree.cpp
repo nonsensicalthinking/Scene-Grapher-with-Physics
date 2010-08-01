@@ -401,6 +401,28 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	bspInOrderFrontToBack(tree->back);
 }
 
+void deleteTree(bsp_node_t* root)	{
+
+	if( !root )	{
+		cout << "Warning BSPTree: Null tree reference" << endl;
+		return;
+	}
+
+	if( root->isLeaf() )	{
+		delete root;
+		return;
+	}
+
+	deleteTree(root->front);
+	deleteTree(root->back);
+
+	// Delete the intermediate nodes between leaves
+	// since we've already been to our children
+//	delete root;
+//	root = NULL;
+}
+
+
 
 // Very simple BSP Test
 /*

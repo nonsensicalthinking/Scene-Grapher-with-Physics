@@ -41,16 +41,38 @@ Camera::Camera() {
 }
 
 Camera::~Camera() {
-	// TODO Auto-generated destructor stub
-}
-
-void Camera::moveCameraLeft(float units)	{
-	origin[0]-=units;
-	lookAtDir();
+	// nothing to destruct
 }
 
 void Camera::moveCameraRight(float units)	{
-	origin[0]+=units;
+	vec3_t r;
+	CrossProduct(up, normDir, r);
+	VectorNegate(r, r);
+	VectorScale(r, units, r);
+	VectorAdd(origin, r, origin);
+	lookAtDir();
+}
+
+void Camera::moveCameraLeft(float units)	{
+	vec3_t r;
+	CrossProduct(up, normDir, r);
+	VectorScale(r, units, r);
+	VectorAdd(origin, r, origin);
+	lookAtDir();
+}
+
+void Camera::moveCameraForward(float units)	{
+	vec3_t r;
+	VectorScale(normDir, units, r);
+	VectorAdd(origin, r, origin);
+	lookAtDir();
+}
+
+void Camera::moveCameraBack(float units)	{
+	vec3_t backdir;
+	VectorNegate(normDir, backdir);
+	VectorScale(backdir, units, backdir);
+	VectorAdd(origin, backdir, origin);
 	lookAtDir();
 }
 
@@ -61,16 +83,6 @@ void Camera::moveCameraUp(float units)		{
 
 void Camera::moveCameraDown(float units)	{
 	origin[1]-=units;
-	lookAtDir();
-}
-
-void Camera::moveCameraForward(float units)	{
-	origin[2]+=units;
-	lookAtDir();
-}
-
-void Camera::moveCameraBack(float units)	{
-	origin[2]-=units;
 	lookAtDir();
 }
 

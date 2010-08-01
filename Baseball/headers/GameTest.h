@@ -112,16 +112,16 @@ public:
 				curScene->cam->moveCameraDown(CAM_MOVE_RATE);
 				break;
 			case 'z':
-				curScene->cam->rotateAboutY(curScene->cam->yaw_rate);
-				break;
-			case 'x':
 				curScene->cam->rotateAboutY(-curScene->cam->yaw_rate);
 				break;
+			case 'x':
+				curScene->cam->rotateAboutY(curScene->cam->yaw_rate);
+				break;
 			case 'c':
-				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
+				curScene->cam->rotateAboutX(-curScene->cam->pitch_rate);
 				break;
 			case 'v':
-				curScene->cam->rotateAboutX(-curScene->cam->pitch_rate);
+				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
 			case ESC_KEY:
 				curScene->exit();

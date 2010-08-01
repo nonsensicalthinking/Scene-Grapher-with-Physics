@@ -15,9 +15,9 @@
 class Camera {
 public:
 	vec3_t origin;
-	vec3_t dir;
-	vec3_t normDir;
-	vec3_t constDir;
+	vec3_t dir;	// This is the camera direction
+	vec3_t normDir;	// This is it normalized
+	vec3_t constDir;// This is a constant direction North? sure. 0,0,1
 	vec3_t up;
 	vec3_t angles;	// angles are in radian measure
 

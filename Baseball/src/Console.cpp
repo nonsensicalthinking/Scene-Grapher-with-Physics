@@ -268,7 +268,7 @@ void Console::processConsoleCommand(const string conInput)	{
 		break;
 
 	case VID_RESTART:
-		vid_restart();
+		getScene()->clearScene();
 		break;
 
 	case SET_PITCH:

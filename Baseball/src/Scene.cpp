@@ -33,6 +33,7 @@
 #include "objloader.h"
 
 #include "GameTest.h"
+#include "md2model.h"
 
 #include <sstream>
 #include <GL/glut.h>
@@ -64,6 +65,9 @@ void Scene::createBSP(string mapName)	{
 	generateBSP(bspRoot);
 	nameAndCachePolygons(bspRoot);
 	buildPolygonMapByName(bspRoot);
+
+	// FIXME TEMP ONLY!
+//	loadMd2("tallguy.md2");
 }
 
 void Scene::LoadMap(string map)	{
@@ -75,6 +79,29 @@ void Scene::LoadMap(string map)	{
 	obj->loadObjFile(map);
 }
 
+
+void Scene::loadMd2(string filename)	{
+	MD2Model* m = MD2Model::load(filename.c_str());
+
+	cout << "MD2 Model apparently loaded." << endl;
+}
+
+void Scene::clearScene()	{
+	polygonCount = 0;
+	polygonList->clear();
+
+	// TODO Free BSP Root and all BSP Node objects
+//	deleteTree(bspRoot);	// At the moment deleteTree causes a segfault
+	bspRoot = NULL;
+
+	// TODO Remove everything except the font (first loaded texture)
+	getMaterialManager()->unloadAllTextures();
+	// This is temporary.
+	getMaterialManager()->loadBitmap("font.bmp");
+
+	isPicking = false;
+	polygonByName.clear();
+}
 
 void Scene::generateBSP(bsp_node_t* root)	{
 
@@ -108,27 +135,8 @@ Scene::Scene(int width, int height)
 	isPicking = false;	// Picking flag, is temporary
 	bspRoot = NULL;
 
-	//	m = MD2Model::load(MODEL);
 
 
-/*	// TODO REMOVE, This is just a test object for which to test the physics header
-	vec3_t startVel;
-	VectorSubtract(startPos, startAngle, startVel);
-	float len = VectorLength(startVel);
-
-	vec3_t heading;
-	VectorSubtract(startAngle, startPos, heading);
-	VectorUnitVector(heading, heading);
-
-//	cout << "Heading: [" << heading[0] << ", " << heading[1] << ", " << heading[2] << "] ";
-//	cout << "Speed: " << len << endl;
-
-//	VectorScale( heading, len, startVel);
-	VectorCopy(startAngle, startVel);
-
-	motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH, startPos, startVel );
-	// END TODO REMOVE
-*/
 }
 
 
@@ -226,7 +234,7 @@ void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
 				glMaterialfv(GL_FRONT, GL_SPECULAR, Ks);
 				glMaterialf(GL_FRONT, GL_SHININESS, Ns);
 			}
-			else	{
+			else	{	// render its normal material
 				if( poly->hasMaterial )
 					matsManager->enableMaterial(poly->materialName);
 			}
@@ -255,16 +263,16 @@ void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
 
 void Scene::renderPolygonList(list<polygon_t*> polygons, bool selectionMode)
 {
-	list<polygon_t*>::iterator itr;
-
-	// for each polygon in the list
-	for(itr = polygons.begin(); itr != polygons.end(); itr++)	{
+	for(list<polygon_t*>::iterator itr = polygons.begin(); itr != polygons.end(); itr++)
 		drawPolygon((*itr), selectionMode);
-	}
 }
 
 
 void Scene::renderBSPTree(bsp_node_t* tree)	{
+
+	if( !tree )
+		return;
+
 	if( tree->isLeaf() )	{
 		renderPolygonList(tree->getPolygonList(), isPicking);
 	}

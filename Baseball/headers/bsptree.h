@@ -79,5 +79,7 @@ typedef struct bsp_node_s	{
 
 
 void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node);
+void deleteTree(bsp_node_t* bspRoot);
+
 
 #endif /* BSPTREE_H_ */

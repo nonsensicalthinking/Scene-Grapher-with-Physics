@@ -60,6 +60,8 @@ public:
 	void createBSP(string mapName);
 	void LoadMap(string map);
 	void generateBSP(bsp_node_t* root);
+	void loadMd2(string filename);
+	void clearScene();
 
 	// The bureaucratic work
 	void addPolygon(polygon_t* p);
