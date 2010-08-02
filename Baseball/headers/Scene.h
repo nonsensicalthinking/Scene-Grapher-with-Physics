@@ -47,6 +47,8 @@ public:
 	list<polygon_t*> *polygonList;
 	MaterialManager* matsManager;
 	bsp_node_t* bspRoot;
+	GLUquadric* sky;
+	GLuint skyCacheID;
 
 	// TEMP SELECTION STUFFS
 	bool isPicking;
@@ -60,6 +62,7 @@ public:
 	void createBSP(string mapName);
 	void LoadMap(string map);
 	void generateBSP(bsp_node_t* root);
+	void cacheSky();
 	void loadMd2(string filename);
 	void clearScene();
 

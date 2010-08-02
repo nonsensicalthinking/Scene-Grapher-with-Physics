@@ -76,6 +76,16 @@ public:
 		return false;
 	}
 
+	void enableSphereMapping()	{
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+	}
+
+	void disableSphereMapping()	{
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+	}
+
 	bool enableMaterial(string matName)	{
 		material_t* mat = materials[matName];
 
@@ -128,6 +138,9 @@ public:
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // GL_LINEAR_MIPMAP_NEAREST);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);			// Set The Texture Generation Mode For S To Sphere Mapping ( NEW )
+		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);			// Set The Texture Generation Mode For T To Sphere Mapping ( NEW )
 
 		gluBuild2DMipmaps( GL_TEXTURE_2D, 3, bmp->width, bmp->height,
 		                       GL_RGB, GL_UNSIGNED_BYTE, bmp->data );

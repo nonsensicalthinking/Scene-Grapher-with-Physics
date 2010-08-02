@@ -33,7 +33,7 @@
 #include "objloader.h"
 
 #include "GameTest.h"
-#include "md2model.h"
+//#include "md2model.h"
 
 #include <sstream>
 #include <GL/glut.h>
@@ -52,12 +52,27 @@ float timeElapsed 		= 0.0;
 float slowMotionRatio 	= 1.0;
 
 
+#define SKY_TEXTURE	"bright_clouds.bmp"
 
 // End Globals
 
 // Things are things that need to be done when
 // "loading a map"
 
+
+void Scene::cacheSky()	{
+    skyCacheID = glGenLists(1);
+    glNewList(skyCacheID, GL_COMPILE);
+
+    glPushMatrix();
+	matsManager->enableSphereMapping();
+	matsManager->bindTexture(SKY_TEXTURE);
+	gluSphere(sky, 125, 10, 5);
+	matsManager->disableSphereMapping();
+	glPopMatrix();
+
+    glEndList();
+}
 
 void Scene::createBSP(string mapName)	{
 	LoadMap(mapName);
@@ -66,8 +81,13 @@ void Scene::createBSP(string mapName)	{
 	nameAndCachePolygons(bspRoot);
 	buildPolygonMapByName(bspRoot);
 
-	// FIXME TEMP ONLY!
-//	loadMd2("tallguy.md2");
+	chdir("images/");
+	sky = gluNewQuadric();
+	gluQuadricTexture(sky, true);
+	gluQuadricOrientation(sky, GLU_INSIDE);
+	matsManager->loadBitmap(SKY_TEXTURE);
+	chdir("..");
+	cacheSky();
 }
 
 void Scene::LoadMap(string map)	{
@@ -79,12 +99,6 @@ void Scene::LoadMap(string map)	{
 	obj->loadObjFile(map);
 }
 
-
-void Scene::loadMd2(string filename)	{
-	MD2Model* m = MD2Model::load(filename.c_str());
-
-	cout << "MD2 Model apparently loaded." << endl;
-}
 
 void Scene::clearScene()	{
 	polygonCount = 0;
@@ -134,8 +148,6 @@ Scene::Scene(int width, int height)
 	polygonCount = 0;	// count of static polygons in the entire scene
 	isPicking = false;	// Picking flag, is temporary
 	bspRoot = NULL;
-
-
 
 }
 
@@ -300,9 +312,16 @@ void Scene::render()
 				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 
+	/*
+*/
 
 	// Draw static polygons in the scene
 	if( bspRoot )	{
+		// draw background sky
+		glPushMatrix();
+		glCallList(skyCacheID);
+		glPopMatrix();
+
 		renderBSPTree(bspRoot);
 	}
 
