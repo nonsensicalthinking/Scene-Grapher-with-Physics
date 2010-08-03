@@ -24,6 +24,7 @@ public:
 	float pitch_rate;
 	float yaw_rate;
 	float roll_rate;
+	int fov;
 
 	Camera();
 	virtual ~Camera();
@@ -40,6 +41,7 @@ public:
 	void calcDirectionVector();
 	void lookAtDir();
 	void goTo(vec3_t o);
+	void setFieldOfView(int degrees);
 };
 
 #endif /* CAMERA_H_ */

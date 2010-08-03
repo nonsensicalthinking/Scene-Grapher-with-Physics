@@ -173,7 +173,7 @@ void Scene::resizeSceneSize(int width, int height)	{
     glViewport(0, 0, width, height);
 
 	// Set the correct perspective.
-	gluPerspective(FOV,ratio,1,1000);
+	gluPerspective(cam->fov, ratio, 1, 1000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 

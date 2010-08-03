@@ -10,6 +10,11 @@
  */
 
 #include "Camera.h"
+#include <GL/glut.h>
+
+#define SCENE_W	800
+#define SCENE_H	600
+
 
 Camera::Camera() {
 	constDir[0] = 0.0;
@@ -38,6 +43,7 @@ Camera::Camera() {
 
 	calcDirectionVector();
 	lookAtDir();
+	setFieldOfView(90);
 }
 
 Camera::~Camera() {
@@ -123,5 +129,19 @@ void Camera::calcDirectionVector()	{
 	MatrixMultiply1x3(&o, rotMatrix, &normDir);
 }
 
+void Camera::setFieldOfView(int degrees)	{
+	fov = degrees;
+	// Reset the coordinate system before modifying
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	// Reset the coordinate system before modifying
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 
+	// Set the correct perspective.
+	gluPerspective(fov, SCENE_W/SCENE_H, 1, 1000);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
 

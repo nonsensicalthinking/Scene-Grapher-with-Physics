@@ -158,7 +158,8 @@ enum {
 	VID_RESTART,
 	SET_PITCH,
 	SET_YAW,
-	SET_ROLL
+	SET_ROLL,
+	FOV
 };
 
 // Commands need to be entered in lowercase
@@ -172,7 +173,8 @@ string commands[] = {
 		"vid_restart",
 		"pitch",
 		"yaw",
-		"roll"
+		"roll",
+		"fov"
 };
 
 extern void vid_restart();
@@ -295,6 +297,16 @@ void Console::processConsoleCommand(const string conInput)	{
 			curScene->cam->roll_rate = roll;
 
 		oss << "roll rate = " << curScene->cam->roll_rate << "(rad)";
+		con_print(oss.str());
+		break;
+
+	case FOV:
+		int val;
+		if( sscanf(conInput.c_str(), "fov %d", &val) > 0 )	{
+			curScene->cam->setFieldOfView(val);
+		}
+
+		oss << "FOV = " << curScene->cam->fov << endl;
 		con_print(oss.str());
 		break;
 
