@@ -41,6 +41,8 @@ const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 #define SKY_TEXTURE	"bright_clouds.bmp"
 
+// TODO REMOVE THIS
+extern int pitchSpeed;
 
 
 // inherit the game class
@@ -62,7 +64,7 @@ public:
 
 	// TODO Test ent TTL
 
-	void throwPitch()	{
+	void throwPitch(int speed)	{
 		entity_t* ent = createEntity();
 
 		ent->mass = new Mass(1);
@@ -72,7 +74,7 @@ public:
 		vec3_t vel;
 		VectorSubtract(pos, end, vel);
 		VectorUnitVector(vel, vel);
-		VectorScale(vel, 90, vel);
+		VectorScale(vel, speed, vel);
 		VectorCopy(pos, ent->mass->pos);
 		VectorNegate(vel, vel);
 		VectorCopy(vel, ent->mass->vel);
@@ -82,7 +84,7 @@ public:
 
 		entityList.push_back(ent);
 
-		cout << "Ent created." << endl;
+		cout << "And the pitch..." << endl;
 	}
 
 	// call this function to load different maps
@@ -170,10 +172,12 @@ public:
 					cout << "Entity removed from scene! (" << entityList.size() << ")."<< endl;
 				}
 			}
-
 		}
 
+		getScene()->setEntityList(entityList);
 	}
+
+
 
 	// Event handlers
 	// Handles keyboard input from normal text keys
@@ -215,7 +219,7 @@ public:
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
 			case 'f':
-				throwPitch();
+				throwPitch(pitchSpeed);
 				break;
 			case ESC_KEY:
 				curScene->exit();

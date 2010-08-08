@@ -10,6 +10,7 @@
 #include "Console.h"
 #include "Camera.h"
 #include "bsptree.h"
+#include "ent.h"
 #include <string>
 #include <list>
 #include <map>
@@ -38,6 +39,8 @@ public:
 
 	bsp_node_t* bspRoot;
 
+	list<entity_t*> entList;
+
 	GLUquadric* sky;
 	GLuint skyCacheID;
 
@@ -45,6 +48,8 @@ public:
 	~Scene(void);
 
 	void drawEntity(entity_t* ent);
+	void drawEntityList(list<entity_t*> mlist);
+	void setEntityList(list<entity_t*> mlist);
 	void submitBSPTree(bsp_node_t* root);
 
 	void renderBSPTree(bsp_node_t* tree);

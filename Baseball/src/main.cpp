@@ -60,9 +60,11 @@
 // The rate at which to advance the scene
 // FIXME: This might have implications in other
 // operations such as animation.
-#define SCENE_ADVANCE_RATE	5
+//#define SCENE_ADVANCE_RATE	5
 
+//int SCENE_ADVANCE_RATE = 5;
 
+int sceneAdvRate = 5;
 
 #ifdef __LINUX__
 pthread_t gameThread;
@@ -76,7 +78,7 @@ int frameRate;
 
 Scene* curScene;
 MaterialManager* materials;
-Game* game;	// C++ gives us inheritance, hooray!
+Game* game = NULL;	// C++ gives us inheritance, hooray!
 
 void* start_game_thread(void* args);	// Func defined below this
 
@@ -101,12 +103,12 @@ void LoadGame()	{
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE BELOW THIS LINE //
 ///////////////////////////////////////////////////////////////////////////////////////
 // Trying something here...
-
+/*
 #ifdef __LINUX__
 	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
 		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
 #endif // __LINUX__
-
+*/
 }
 
 
@@ -128,6 +130,8 @@ Scene* getScene()	{
 Game* getGame()	{
 	return game;
 }
+
+int pitchSpeed;
 
 void cleanExit()	{
 
@@ -207,8 +211,13 @@ void draw(void)
 
 	int curFrameTime = Sys_Milliseconds();
 
+	long timeSinceLastFrame = curFrameTime - lastFrameTime;
+
 	// Draw the scene.
 	curScene->render();
+
+	if( game != NULL )
+		game->advance(sceneAdvRate);
 
 	// Tabulate frame rate
 	frameCount++;

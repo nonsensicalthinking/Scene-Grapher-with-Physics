@@ -145,6 +145,7 @@ void Console::con_print(string s)	{
 	output->push_back(s);
 }
 
+extern int sceneAdvRate;
 
 
 // Commands
@@ -157,7 +158,9 @@ enum {
 	SET_PITCH,
 	SET_YAW,
 	SET_ROLL,
-	FOV
+	FOV,
+	PSPEED,
+	SAR
 };
 
 // Commands need to be entered in lowercase
@@ -170,10 +173,12 @@ string commands[] = {
 		"pitch",
 		"yaw",
 		"roll",
-		"fov"
+		"fov",
+		"pspeed",
+		"sar"
 };
 
-extern void vid_restart();
+extern int pitchSpeed;
 
 void Console::processConsoleCommand(const string conInput)	{
 	// Don't proceed without real input
@@ -281,6 +286,29 @@ void Console::processConsoleCommand(const string conInput)	{
 		oss << "FOV = " << curScene->cam->fov << endl;
 		con_print(oss.str());
 		break;
+
+
+	case PSPEED:
+		int val1;
+		if( sscanf(conInput.c_str(), "pspeed %d", &val1) > 0 )	{
+			pitchSpeed = val1;
+		}
+
+		oss << "Pitch speed = " << pitchSpeed << endl;
+		con_print(oss.str());
+		break;
+
+	case SAR:
+		int val2;
+		if( sscanf(conInput.c_str(), "sar %d", &val2) > 0 )	{
+			sceneAdvRate = val2;
+		}
+
+		oss << "SAR = " << sceneAdvRate << endl;
+		con_print(oss.str());
+		break;
+
+
 
 	case -1:
 		oss << "Unrecognized command: " << token << endl;

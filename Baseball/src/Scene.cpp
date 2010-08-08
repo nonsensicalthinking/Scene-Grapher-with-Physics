@@ -68,6 +68,15 @@ void Scene::drawEntity(entity_t* ent)	{
 */
 }
 
+void Scene::drawEntityList(list<entity_t*> mlist)	{
+	list<entity_t*>::iterator itr;
+	for(itr=mlist.begin(); itr != mlist.end(); itr++)
+		drawEntity((*itr));
+}
+
+void Scene::setEntityList(list<entity_t*> mlist)	{
+	entList = mlist;
+}
 
 void Scene::submitBSPTree(bsp_node_t* root)	{
 	bspRoot = root;
@@ -98,6 +107,7 @@ Scene::Scene(int width, int height)
 	cam = new Camera();
 	polygonCount = 0;	// count of static polygons in the entire scene
 	bspRoot = NULL;
+//	entList = NULL;
 }
 
 
@@ -235,6 +245,8 @@ void Scene::render()
 		glPopMatrix();
 
 		renderBSPTree(bspRoot);
+
+		drawEntityList(entList);
 	}
 
 	///////////////////////////////////
