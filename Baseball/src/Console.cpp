@@ -152,10 +152,8 @@ enum {
 	QUIT=0,
 	CLEAR,
 	PUTCAM,
-	PICKING,
 	POLYCOUNT,
 	LOAD,
-	VID_RESTART,
 	SET_PITCH,
 	SET_YAW,
 	SET_ROLL,
@@ -167,10 +165,8 @@ string commands[] = {
 		"quit",
 		"clear",
 		"putcam",
-		"picking",
 		"polycount",
 		"load",
-		"vid_restart",
 		"pitch",
 		"yaw",
 		"roll",
@@ -235,26 +231,6 @@ void Console::processConsoleCommand(const string conInput)	{
 		}
 		break;
 
-	case PICKING:
-		int p;
-		if( sscanf(conInput.c_str(), "picking %i", &p) > 0 )	{
-			oss << "Polygon picking: ";
-			if( p )	{
-				oss << "Enabled." << endl;
-				getScene()->isPicking = true;
-			}
-			else	{
-				oss << "Disabled." << endl;
-				getScene()->isPicking = false;
-			}
-		}
-		else	{
-			oss << "Polygon picking: " << getScene()->isPicking;
-		}
-
-		con_print(oss.str());
-		break;
-
 	case POLYCOUNT:
 		oss << "Polygons in scene: " << getScene()->polygonCount << endl;
 		con_print(oss.str());
@@ -267,10 +243,6 @@ void Console::processConsoleCommand(const string conInput)	{
 			con_print(oss.str().c_str());
 			getGame()->load(mapname);
 		}
-		break;
-
-	case VID_RESTART:
-		getScene()->clearScene();
 		break;
 
 	case SET_PITCH:

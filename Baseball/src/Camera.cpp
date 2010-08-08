@@ -21,20 +21,20 @@ Camera::Camera() {
 	constDir[1] = 0.0;
 	constDir[2] = 1.0;
 
-	origin[0] = 0.0;
-	origin[1] = 0.0;
-	origin[2] = 0.0;
+	origin[0] = -42.0;
+	origin[1] = 4.0;
+	origin[2] = 36.0;
 
 	dir[0] = 0.0;
 	dir[1] = 0.0;
-	dir[2] = 1.0;
+	dir[2] = 0.0;
 
 	up[0] = 0.0;
 	up[1] = 1.0;
 	up[2] = 0.0;
 
 	angles[0] = 0;
-	angles[1] = 0;
+	angles[1] = degToRad(-130);
 	angles[2] = 0;
 
 	pitch_rate = 0.22;

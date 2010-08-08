@@ -23,46 +23,115 @@
  */
 #include "Game.h"
 #include "Scene.h"
+#include "objloader.h"
 
+#define CAM_MOVE_RATE 1
 
 // TODO move this into the Game you extend
-//const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
+const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 // TODO Remove these 3 whence the game is up and going
 //vec3_t startPos = {0.0, 0.0, 0.0};
 //vec3_t startAngle = {10.0, 15.0, 0.0};
 
 
-//MotionUnderGravitation* motionUnderGravitation;
 
 #define PITCH_RATE	1
 #define YAW_RATE	1
 #define ROLL_RATE	1
 
+#define SKY_TEXTURE	"bright_clouds.bmp"
+
+
 
 // inherit the game class
 class SpecialGame : public Game	{
 
+	bsp_node_t* bspRoot;
+	list<entity_t*> entityList;
+	list<list<entity_t*> > bspDynamicEntityLeafList;
+
+	float timeElapsed;
+	float slowMotionRatio;
+
+	MotionUnderGravitation* motionUnderGravitation;
+
+
+	bool loaded;
 
 public:
 
-	SpecialGame() : Game()	{
-	}
+	// TODO Test ent TTL
 
-	~SpecialGame()	{
+	void throwPitch()	{
+		entity_t* ent = createEntity();
 
+		ent->mass = new Mass(1);
+
+		vec3_t pos = {-24, 4, 19};
+		vec3_t end = {-38, 4, 32};
+		vec3_t vel;
+		VectorSubtract(pos, end, vel);
+		VectorUnitVector(vel, vel);
+		VectorScale(vel, 90, vel);
+		VectorCopy(pos, ent->mass->pos);
+		VectorNegate(vel, vel);
+		VectorCopy(vel, ent->mass->vel);
+
+		// 5 seconds
+		ent->setTTL(2000);
+
+		entityList.push_back(ent);
+
+		cout << "Ent created." << endl;
 	}
 
 	// call this function to load different maps
 	virtual void load(string mapname)	{
-		Scene* curScene = getScene();
-		// TODO push this some place else, this isn't mod friendly
-		curScene->createBSP(mapname);
+		createBSP(mapname);
+		getScene()->submitBSPTree(bspRoot);
+		loaded = true;
+	}
 
+	// TODO make this return a leaf list when doing sphere and bounding box collisions
+	// because the box or sphere may be laying in more than one partition
+	bsp_node_t* findBSPLeaf(const vec3_t pos)	{
+		bsp_node_t* curNode = bspRoot;
+
+		while( !curNode->isLeaf() )	{
+			if( curNode->partition != NULL )	{
+				float result = classifyPoint(curNode->partition, pos);
+				if( result > EPSILON )	{
+					curNode = curNode->front;
+				}
+				else if(result < -EPSILON )	{
+					curNode = curNode->back;
+				}
+				else	{
+					//TODO HANDLE SPANNING OCCURANCE
+					cout << "Ent position spanning two nodes" << endl;
+					//FIXME for now just going down the front
+					// Will need to go down both front and back!
+					curNode = curNode->front;
+				}
+			}
+			else	{
+				cout << "NULL NODE REFERENCE" << endl;
+			}
+		}
+
+		if( curNode->isLeaf() )
+			return curNode;
+
+		return NULL;
 	}
 
 	// This is called once every time around the game loop.
 	virtual void advance(long ms)	{
-/*		// Time work, used for Simulation work
+
+		if( !loaded )
+			return;
+
+		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 		// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
 		float dt = ms / 1000.0f;							// Let's Convert Milliseconds To Seconds
@@ -76,12 +145,34 @@ public:
 
 
 		// Simulation work from here down
+		if( motionUnderGravitation != NULL )	{
 
-		for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
-		{
-			motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
+			for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
+			{
+				// for number of masses do
+				vector<entity_t*> removalList;
+
+				for( list<entity_t*>::iterator itr = entityList.begin(); itr != entityList.end(); itr++)	{
+					if( (*itr)->checkTTL() )	{
+						removalList.push_back((*itr));
+					}
+					else	{
+						motionUnderGravitation->operate(dt, (*itr)->mass);					// Iterate motionUnderGravitation Simulation By dt Seconds
+					}
+				}
+
+				for( int x=0; x < removalList.size(); x++)	{
+					motionUnderGravitation->release(removalList[x]->mass);
+					entity_t* cur = removalList[x];
+					cur->hasExpired = true;
+					entityList.remove(cur);
+					delete cur;	// TODO don't delete, clean out and put into free ent list.
+					cout << "Entity removed from scene! (" << entityList.size() << ")."<< endl;
+				}
+			}
+
 		}
-		*/
+
 	}
 
 	// Event handlers
@@ -123,6 +214,9 @@ public:
 			case 'v':
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
+			case 'f':
+				throwPitch();
+				break;
 			case ESC_KEY:
 				curScene->exit();
 				break;
@@ -135,9 +229,68 @@ public:
 	}
 
 	virtual void mouseEvent(int button, int state, int x, int y)	{
-		Scene* curScene = getScene();
-		curScene->doPick(button, state, x, y);
+
 	}
 
 
+	void createBSP(string mapName)	{
+		Scene* curScene = getScene();
+		ObjModel* obj = loadMap(mapName);
+		bspRoot = new bsp_node_t;
+
+		generateBSPTree(bspRoot, obj->polygonList);
+		curScene->nameAndCachePolygons(bspRoot);
+
+		chdir("images/");
+		curScene->sky = gluNewQuadric();
+		gluQuadricTexture(curScene->sky, true);
+		gluQuadricOrientation(curScene->sky, GLU_INSIDE);
+		getMaterialManager()->loadBitmap(SKY_TEXTURE);
+		chdir("..");
+		curScene->cacheSky();
+	}
+
+	ObjModel* loadMap(string map)	{
+		// TODO FIX THIS SLOPPYNESS AND THE STUFF WHEN LOADING
+		// BMP FILES TOO, THIS IS JUST A TEMP HACK TO CLEAN UP
+		// THE ROOT FOLDER OF THIS PROJECT.
+		chdir("..");
+		ObjModel* obj = new ObjModel();
+		obj->loadObjFile(map);
+		return obj;
+	}
+
+	void createDynamicLeafList(bsp_node_t* root, bool start)	{
+		if( start )
+			bspDynamicEntityLeafList.clear();
+
+		if( root->isLeaf() )	{
+			bspDynamicEntityLeafList.push_back(root->getDynamicObjectList());
+		}
+		else	{
+			createDynamicLeafList(root->front, false);
+			createDynamicLeafList(root->back, false);
+		}
+	}
+
+	void addEntity(entity_t* ent)	{
+		entityList.push_back(ent);
+	}
+
+	void removeEntity(entity_t* ent)	{
+		entityList.remove(ent);
+	}
+
+
+	SpecialGame() : Game()	{
+		loaded = false;
+		timeElapsed = 0.0;
+		slowMotionRatio = 1.0;
+
+		motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH);
+	}
+
+	~SpecialGame()	{
+
+	}
 };

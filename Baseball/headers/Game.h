@@ -10,13 +10,13 @@
 #include <iostream>
 
 // TODO REMOVE THIS, THIS DOES NOT BELONG HERE
-#define CAM_MOVE_RATE 6
 
 #define SCENE_ADVANCE_RATE	5
 
 using namespace std;
 
 extern Scene* getScene();
+extern int Sys_Milliseconds();
 
 
 class Game	{
@@ -46,9 +46,15 @@ public:
 	void run()	{
 //		load();
 		gameOn = true;
+		int preTime = 0;
+		int curTime = Sys_Milliseconds();
 
 		while( gameOn )	{
-			advance(SCENE_ADVANCE_RATE);
+			preTime = curTime;
+			curTime = Sys_Milliseconds();
+			long dt = curTime - preTime;
+
+			advance(dt);
 		}
 
 		cout << "Game thread ended." << endl;

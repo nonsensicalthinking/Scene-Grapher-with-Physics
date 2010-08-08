@@ -100,11 +100,13 @@ void LoadGame()	{
 ///////////////////////////////////////////////////////////////////////////////////////
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE BELOW THIS LINE //
 ///////////////////////////////////////////////////////////////////////////////////////
+// Trying something here...
 
 #ifdef __LINUX__
 	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
 		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
 #endif // __LINUX__
+
 }
 
 
@@ -194,15 +196,6 @@ void init()	{
 				// see the function at the top of file.
 }
 
-void vid_restart()	{
-	game->killGame();	// stop game thread first
-
-	delete game;
-	delete materials;
-	delete curScene;
-	init();
-}
-
 
 void changeSize(int w, int h)	{
 	curScene->resizeSceneSize(w,h);
@@ -212,13 +205,12 @@ void draw(void)
 {
 	static int frameCount = 0;
 
-	// Based on rate of change, advance the physical objects
-	// in the scene then draw 'em out.
-	curScene->advance(SCENE_ADVANCE_RATE);
+	int curFrameTime = Sys_Milliseconds();
+
+	// Draw the scene.
 	curScene->render();
 
 	// Tabulate frame rate
-	int curFrameTime = Sys_Milliseconds();
 	frameCount++;
 	if( (lastFrameTime+1000) <= curFrameTime )	{
 		curScene->frameRate = frameCount;
@@ -239,6 +231,7 @@ void processSpecialKeys(int key, int x, int y) {
 	game->specialKeyPressedEvent(key, x, y);
 }
 
+
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -247,6 +240,7 @@ int main(int argc, char **argv) {
 
 	glutCreateWindow(GAME_TITLE);
 
+	init();
 	// Set GLUT Call backs
 	glutDisplayFunc(draw);
 	glutIdleFunc(draw);
@@ -255,7 +249,6 @@ int main(int argc, char **argv) {
 	glutKeyboardFunc(processNormalKeys);
 	glutSpecialFunc(processSpecialKeys);
 
-	init();
 
 	glutMainLoop();
 

@@ -27,6 +27,7 @@ using namespace std;
 
 #define PI					3.14159265
 #define PI_DIV_BY_180		PI/180.0
+#define ONE_RADIAN			PI_DIV_BY_180
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];

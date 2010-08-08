@@ -33,32 +33,45 @@
 #include "objloader.h"
 
 #include "GameTest.h"
-//#include "md2model.h"
 
 #include <sstream>
 #include <GL/glut.h>
-
-// Model for MD2 model testing
-//#define MODEL 			"models/tallguy.md2"
-
-// Field of view for frustrum
-#define FOV		90
 
 
 using namespace std;
 
 // Scene Globals
-float timeElapsed 		= 0.0;
-float slowMotionRatio 	= 1.0;
+#define Z_NEAR		1
+#define Z_FAR		200
 
-
-#define SKY_TEXTURE	"bright_clouds.bmp"
 
 // End Globals
 
-// Things are things that need to be done when
-// "loading a map"
 
+// TODO have this draw a model instead of just a point
+void Scene::drawEntity(entity_t* ent)	{
+
+	// FIXME there is something rotten in denmark
+	if( ent->hasExpired )
+		return;
+
+	glPushMatrix();
+    glPointSize(4);
+    glBegin(GL_POINTS);
+            glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+    glEnd();
+    glPopMatrix();
+/*
+    cout << "Drawing ent: ";
+    VectorPrint(ent->mass->pos);
+    cout << endl;
+*/
+}
+
+
+void Scene::submitBSPTree(bsp_node_t* root)	{
+	bspRoot = root;
+}
 
 void Scene::cacheSky()	{
     skyCacheID = glGenLists(1);
@@ -74,67 +87,6 @@ void Scene::cacheSky()	{
     glEndList();
 }
 
-void Scene::createBSP(string mapName)	{
-	LoadMap(mapName);
-	bspRoot = new bsp_node_t;
-	generateBSP(bspRoot);
-	nameAndCachePolygons(bspRoot);
-	buildPolygonMapByName(bspRoot);
-
-	chdir("images/");
-	sky = gluNewQuadric();
-	gluQuadricTexture(sky, true);
-	gluQuadricOrientation(sky, GLU_INSIDE);
-	matsManager->loadBitmap(SKY_TEXTURE);
-	chdir("..");
-	cacheSky();
-}
-
-void Scene::LoadMap(string map)	{
-	// TODO FIX THIS SLOPPYNESS AND THE STUFF WHEN LOADING
-	// BMP FILES TOO, THIS IS JUST A TEMP HACK TO CLEAN UP
-	// THE ROOT FOLDER OF THIS PROJECT.
-	chdir("..");
-	ObjModel* obj = new ObjModel();
-	obj->loadObjFile(map);
-}
-
-
-void Scene::clearScene()	{
-	polygonCount = 0;
-	polygonList->clear();
-
-	// TODO Free BSP Root and all BSP Node objects
-//	deleteTree(bspRoot);	// At the moment deleteTree causes a segfault
-	bspRoot = NULL;
-
-	// TODO Remove everything except the font (first loaded texture)
-	getMaterialManager()->unloadAllTextures();
-	// This is temporary.
-	getMaterialManager()->loadBitmap("font.bmp");
-
-	isPicking = false;
-	polygonByName.clear();
-}
-
-void Scene::generateBSP(bsp_node_t* root)	{
-
-	plane_t* partition = new plane_t;
-
-	partition->normal[0] = 1.0;
-	partition->normal[1] = 0.0;
-	partition->normal[2] = 0.0;
-
-	partition->origin[0] = 0.0;
-	partition->origin[1] = 0.0;
-	partition->origin[2] = 0.0;
-
-	root->setPolygonList(*polygonList);
-
-	// the first argument must be double the width of the largest surface
-	buildTree(400, 0, partition, root);
-}
-
 
 Scene::Scene(int width, int height)
 {
@@ -142,13 +94,10 @@ Scene::Scene(int width, int height)
 	sceneHeight = height;
 	con = new Console(width,height);
 	con->consoleActive = false;
-	polygonList = new list<polygon_t*>;
 	matsManager = getMaterialManager();
 	cam = new Camera();
 	polygonCount = 0;	// count of static polygons in the entire scene
-	isPicking = false;	// Picking flag, is temporary
 	bspRoot = NULL;
-
 }
 
 
@@ -173,7 +122,7 @@ void Scene::resizeSceneSize(int width, int height)	{
     glViewport(0, 0, width, height);
 
 	// Set the correct perspective.
-	gluPerspective(cam->fov, ratio, 1, 1000);
+	gluPerspective(cam->fov, ratio, Z_NEAR, Z_FAR);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -204,52 +153,23 @@ void Scene::performLighting()	{
 	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
 }
 
-void Scene::addPolygon(polygon_t* p)	{
-	polygonList->push_back(p);
-}
-
-
 void Scene::glCachePolygon(polygon_t* polygon)	{
     polygon->glCacheID = glGenLists(1);
     glNewList(polygon->glCacheID, GL_COMPILE);
-    drawPolygon(polygon, false);
+    drawPolygon(polygon);
     glEndList();
     polygon->glCached = true;
 }
 
 
-void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
+void Scene::drawPolygon(polygon_t* poly)	{
 	if( poly->glCached )	{
-// try it out if you don't believe me...
-//		cout << "Rendering cached polygons" << endl;
-		if( selectMode )
-			glPushName(poly->polyID);
-
 		glCallList(poly->glCacheID);
-
-		if( selectMode )
-			glPopName();
 	}
 	else	{
-		if( selectMode )
-			glPushName(poly->polyID);
-
 		glPushMatrix();
-			if( selectMode && poly->selected )	{
-				vec3_t Ka = {0,0,1};
-				vec3_t Kd = {0,0,1};
-				vec3_t Ks = {0,0,1};
-				int Ns = 0;
-
-				glMaterialfv(GL_FRONT, GL_AMBIENT, Ka);
-				glMaterialfv(GL_FRONT, GL_DIFFUSE, Kd);
-				glMaterialfv(GL_FRONT, GL_SPECULAR, Ks);
-				glMaterialf(GL_FRONT, GL_SHININESS, Ns);
-			}
-			else	{	// render its normal material
-				if( poly->hasMaterial )
-					matsManager->enableMaterial(poly->materialName);
-			}
+			if( poly->hasMaterial )
+				matsManager->enableMaterial(poly->materialName);
 
 			glBegin(GL_POLYGON);
 			for(int x=0; x < poly->numPoints; x++)	{
@@ -267,18 +187,14 @@ void Scene::drawPolygon(polygon_t* poly, bool selectMode)	{
 				matsManager->disableMaterial(poly->materialName);
 
 		glPopMatrix();
-
-		if( selectMode )
-			glPopName();
 	}
 }
 
-void Scene::renderPolygonList(list<polygon_t*> polygons, bool selectionMode)
+void Scene::renderPolygonList(list<polygon_t*> polygons)
 {
 	for(list<polygon_t*>::iterator itr = polygons.begin(); itr != polygons.end(); itr++)
-		drawPolygon((*itr), selectionMode);
+		drawPolygon((*itr));
 }
-
 
 void Scene::renderBSPTree(bsp_node_t* tree)	{
 
@@ -286,7 +202,7 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 		return;
 
 	if( tree->isLeaf() )	{
-		renderPolygonList(tree->getPolygonList(), isPicking);
+		renderPolygonList(tree->getPolygonList());
 	}
 	else	{
 		// perform render back to front
@@ -297,7 +213,6 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 
 void Scene::render()
 {
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -312,12 +227,9 @@ void Scene::render()
 				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 
-	/*
-*/
-
-	// Draw static polygons in the scene
+	// Draw the scene
 	if( bspRoot )	{
-		// draw background sky
+		// TODO find a better way to draw background sky
 		glPushMatrix();
 		glCallList(skyCacheID);
 		glPopMatrix();
@@ -325,24 +237,10 @@ void Scene::render()
 		renderBSPTree(bspRoot);
 	}
 
-
-/*	// TODO This codeblock needs to be replaced with something to draw the game's dynamic objects.
-	glPushMatrix();
-		// Draw All Masses In motionUnderGravitation Simulation (Actually There Is Only One Mass In This Example Of Code)
-		glColor3f(255, 255, 0);									// Draw In Yellow
-
-		for (int a = 0; a < motionUnderGravitation->numOfMasses; ++a)
-		{
-			Mass* mass = motionUnderGravitation->getMass(a);
-
-			glPointSize(4);
-			glBegin(GL_POINTS);
-				glVertex3f(mass->pos[0], mass->pos[1], mass->pos[2]);
-			glEnd();
-		}
-	glPopMatrix();
-*/
-
+	///////////////////////////////////
+	// CONSOLE AND HUD DRAWING AREA  //
+	// v	v	v	v	v	v	v	 //
+	///////////////////////////////////
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
 	glDisable(GL_LIGHTING);
@@ -376,133 +274,16 @@ void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 	}
 }
 
-void Scene::buildPolygonMapByName(bsp_node_t* bspRootNode)	{
-	if( bspRootNode->isLeaf() )	{
-		list<polygon_t*>::iterator itr;
-		for(itr = bspRootNode->beginPolyListItr(); itr != bspRootNode->endPolyListItr(); itr++)
-			polygonByName[(*itr)->polyID] = (*itr);
-	}
-	else	{
-		buildPolygonMapByName(bspRootNode->front);
-		buildPolygonMapByName(bspRootNode->back);
-	}
-}
-
-// BEGIN PICKING SHIT
-void Scene::doPick(int button, int state, int x, int y)	{
-	if( isPicking )	{
-		if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN )	{
-			cout << "Entering pick mode." << endl;
-			startPicking(x, y);
-			renderBSPTree(bspRoot);
-			int hits = stopPicking();
-
-			if( hits )	{
-				processHits(hits, selectBuf);
-			}
-			else
-				cout << "No hits occurred." << endl;
-		}
-	}
-}
-
-
-void Scene::startPicking(int cursorX, int cursorY) {
-	GLint viewport[4];
-
-	glSelectBuffer(BUFSIZE,selectBuf);
-	glRenderMode(GL_SELECT);
-
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-
-	glGetIntegerv(GL_VIEWPORT,viewport);
-	gluPickMatrix(cursorX,viewport[3]-cursorY,
-			5,5,viewport);
-
-	float ratio = 1.0 * sceneWidth / sceneHeight;
-
-	gluPerspective(45,ratio,0.1,1000);
-	glMatrixMode(GL_MODELVIEW);
-	glInitNames();
-}
-
-
-int Scene::stopPicking() {
-	int hits;
-
-	// restoring the original projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glFlush();
-
-	// returning to normal rendering mode
-	hits = glRenderMode(GL_RENDER);
-
-	return hits;
-}
-
-void Scene::processHits(int hits, GLuint selectBuf[])	{
-	cout << "Selection hits: " << hits << endl;
-
-	if( hits )	{
-		cout << "Number of names for this polygon: " << selectBuf[0] << endl;
-
-		if( selectBuf[0] >= 1 )	{
-			cout << "Polygon Name: " << selectBuf[3] << endl;
-
-			polygon_t* p = polygonByName[selectBuf[3]];
-
-			if( p )	{
-				if( p->selected )
-					p->selected = false;
-				else	{
-					p->selected = true;
-					for(int x=0; x < p->numPoints; x++)	{
-						cout << "Texture Point [" << x << "]: ";
-						VectorPrint2f(p->texpts[x]);
-						cout << endl;
-					}
-				}
-			}
-			else	{
-				cout << "Error: couldn't find polygon's reference." << endl;
-			}
-
-		}
-		else
-			cout << "Unnamed polygon." << endl;
-	}
-}
-// END PICKING SHIT
-
-
-
 void Scene::exit()	{
 	cleanExit();
 }
 
-// Example of animating md2 model
+
+
 /*
-	glPushMatrix();
-
-	glTranslated(-5.0, 10.0, 0.0);
-	glRotated(-90.0, 0.0, 0.0, 1.0);
-	glRotated(-45.0, 1.0, 0.0, 0.0);
-
-	m->setAnimation("run");
-	m->advance(0.01);
-	m->draw();
-
-	glPopMatrix();
-*/
-
-
 void Scene::advance(long milliseconds)
 {
-/*	// Time work, used for Simulation work
+	// Time work, used for Simulation work
 	// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 	// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
 	float dt = milliseconds / 1000.0f;							// Let's Convert Milliseconds To Seconds
@@ -521,12 +302,26 @@ void Scene::advance(long milliseconds)
 	{
 		motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
 	}
-*/
 
 }
+*/
 
 
 
+// Example of animating md2 model
+/*
+	glPushMatrix();
+
+	glTranslated(-5.0, 10.0, 0.0);
+	glRotated(-90.0, 0.0, 0.0, 1.0);
+	glRotated(-45.0, 1.0, 0.0, 0.0);
+
+	m->setAnimation("run");
+	m->advance(0.01);
+	m->draw();
+
+	glPopMatrix();
+*/
 
 
 

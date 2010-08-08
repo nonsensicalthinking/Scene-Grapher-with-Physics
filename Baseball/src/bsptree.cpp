@@ -220,6 +220,7 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 	depth++;
 
 	if( depth == BSP_RECURSION_DEPTH )	{
+		// TODO get dynamic object list from this node and insert into master listing of dynobjlists
 		leafCount++;
 		depth--;
 		return;
@@ -422,6 +423,24 @@ void deleteTree(bsp_node_t* root)	{
 //	root = NULL;
 }
 
+
+void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList)	{
+
+	plane_t* partition = new plane_t;
+
+	partition->normal[0] = 1.0;
+	partition->normal[1] = 0.0;
+	partition->normal[2] = 0.0;
+
+	partition->origin[0] = 0.0;
+	partition->origin[1] = 0.0;
+	partition->origin[2] = 0.0;
+
+	root->setPolygonList(polygonList);
+
+	// the first argument must be double the width of the largest surface
+	buildTree(400, 0, partition, root);
+}
 
 
 // Very simple BSP Test

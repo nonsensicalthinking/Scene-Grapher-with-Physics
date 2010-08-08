@@ -5,6 +5,9 @@
  *      Author: Derek Brooks
  */
 
+#include "ent.h"
+
+
 #ifndef BSPTREE_H_
 #define BSPTREE_H_
 #include <list>
@@ -30,6 +33,7 @@ typedef struct bsp_node_s	{
 
 	private:
 	list<polygon_t*> polygonList;
+	list<entity_t*> dynamicObjectList;
 
 
 	public:
@@ -75,11 +79,19 @@ typedef struct bsp_node_s	{
 		return polygonList.size();
 	}
 
+	void addDynamicObject(entity_t* ent)	{
+		dynamicObjectList.push_back(ent);
+	}
+
+	list<entity_t*> getDynamicObjectList()	{
+		return dynamicObjectList;
+	}
+
 }bsp_node_t;
 
 
 void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node);
 void deleteTree(bsp_node_t* bspRoot);
-
+void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList);
 
 #endif /* BSPTREE_H_ */

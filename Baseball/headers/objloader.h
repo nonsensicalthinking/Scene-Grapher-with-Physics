@@ -28,8 +28,6 @@ using namespace std;
 // errors will be difficult to track down.
 // Needed to load textures into the GL instance
 extern MaterialManager* getMaterialManager();
-// Needed to load polygons into scene instance
-extern Scene* getScene();
 
 //#define OBJDEBUG
 
@@ -45,11 +43,13 @@ class ObjModel	{
 	vector<vector<float> > vt;
 	vector<vector<float> > vn;
 
-	string error;
 
 	char curMat[MAX_MAT_NAME_LEN];
 
 public:
+	string error;
+	list<polygon_t*> polygonList;
+
 	ObjModel()	{
 
 	}
@@ -235,8 +235,8 @@ public:
 			poly->normpts[x][2] = vn[(face[x][2]-1)][2];
 		}
 
-		Scene* s = getScene();
-		s->addPolygon(poly);
+//		Scene* s = getScene();
+		polygonList.push_back(poly);
 	}
 
 	void initializeMaterial(material_t* mat)	{

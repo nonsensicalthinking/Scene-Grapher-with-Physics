@@ -56,52 +56,39 @@ public:
 // Abstract class Simulation
 class Simulation	{
 public:
-	int numOfMasses;
-	Mass** masses;
 	
-	Simulation(int numOfMasses, float m)	{
-		this->numOfMasses = numOfMasses;
-		
-		masses = new Mass*[numOfMasses];
-
-		for (int a = 0; a < numOfMasses; ++a)
-			masses[a] = new Mass(m);
+	Simulation()	{
 	}
 
-	virtual void release()	{
-		for (int a = 0; a < numOfMasses; ++a)	{
-			delete(masses[a]);
-			masses[a] = NULL;
-		}
-			
-		delete(masses);
-		masses = NULL;
+	virtual void release(Mass* mass)	{
+		delete(mass);
+		mass = NULL;
 	}
 
+	/*
 	Mass* getMass(int index)	{
 		if (index < 0 || index >= numOfMasses)
 			return NULL;
 
 		return masses[index];
 	}
+	*/
 
-	virtual void init()	{
-		for (int a = 0; a < numOfMasses; ++a)
-			masses[a]->init();
+	virtual void init(Mass* mass)	{
+		mass->init();
 	}
 
-	virtual void solve()	{
+	virtual void solve(Mass* mass)	{
 	}
 
-	virtual void simulate(float dt)	{
-		for (int a = 0; a < numOfMasses; ++a)
-			masses[a]->simulate(dt);
+	virtual void simulate(float dt, Mass* mass)	{
+		mass->simulate(dt);
 	}
 
-	virtual void operate(float dt)	{
-		init();
-		solve();
-		simulate(dt);
+	virtual void operate(float dt, Mass* mass)	{
+		init(mass);
+		solve(mass);
+		simulate(dt, mass);
 	}
 
 };
@@ -109,6 +96,7 @@ public:
 //  class ConstantVelocity is derived from class Simulation
 //  It creates 1 mass with mass value 1 kg and sets its velocity to (1.0f, 0.0f, 0.0f)
 //  so that the mass moves in the x direction with 1 m/s velocity.
+/*
 class ConstantVelocity : public Simulation	{
 public:
 	ConstantVelocity() : Simulation(1, 1.0f)	{
@@ -120,7 +108,7 @@ public:
 	}
 
 };
-
+*/
 //	class MotionUnderGravitation is derived from class Simulation
 //	It creates 1 mass with mass value 1 kg and sets its velocity to (10.0f, 15.0f, 0.0f) and its position to
 //	(-10.0f, 0.0f, 0.0f). The purpose of this application is to apply a gravitational force to the mass and
@@ -131,18 +119,14 @@ class MotionUnderGravitation : public Simulation	{
 public:
 	vec3_t gravitation;													//the gravitational acceleration
 
-	MotionUnderGravitation(const vec3_t gravitation, const vec3_t startingPosition, const vec3_t startingVelocity) : Simulation(1, 1.0f)	{																		//Vector3D gravitation, is the gravitational acceleration
+	MotionUnderGravitation(const vec3_t gravitation) : Simulation()	{																		//Vector3D gravitation, is the gravitational acceleration
 		VectorCopy(gravitation, this->gravitation);
-		VectorCopy( startingPosition, masses[0]->pos);
-		VectorCopy( startingVelocity, masses[0]->vel);
 	}
 
-	virtual void solve()	{
-		for (int a = 0; a < numOfMasses; ++a)	{
-			vec3_t force;
-			VectorScale(gravitation, masses[a]->m, force);
-			masses[a]->applyForce(force);
-		}
+	virtual void solve(Mass* mass)	{
+		vec3_t force;
+		VectorScale(gravitation, mass->m, force);
+		mass->applyForce(force);
 	}
 	
 };
@@ -151,6 +135,7 @@ public:
 //	It creates 1 mass with mass value 1 kg and binds the mass to an arbitrary constant point with a spring.
 //	This point is refered as the connectionPos and the spring has a springConstant value to represent its
 //	stiffness.
+/*
 class MassConnectedWithSpring : public Simulation	{
 public:
 	float springConstant;
@@ -182,8 +167,8 @@ public:
 			masses[a]->applyForce(springForce);
 		}
 	}
-	
 };
+*/
 
 #endif	// ENDIF PHYSICS_H_
 
