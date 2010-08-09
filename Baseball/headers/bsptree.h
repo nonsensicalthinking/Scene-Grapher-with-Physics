@@ -33,7 +33,7 @@ typedef struct bsp_node_s	{
 
 	private:
 	list<polygon_t*> polygonList;
-	list<entity_t*> dynamicObjectList;
+	list<entity_t*> entityList;
 
 
 	public:
@@ -79,12 +79,12 @@ typedef struct bsp_node_s	{
 		return polygonList.size();
 	}
 
-	void addDynamicObject(entity_t* ent)	{
-		dynamicObjectList.push_back(ent);
+	void addEntity(entity_t* ent)	{
+		entityList.push_back(ent);
 	}
 
-	list<entity_t*> getDynamicObjectList()	{
-		return dynamicObjectList;
+	list<entity_t*> getEntityList()	{
+		return entityList;
 	}
 
 }bsp_node_t;

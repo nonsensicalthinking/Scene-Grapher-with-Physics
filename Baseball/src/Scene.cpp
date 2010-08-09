@@ -41,7 +41,7 @@
 using namespace std;
 
 // Scene Globals
-#define Z_NEAR		1
+#define Z_NEAR		0.1
 #define Z_FAR		200
 
 
@@ -56,7 +56,7 @@ void Scene::drawEntity(entity_t* ent)	{
 		return;
 
 	glPushMatrix();
-    glPointSize(4);
+    glPointSize(5);
     glBegin(GL_POINTS);
             glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
     glEnd();

@@ -176,10 +176,15 @@ inline float VectorLength(const vec3_t a)	{
 }
 
 
-inline void VectorUnitVector(const vec3_t a, vec3_t result)	{
+inline bool VectorUnitVector(const vec3_t a, vec3_t result)	{
 	float length = VectorLength(a);
 
 	VectorDivide(a, length, result);
+
+	if( length == 0 )
+		return false;
+
+	return true;
 }
 
 inline void VectorNegate(const vec3_t a, vec3_t result)	{
@@ -194,6 +199,72 @@ inline void VectorPrint(const vec3_t v)	{
 
 inline void VectorPrint2f(const vec2_t v)	{
 	cout << "[" << v[0] << ", " << v[1] << "]";
+}
+
+/* From Quake III Arena, kinda...
+=====================
+PlaneFromPoints
+
+Returns false if the triangle is degenrate.
+The normal will point out of the clock for clockwise ordered points
+=====================
+*/
+inline bool planeFromPoints( plane_t* plane, const vec3_t a, const vec3_t b, const vec3_t c ) {
+	vec3_t	d1, d2;
+
+	VectorSubtract( b, a, d1 );
+	VectorSubtract( c, a, d2 );
+	VectorAdd(d1, d2, plane->origin);
+//	VectorAdd(d1, d2, plane->origin); // could just be a b or c too...
+	CrossProduct( d2, d1, plane->normal );
+
+	return VectorUnitVector(plane->normal, plane->normal);
+//		return false;
+//	}
+
+	// D value?
+//	plane[3] = DotProduct( a, plane );
+
+//	return true;
+}
+// End from Quake III Arena
+
+
+/*
+bool pointInPolygon(vector point, vector[] vertices, int numVertices)
+{
+    vector p = cross(vertices[numVertices-1] - point, vertices[0] - point);
+    for (int i = 0; i < numVertices - 1; i++)
+    {
+        vector q = cross(vertices[i] - point, vector[i+1] - point);
+        if (dot(p, q) < 0)
+            return false;
+    }
+    return true;
+}*/
+
+inline bool isPointInPolygon(polygon_t* poly, vec3_t point)	{
+	vec3_t p;
+	vec3_t a;
+	vec3_t b;
+	VectorSubtract(point, poly->points[poly->numPoints-1], a);
+	VectorSubtract(point, poly->points[0], b);
+	CrossProduct(a, b, p);
+
+	for(int i = 0; i < poly->numPoints - 1; i++)	{
+		vec3_t q;
+		vec3_t c;
+		vec3_t d;
+
+		VectorSubtract(point, poly->points[i], c);
+		VectorSubtract(point, poly->points[i+1], d);
+		CrossProduct(c, d, q);
+
+		if( DotProduct(p, q) < 0 )
+			return false;
+	}
+
+	return true;
 }
 
 inline float classifyPoint(const plane_t *plane, const vec3_t point)	{
@@ -264,6 +335,22 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	return 1;	// Indicate that we had an intersection
 }
 
+inline bool rayPlaneIntersect(const plane_t* plane, const vec3_t rayStart, const vec3_t rayDir, float *time)	{
+	float dot = DotProduct(plane->normal, rayDir);
+	float l2;
 
+	if( dot < EPSILON && dot > -EPSILON )
+		return 0;
+
+	l2 = DotProduct(plane->normal, plane->origin) / dot;
+
+	if( l2 < -EPSILON )
+		return 0;
+
+	(*time) = l2;
+
+
+
+}
 
 #endif /* SHARED_H_ */

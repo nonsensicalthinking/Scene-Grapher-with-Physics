@@ -25,7 +25,6 @@ typedef struct entity_s	{
 	bool hasExpired;
 
 	Mass* mass;	// Mass' current state
-	Mass* preMass;	// Mass' previous state
 
 	string md2name;
 
@@ -59,10 +58,8 @@ inline entity_t* createEntity()	{
 	ent->hasExpired = false;
 	ent->expired = 0;
 	ent->mass = NULL;
-	ent->preMass = NULL;
 	ent->md2name = "";
 	ent->collisionType = COLLISION_NONE;
-//	ent->curPos = ent->curMass->pos;
 }
 
 

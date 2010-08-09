@@ -24,6 +24,7 @@
 #include "Game.h"
 #include "Scene.h"
 #include "objloader.h"
+#include "shared.h"
 
 #define CAM_MOVE_RATE 1
 
@@ -50,7 +51,7 @@ class SpecialGame : public Game	{
 
 	bsp_node_t* bspRoot;
 	list<entity_t*> entityList;
-	list<list<entity_t*> > bspDynamicEntityLeafList;
+	list<list<entity_t*> > entityLeafList;
 
 	float timeElapsed;
 	float slowMotionRatio;
@@ -69,22 +70,30 @@ public:
 
 		ent->mass = new Mass(1);
 
-		vec3_t pos = {-24, 4, 19};
-		vec3_t end = {-38, 4, 32};
+		vec3_t pos = {-26.5, 2.5, 19};
+		vec3_t end = {-39.1, -1.5, 31.73};
 		vec3_t vel;
-		VectorSubtract(pos, end, vel);
+
+		//  start * a
+		// 		   \
+		//          \
+		//    end    * b
+		//
+
+		VectorAdd(pos, end, vel);
+
 		VectorUnitVector(vel, vel);
 		VectorScale(vel, speed, vel);
 		VectorCopy(pos, ent->mass->pos);
-		VectorNegate(vel, vel);
+//		VectorNegate(vel, vel);
 		VectorCopy(vel, ent->mass->vel);
 
 		// 5 seconds
 		ent->setTTL(2000);
-
+		ent->collisionType = COLLISION_SPHERE;
 		entityList.push_back(ent);
 
-		cout << "And the pitch..." << endl;
+//		cout << "And the pitch..." << endl;
 	}
 
 	// call this function to load different maps
@@ -127,11 +136,90 @@ public:
 		return NULL;
 	}
 
+	void entPolyCollision(entity_t* ent, polygon_t* poly)	{
+		switch( ent->collisionType )	{
+		case COLLISION_NONE:
+			break;
+		case COLLISION_BOX:
+			// TODO perform BOX + POLY COLLISION
+			break;
+		case COLLISION_SPHERE:
+			// TODO perform SPHERE + POLY COLLISION
+			float time;
+			plane_t* plane = new plane_t;
+			if( planeFromPoints(plane, poly->points[0], poly->points[1], poly->points[2]) )	{
+//					cout << "Looking for collision..." << endl;
+				vec3_t intersect;
+				vec3_t rayEnd;
+//				VectorUnitVector(ent->mass->vel, rayEnd);
+				VectorAdd(ent->mass->pos, ent->mass->vel, rayEnd);
+				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &time)) == 1 )	{
+					if( isPointInPolygon(poly, intersect) )	{
+						cout << "Time: " << time << endl;
+						cout << "Collision Occurred!" << endl;
+						cout << "Intersection Point: ";
+						VectorPrint(intersect);
+						cout << endl;
+						VectorCopy(ent->mass->prevPos, ent->mass->pos);
+						VectorNegate(ent->mass->vel, ent->mass->vel);
+					}
+				}
+			}
+			break;
+//		case COLLISION_CYLINDER:
+			// TODO perform CYLINDER + POLY COLLISION
+//			break;
+		}
+
+	}
+
+	void entEntCollision(entity_t* ent, entity_t* otherEnt)	{
+		// TODO Use flags to switch? can you set a case to box+sphere flag?
+	}
+
+	void collideWithWorld(list<polygon_t*> polyList, entity_t* ent)	{
+		list<polygon_t*>::iterator itr = polyList.begin();
+		for(; itr != polyList.end(); itr++)	{
+			entPolyCollision(ent, (*itr));
+		}
+	}
+
+/*	void collideWithOtherEntities(list<entity_t*> entList, entity_t* ent)	{
+		list<entity_t*>::iterator itr = entList.begin();
+		for(; itr != entList.end(); itr++)	{
+			if( entEntCollision(ent, (*itr)) )	{
+				// TODO Take appropirate action
+				cout << "ent collided with ent." << endl;
+			}
+		}
+	}
+*/
+	void insertEntityIntoBSP(entity_t* ent)	{
+		bsp_node_t* node = findBSPLeaf(ent->mass->pos);
+
+		// TODO Check for world collisions
+		collideWithWorld(node->getPolygonList(), ent);
+
+		// TODO Check for other entity collisions
+//		collideWithOtherEntities(node->getEntityList(), ent);
+
+		node->addEntity(ent);
+	}
+
+	void insertEntitiesIntoBSPTree()	{
+		list<entity_t*>::iterator itr = entityList.begin();
+
+		for(;itr != entityList.end(); itr++)
+			insertEntityIntoBSP((*itr));
+	}
+
+
 	// This is called once every time around the game loop.
 	virtual void advance(long ms)	{
 
 		if( !loaded )
 			return;
+
 
 		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
@@ -151,6 +239,9 @@ public:
 
 			for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
 			{
+				// remove all ents from BSP Tree
+				removeEntitiesFromBSPTree();
+
 				// for number of masses do
 				vector<entity_t*> removalList;
 
@@ -169,9 +260,13 @@ public:
 					cur->hasExpired = true;
 					entityList.remove(cur);
 					delete cur;	// TODO don't delete, clean out and put into free ent list.
-					cout << "Entity removed from scene! (" << entityList.size() << ")."<< endl;
+//					cout << "Entity removed from scene! (" << entityList.size() << ")."<< endl;
 				}
+
+				insertEntitiesIntoBSPTree();
 			}
+
+
 		}
 
 		getScene()->setEntityList(entityList);
@@ -266,15 +361,21 @@ public:
 
 	void createDynamicLeafList(bsp_node_t* root, bool start)	{
 		if( start )
-			bspDynamicEntityLeafList.clear();
+			entityLeafList.clear();
 
 		if( root->isLeaf() )	{
-			bspDynamicEntityLeafList.push_back(root->getDynamicObjectList());
+			entityLeafList.push_back(root->getEntityList());
 		}
 		else	{
 			createDynamicLeafList(root->front, false);
 			createDynamicLeafList(root->back, false);
 		}
+	}
+
+	void removeEntitiesFromBSPTree()	{
+		list<list<entity_t*> >::iterator itr;
+		for(itr=entityLeafList.begin(); itr != entityLeafList.end(); itr++)
+			(*itr).clear();
 	}
 
 	void addEntity(entity_t* ent)	{

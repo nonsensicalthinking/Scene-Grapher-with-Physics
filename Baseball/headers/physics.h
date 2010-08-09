@@ -19,6 +19,7 @@
 class Mass	{
 public:
 	float m;									// The mass value
+	vec3_t prevPos;							// previous position
 	vec3_t pos;								// Position in space
 	vec3_t vel;								// Velocity
 	vec3_t force;								// Force applied on this mass at an instance
@@ -48,7 +49,9 @@ public:
 		VectorDivide(force, m, velocityDelta);
 		VectorMA(vel, velocityDelta, dt, vel);
 
-		VectorMA(pos, vel, dt, pos);
+		VectorCopy(pos, prevPos);	// save old position
+
+		VectorMA(pos, vel, dt, pos);	// get new one!
 	}
 
 };

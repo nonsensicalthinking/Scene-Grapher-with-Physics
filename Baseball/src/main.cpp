@@ -64,7 +64,8 @@
 
 //int SCENE_ADVANCE_RATE = 5;
 
-int sceneAdvRate = 5;
+int sceneAdvRate = 3;
+int pitchSpeed = 120;
 
 #ifdef __LINUX__
 pthread_t gameThread;
@@ -131,7 +132,6 @@ Game* getGame()	{
 	return game;
 }
 
-int pitchSpeed;
 
 void cleanExit()	{
 
