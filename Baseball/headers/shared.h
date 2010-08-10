@@ -335,22 +335,6 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	return 1;	// Indicate that we had an intersection
 }
 
-inline bool rayPlaneIntersect(const plane_t* plane, const vec3_t rayStart, const vec3_t rayDir, float *time)	{
-	float dot = DotProduct(plane->normal, rayDir);
-	float l2;
 
-	if( dot < EPSILON && dot > -EPSILON )
-		return 0;
-
-	l2 = DotProduct(plane->normal, plane->origin) / dot;
-
-	if( l2 < -EPSILON )
-		return 0;
-
-	(*time) = l2;
-
-
-
-}
 
 #endif /* SHARED_H_ */

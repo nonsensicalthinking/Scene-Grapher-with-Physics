@@ -65,35 +65,20 @@ public:
 
 	// TODO Test ent TTL
 
-	void throwPitch(int speed)	{
+	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
 		entity_t* ent = createEntity();
 
-		ent->mass = new Mass(1);
+		ent->mass = new Mass(0.14);
 
-		vec3_t pos = {-26.5, 2.5, 19};
-		vec3_t end = {-39.1, -1.5, 31.73};
 		vec3_t vel;
-
-		//  start * a
-		// 		   \
-		//          \
-		//    end    * b
-		//
-
-		VectorAdd(pos, end, vel);
-
-		VectorUnitVector(vel, vel);
-		VectorScale(vel, speed, vel);
-		VectorCopy(pos, ent->mass->pos);
-//		VectorNegate(vel, vel);
+		VectorMA(standing, looking, speed, vel);
+		VectorCopy(standing, ent->mass->pos);
 		VectorCopy(vel, ent->mass->vel);
 
 		// 5 seconds
 		ent->setTTL(2000);
 		ent->collisionType = COLLISION_SPHERE;
 		entityList.push_back(ent);
-
-//		cout << "And the pitch..." << endl;
 	}
 
 	// call this function to load different maps
@@ -138,21 +123,26 @@ public:
 
 	void entPolyCollision(entity_t* ent, polygon_t* poly)	{
 		switch( ent->collisionType )	{
-		case COLLISION_NONE:
+		case COLLISION_NONE:	// You said it chief
 			break;
-		case COLLISION_BOX:
+		case COLLISION_BOX:		// Bounding Box vs Polygon
 			// TODO perform BOX + POLY COLLISION
 			break;
-		case COLLISION_SPHERE:
-			// TODO perform SPHERE + POLY COLLISION
+		case COLLISION_SPHERE:	// Sphere vs Polygon
+			// TODO create sphere aspect of this collision
 			float time;
 			plane_t* plane = new plane_t;
-			if( planeFromPoints(plane, poly->points[0], poly->points[1], poly->points[2]) )	{
-//					cout << "Looking for collision..." << endl;
+
+			// TODO figure out what to do if no normals are provided for a polygon
+			if( poly->hasNormals )	{
+				VectorCopy(poly->normpts[0], plane->normal);
+				VectorCopy(poly->points[0], plane->origin);
+
 				vec3_t intersect;
 				vec3_t rayEnd;
-//				VectorUnitVector(ent->mass->vel, rayEnd);
+
 				VectorAdd(ent->mass->pos, ent->mass->vel, rayEnd);
+
 				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &time)) == 1 )	{
 					if( isPointInPolygon(poly, intersect) )	{
 						cout << "Time: " << time << endl;
@@ -314,7 +304,7 @@ public:
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
 			case 'f':
-				throwPitch(pitchSpeed);
+				throwPitch(pitchSpeed, curScene->cam->origin, curScene->cam->normDir);
 				break;
 			case ESC_KEY:
 				curScene->exit();
