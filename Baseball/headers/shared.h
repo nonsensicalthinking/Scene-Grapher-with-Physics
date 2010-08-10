@@ -89,12 +89,13 @@ inline polygon_t* createPolygon()	{
 	return poly;
 }
 
-
-inline float degToRad(float deg)	{
-	return deg * PI_DIV_BY_180;
+inline void VectorPrint(const vec3_t v)	{
+	cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
 }
 
-
+inline void VectorPrint2f(const vec2_t v)	{
+	cout << "[" << v[0] << ", " << v[1] << "]";
+}
 
 inline void VectorInit(vec3_t vec)	{
 	vec[0] = 0;
@@ -111,16 +112,6 @@ inline void VectorCopy(const vec3_t a, vec3_t b)	{
 inline void VectorCopy2f(const vec2_t a, vec2_t b)	{
 	b[0] = a[0];
 	b[1] = a[1];
-}
-
-inline float DotProduct(const vec3_t a, const vec3_t b)	{
-	return ( (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]) );
-}
-
-inline void CrossProduct(const vec3_t a, const vec3_t b, vec3_t result)	{
-	result[0] = a[1]*b[2] - a[2]*b[1];
-	result[1] = a[2]*b[0] - a[0]*b[2];
-	result[2] = a[0]*b[1] - a[1]*b[0];
 }
 
 // subtracts vec3_t b from vec3_t a
@@ -176,15 +167,12 @@ inline float VectorLength(const vec3_t a)	{
 }
 
 
-inline bool VectorUnitVector(const vec3_t a, vec3_t result)	{
+inline float VectorUnitVector(const vec3_t a, vec3_t result)	{
 	float length = VectorLength(a);
 
 	VectorDivide(a, length, result);
 
-	if( length == 0 )
-		return false;
-
-	return true;
+	return length;
 }
 
 inline void VectorNegate(const vec3_t a, vec3_t result)	{
@@ -193,55 +181,16 @@ inline void VectorNegate(const vec3_t a, vec3_t result)	{
 	result[2] = -a[2];
 }
 
-inline void VectorPrint(const vec3_t v)	{
-	cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
+inline float DotProduct(const vec3_t a, const vec3_t b)	{
+	return ( (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]) );
 }
 
-inline void VectorPrint2f(const vec2_t v)	{
-	cout << "[" << v[0] << ", " << v[1] << "]";
+inline void CrossProduct(const vec3_t a, const vec3_t b, vec3_t result)	{
+	result[0] = a[1]*b[2] - a[2]*b[1];
+	result[1] = a[2]*b[0] - a[0]*b[2];
+	result[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-/* From Quake III Arena, kinda...
-=====================
-PlaneFromPoints
-
-Returns false if the triangle is degenrate.
-The normal will point out of the clock for clockwise ordered points
-=====================
-*/
-inline bool planeFromPoints( plane_t* plane, const vec3_t a, const vec3_t b, const vec3_t c ) {
-	vec3_t	d1, d2;
-
-	VectorSubtract( b, a, d1 );
-	VectorSubtract( c, a, d2 );
-	VectorAdd(d1, d2, plane->origin);
-//	VectorAdd(d1, d2, plane->origin); // could just be a b or c too...
-	CrossProduct( d2, d1, plane->normal );
-
-	return VectorUnitVector(plane->normal, plane->normal);
-//		return false;
-//	}
-
-	// D value?
-//	plane[3] = DotProduct( a, plane );
-
-//	return true;
-}
-// End from Quake III Arena
-
-
-/*
-bool pointInPolygon(vector point, vector[] vertices, int numVertices)
-{
-    vector p = cross(vertices[numVertices-1] - point, vertices[0] - point);
-    for (int i = 0; i < numVertices - 1; i++)
-    {
-        vector q = cross(vertices[i] - point, vector[i+1] - point);
-        if (dot(p, q) < 0)
-            return false;
-    }
-    return true;
-}*/
 
 inline bool isPointInPolygon(polygon_t* poly, vec3_t point)	{
 	vec3_t p;
@@ -335,6 +284,18 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	return 1;	// Indicate that we had an intersection
 }
 
+inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t result)	{
+	vec3_t r;
+	VectorScale(surfNorm, 2, r);
 
+	float f = DotProduct(incident, surfNorm);
+	VectorScale(r, f, result);
+
+	VectorSubtract(incident, result, result);
+}
+
+inline float degToRad(float deg)	{
+	return deg * PI_DIV_BY_180;
+}
 
 #endif /* SHARED_H_ */

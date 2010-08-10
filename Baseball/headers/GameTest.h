@@ -63,21 +63,21 @@ class SpecialGame : public Game	{
 
 public:
 
-	// TODO Test ent TTL
-
 	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
 		entity_t* ent = createEntity();
 
-		ent->mass = new Mass(0.14);
+		ent->mass = new Mass(1);
 
 		vec3_t vel;
 		VectorMA(standing, looking, speed, vel);
 		VectorCopy(standing, ent->mass->pos);
 		VectorCopy(vel, ent->mass->vel);
 
-		// 5 seconds
-		ent->setTTL(2000);
+		// 3 seconds
+		ent->setTTL(3000);
 		ent->collisionType = COLLISION_SPHERE;
+		ent->radius = 2;
+
 		entityList.push_back(ent);
 	}
 
@@ -129,7 +129,6 @@ public:
 			// TODO perform BOX + POLY COLLISION
 			break;
 		case COLLISION_SPHERE:	// Sphere vs Polygon
-			// TODO create sphere aspect of this collision
 			float time;
 			plane_t* plane = new plane_t;
 
@@ -145,20 +144,22 @@ public:
 
 				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &time)) == 1 )	{
 					if( isPointInPolygon(poly, intersect) )	{
-						cout << "Time: " << time << endl;
-						cout << "Collision Occurred!" << endl;
-						cout << "Intersection Point: ";
-						VectorPrint(intersect);
-						cout << endl;
-						VectorCopy(ent->mass->prevPos, ent->mass->pos);
-						VectorNegate(ent->mass->vel, ent->mass->vel);
+
+						vec3_t dist;
+						VectorSubtract(ent->mass->pos, intersect, dist);
+						float distSquared = DotProduct(dist, dist);
+						float rad = ent->radius + 0;	// no radius for polygon
+						if( distSquared <= (rad*rad) )	{
+							vec3_t reflect;
+							vec3_t incident;
+							float len = VectorUnitVector(ent->mass->vel, incident);
+							VectorReflect(incident, poly->normpts[0], reflect);
+							VectorScale(reflect, (len/3), ent->mass->vel);
+						}
 					}
 				}
 			}
 			break;
-//		case COLLISION_CYLINDER:
-			// TODO perform CYLINDER + POLY COLLISION
-//			break;
 		}
 
 	}
@@ -304,8 +305,30 @@ public:
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
 			case 'f':
-				throwPitch(pitchSpeed, curScene->cam->origin, curScene->cam->normDir);
+				vec3_t r;
+				VectorAdd(curScene->cam->origin, curScene->cam->normDir, r);
+				throwPitch(pitchSpeed, r, curScene->cam->normDir);
 				break;
+			case 'g':
+				vec3_t e1;
+				vec3_t r1;
+				r1[0] = -38;
+				r1[1] = 4;
+				r1[2] = 32;
+				vec3_t d1;
+				d1[0] = -42;
+				d1[1] = 4;
+				d1[2] = 36;
+
+				VectorSubtract(d1, r1, e1);
+				VectorUnitVector(e1, e1);
+
+				throwPitch(pitchSpeed, r1, e1);
+
+
+				break;
+
+
 			case ESC_KEY:
 				curScene->exit();
 				break;

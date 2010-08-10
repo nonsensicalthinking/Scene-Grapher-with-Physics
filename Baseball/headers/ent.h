@@ -29,6 +29,7 @@ typedef struct entity_s	{
 	string md2name;
 
 	int collisionType;
+	float radius;
 	// Bounding box def
 	// Sphere def
 	// Cylinder def
