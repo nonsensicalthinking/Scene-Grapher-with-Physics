@@ -13,7 +13,7 @@
 /*
  * TODO LIST for this file
  *
- * Empty for now, certainly not done with this file yet though.
+ * Fix lighting crap
  *
  *
  */
@@ -40,18 +40,13 @@
 
 using namespace std;
 
-// Scene Globals
 #define Z_NEAR		0.1
-#define Z_FAR		200
+#define Z_FAR		700	// this happens to be the diameter of the "skybox" for now
 
-
-// End Globals
 
 
 // TODO have this draw a model instead of just a point
 void Scene::drawEntity(entity_t* ent)	{
-
-	// FIXME there is something rotten in denmark
 	if( ent->hasExpired )
 		return;
 
@@ -61,11 +56,6 @@ void Scene::drawEntity(entity_t* ent)	{
             glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
     glEnd();
     glPopMatrix();
-/*
-    cout << "Drawing ent: ";
-    VectorPrint(ent->mass->pos);
-    cout << endl;
-*/
 }
 
 void Scene::drawEntityList(list<entity_t*> mlist)	{
@@ -85,14 +75,12 @@ void Scene::submitBSPTree(bsp_node_t* root)	{
 void Scene::cacheSky()	{
     skyCacheID = glGenLists(1);
     glNewList(skyCacheID, GL_COMPILE);
-
     glPushMatrix();
 	matsManager->enableSphereMapping();
 	matsManager->bindTexture(SKY_TEXTURE);
-	gluSphere(sky, 125, 10, 5);
+	gluSphere(sky, 350, 10, 5);
 	matsManager->disableSphereMapping();
 	glPopMatrix();
-
     glEndList();
 }
 
@@ -107,7 +95,6 @@ Scene::Scene(int width, int height)
 	cam = new Camera();
 	polygonCount = 0;	// count of static polygons in the entire scene
 	bspRoot = NULL;
-//	entList = NULL;
 }
 
 
@@ -143,16 +130,18 @@ void Scene::resizeSceneSize(int width, int height)	{
 
 
 void Scene::performLighting()	{
-	GLfloat spec[]={1.0, 1.0 ,1.0 ,1.0};      //sets specular highlight
-	GLfloat posl[]={0,700,0,0};               //position of light source
-	GLfloat amb[]={0.8f, 0.8f, 0.8f ,1.0f};   //global ambient
-	GLfloat amb2[]={0.8f, 0.8f, 0.8f ,1.0f};  //ambiance of light source
-	GLfloat df = 100.0;
+	// FIXME Part of the fix to the lighting problem is removing all occurrences of glColor3f();
 
+	GLfloat spec[]={1.0, 1.0, 1.0, 0};      //sets specular highlight
+	GLfloat posl[]={-21, 33, 18, 0};               //position of light source
+	GLfloat amb[]={0.8f, 0.8f, 0.8f, 0};   //global ambient
+	GLfloat amb2[]={0.8f, 0.8f, 0.8f, 0};  //ambiance of light source
+	GLfloat df = 10.0;
+
+	glEnable(GL_LIGHTING);
 	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
 	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
 
-	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0,GL_POSITION,posl);
 	glLightfv(GL_LIGHT0,GL_AMBIENT,amb2);
 	glEnable(GL_LIGHT0);
@@ -227,9 +216,7 @@ void Scene::render()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// configure the scene's lighting
-	// TODO Find out if this has to be called every time or
-	// as a state system (probably as a state system right?)
+	// TODO FIX LIGHTING, ITS FUCKED TO HELL I SAY!
 	performLighting();
 
 	// position camera
@@ -237,7 +224,9 @@ void Scene::render()
 				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 
-	// Draw the scene
+	//////////////////////////////////
+	// 		Scene Drawing Area		//
+	// v	v	v	v	v	v	v	//
 	if( bspRoot )	{
 		// TODO find a better way to draw background sky
 		glPushMatrix();
@@ -252,7 +241,6 @@ void Scene::render()
 	///////////////////////////////////
 	// CONSOLE AND HUD DRAWING AREA  //
 	// v	v	v	v	v	v	v	 //
-	///////////////////////////////////
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
 	glDisable(GL_LIGHTING);

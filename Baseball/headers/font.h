@@ -130,7 +130,8 @@ public:
 	    if (set > 1)
 	    	set = 1;
 
-		glEnable(GL_TEXTURE_2D);
+	    glDisable(GL_LIGHTING);
+	    glEnable(GL_TEXTURE_2D);
 		textures->bindTexture(fontPath);
 	    glDisable(GL_DEPTH_TEST);
 	    glMatrixMode(GL_PROJECTION);
@@ -140,6 +141,7 @@ public:
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 				glLoadIdentity();
+				// TODO REMOVE THIS WHEN LIGHTING IS RE-IMPLEMENTED
 				glColor3f(1.0, 1.0, 1.0);
 				glTranslated(x, y, 0);
 				glListBase(base - 32 + (128 * set));
@@ -150,6 +152,7 @@ public:
 	    glPopMatrix();
 	    glEnable(GL_DEPTH_TEST);
 		glDisable(GL_TEXTURE_2D);
+	    glEnable(GL_LIGHTING);
 	}
 
 };

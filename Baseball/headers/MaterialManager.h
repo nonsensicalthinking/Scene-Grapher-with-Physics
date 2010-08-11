@@ -10,7 +10,7 @@
  *	TODO Make loadJPEG function so we can use alpha layers
  *	TODO Make loadPNG function so we can use alpha layers
  *
- *	TODO Make it so loading can be done with any type of mipmap filter
+ *	TODO Get Material Properties working, check the enableMaterial()
  *
  *
  *
@@ -96,6 +96,8 @@ public:
 
 
 		bindTexture(mat->map_Kd);
+/*
+		// TODO GET THE MATERIAL PROPERTIES WORKING!!
 		glMaterialfv(GL_FRONT, GL_AMBIENT, mat->Ka);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->Kd);
 		// TODO use mat->illum to define how specular is used
@@ -103,7 +105,7 @@ public:
 		// TODO implement light emission materials
 //		glMaterialfv(GL_FRONT, GL_EMISSION, mat-> );
 		glMaterialf(GL_FRONT, GL_SHININESS, mat->Ns);
-
+*/
 		return true;
 	}
 
@@ -132,22 +134,19 @@ public:
 		glGenTextures(1, &tid);
 		glBindTexture(GL_TEXTURE_2D, tid);
 
-		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // GL_LINEAR_MIPMAP_NEAREST);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);			// Set The Texture Generation Mode For S To Sphere Mapping ( NEW )
-		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);			// Set The Texture Generation Mode For T To Sphere Mapping ( NEW )
-
-		gluBuild2DMipmaps( GL_TEXTURE_2D, 3, bmp->width, bmp->height,
-		                       GL_RGB, GL_UNSIGNED_BYTE, bmp->data );
+		gluBuild2DMipmaps( GL_TEXTURE_2D, 3, bmp->width, bmp->height, GL_RGB, GL_UNSIGNED_BYTE, bmp->data );
 
 		textures[str] = tid;
 
-		// remove the bitmap data, its in opengl now
 		delete bmp;
 		return true;
 	}
@@ -175,12 +174,6 @@ public:
 		return true;
 	}
 };
-
-
-
-
-
-
 
 
 #endif /* TEXTURE_H_ */

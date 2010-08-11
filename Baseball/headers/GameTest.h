@@ -26,24 +26,17 @@
 #include "objloader.h"
 #include "shared.h"
 
-#define CAM_MOVE_RATE 1
+#define CAM_MOVE_RATE 	1
+#define PITCH_RATE		1
+#define YAW_RATE		1
+#define ROLL_RATE		1
 
-// TODO move this into the Game you extend
-const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
-// TODO Remove these 3 whence the game is up and going
-//vec3_t startPos = {0.0, 0.0, 0.0};
-//vec3_t startAngle = {10.0, 15.0, 0.0};
-
-
-
-#define PITCH_RATE	1
-#define YAW_RATE	1
-#define ROLL_RATE	1
-
-#define SKY_TEXTURE	"bright_clouds.bmp"
+#define SKY_TEXTURE		"bright_clouds.bmp"
 
 // TODO REMOVE THIS
 extern int pitchSpeed;
+
+const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 
 // inherit the game class
@@ -74,7 +67,7 @@ public:
 		VectorCopy(vel, ent->mass->vel);
 
 		// 3 seconds
-		ent->setTTL(3000);
+		ent->setTTL(6000);
 		ent->collisionType = COLLISION_SPHERE;
 		ent->radius = 2;
 
@@ -129,10 +122,8 @@ public:
 			// TODO perform BOX + POLY COLLISION
 			break;
 		case COLLISION_SPHERE:	// Sphere vs Polygon
-			float time;
 			plane_t* plane = new plane_t;
 
-			// TODO figure out what to do if no normals are provided for a polygon
 			if( poly->hasNormals )	{
 				VectorCopy(poly->normpts[0], plane->normal);
 				VectorCopy(poly->points[0], plane->origin);
@@ -142,23 +133,30 @@ public:
 
 				VectorAdd(ent->mass->pos, ent->mass->vel, rayEnd);
 
-				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &time)) == 1 )	{
+				float discard;
+				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &discard)) == 1 )	{
 					if( isPointInPolygon(poly, intersect) )	{
-
 						vec3_t dist;
 						VectorSubtract(ent->mass->pos, intersect, dist);
 						float distSquared = DotProduct(dist, dist);
 						float rad = ent->radius + 0;	// no radius for polygon
-						if( distSquared <= (rad*rad) )	{
+						if( distSquared <= (rad*rad) )	{	// is it within striking distance?
 							vec3_t reflect;
 							vec3_t incident;
 							float len = VectorUnitVector(ent->mass->vel, incident);
+
+							cout << "Old Speed: " << len << " New Speed: " << len/3 << endl;
+
 							VectorReflect(incident, poly->normpts[0], reflect);
 							VectorScale(reflect, (len/3), ent->mass->vel);
 						}
 					}
 				}
 			}
+			else	{	// Polygon has no normals... planeFromPoints()?
+				// TODO Figure out how to handle this
+			}
+
 			break;
 		}
 
@@ -188,7 +186,6 @@ public:
 	void insertEntityIntoBSP(entity_t* ent)	{
 		bsp_node_t* node = findBSPLeaf(ent->mass->pos);
 
-		// TODO Check for world collisions
 		collideWithWorld(node->getPolygonList(), ent);
 
 		// TODO Check for other entity collisions
@@ -210,7 +207,6 @@ public:
 
 		if( !loaded )
 			return;
-
 
 		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
@@ -274,22 +270,22 @@ public:
 			case '`':	// active console
 				curScene->con->consoleActive = !curScene->con->consoleActive;
 				break;
-			case 'a':	// omg our first control over the scene!
+			case 'a':
 				curScene->cam->moveCameraLeft(CAM_MOVE_RATE);
 				break;
-			case 'd':	// omg our first control over the scene!
+			case 'd':
 				curScene->cam->moveCameraRight(CAM_MOVE_RATE);
 				break;
-			case 'w':	// omg our first control over the scene!
+			case 'w':
 				curScene->cam->moveCameraForward(CAM_MOVE_RATE);
 				break;
-			case 's':	// omg our first control over the scene!
+			case 's':
 				curScene->cam->moveCameraBack(CAM_MOVE_RATE);
 				break;
-			case 'q':	// omg our first control over the scene!
+			case 'q':
 				curScene->cam->moveCameraUp(CAM_MOVE_RATE);
 				break;
-			case 'e':	// omg our first control over the scene!
+			case 'e':
 				curScene->cam->moveCameraDown(CAM_MOVE_RATE);
 				break;
 			case 'z':
@@ -324,8 +320,6 @@ public:
 				VectorUnitVector(e1, e1);
 
 				throwPitch(pitchSpeed, r1, e1);
-
-
 				break;
 
 
