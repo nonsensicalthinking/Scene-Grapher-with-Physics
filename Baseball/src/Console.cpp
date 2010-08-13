@@ -112,7 +112,8 @@ void Console::Draw()	{
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 			glLoadIdentity();
-			glColor3f(0.0, 0.0, 0.0);
+			GLfloat emis[] = {0.0, 0.0, 0.0};	// Make it black
+			glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emis);
 			glBegin(GL_QUADS);
 			glVertex2i(0,(lines-4)*lineHeight);
 			glVertex2i(screenWidth, (lines-4)*lineHeight);

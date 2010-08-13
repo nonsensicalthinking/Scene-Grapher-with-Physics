@@ -181,8 +181,13 @@ int Sys_Milliseconds (void)
 #endif // __LINUX__
 
 void init()	{
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	glClearDepth(1.0f);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
@@ -190,9 +195,8 @@ void init()	{
 
   	glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-	glShadeModel(GL_SMOOTH);
+
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_COLOR_MATERIAL);
 
 	materials = new MaterialManager();
 	curScene = new Scene(SCREEN_WIDTH, SCREEN_HEIGHT);

@@ -2,8 +2,8 @@
 
   File: physics.h
 	Portions of the code in this file was derived from the works of:
-	Erkin Tunca for http://nehe.gamedev.net
-
+	Erkin Tunca for http://nehe.gamedev.net/
+ 	More specifically the introduction to physical simulations lesson.
 	Thanks for the lesson.
 
 **************************************************************************/
@@ -49,7 +49,7 @@ public:
 		VectorDivide(force, m, velocityDelta);
 		VectorMA(vel, velocityDelta, dt, vel);
 
-		VectorCopy(pos, prevPos);	// save old position
+		VectorCopy(pos, prevPos);		// save old position
 
 		VectorMA(pos, vel, dt, pos);	// get new one!
 	}
@@ -67,15 +67,6 @@ public:
 		delete(mass);
 		mass = NULL;
 	}
-
-	/*
-	Mass* getMass(int index)	{
-		if (index < 0 || index >= numOfMasses)
-			return NULL;
-
-		return masses[index];
-	}
-	*/
 
 	virtual void init(Mass* mass)	{
 		mass->init();

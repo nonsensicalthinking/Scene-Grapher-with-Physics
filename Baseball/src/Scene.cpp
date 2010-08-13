@@ -84,7 +84,6 @@ void Scene::cacheSky()	{
     glEndList();
 }
 
-
 Scene::Scene(int width, int height)
 {
 	sceneWidth = width;
@@ -130,26 +129,46 @@ void Scene::resizeSceneSize(int width, int height)	{
 
 
 void Scene::performLighting()	{
-	// FIXME Part of the fix to the lighting problem is removing all occurrences of glColor3f();
+	GLfloat df = 1.0;
+	GLfloat amb[]=	{0.5, 0.5, 0.5, 1};   		//global ambient
 
-	GLfloat spec[]={1.0, 1.0, 1.0, 0};      //sets specular highlight
-	GLfloat posl[]={-21, 33, 18, 0};               //position of light source
-	GLfloat amb[]={0.8f, 0.8f, 0.8f, 0};   //global ambient
-	GLfloat amb2[]={0.8f, 0.8f, 0.8f, 0};  //ambiance of light source
-	GLfloat df = 10.0;
+	GLfloat amb2[]=	{1, 1, 1, 1};  		//ambiance of light source
+	GLfloat diff[]=	{1.0, 1.0, 1.0, 1.0};	// diffuse light
+	GLfloat spec[]=	{1.0, 1.0, 1.0, 1.0};      	//sets specular highlight
+	GLfloat posl[]=	{-21, 33, 18, 1};            //position of light source
 
+//	GLfloat posL1[] = {0, 5, 0};
+//	GLfloat spotDir[] = {0, -1, 0};
+
+
+
+	glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
+//	glMaterialfv(GL_FRONT, GL_SHININESS, &df);
 	glEnable(GL_LIGHTING);
-	glMaterialfv(GL_FRONT,GL_SPECULAR,spec);
-	glMaterialfv(GL_FRONT,GL_SHININESS,&df);
-
-	glLightfv(GL_LIGHT0,GL_POSITION,posl);
-	glLightfv(GL_LIGHT0,GL_AMBIENT,amb2);
 	glEnable(GL_LIGHT0);
 
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
+	// global ambiance
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
+	glShadeModel(GL_SMOOTH);
 
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
+	// Light 0
+	glLightfv(GL_LIGHT0, GL_AMBIENT, amb2);
+//	glLightfv(GL_LIGHT0, GL_DIFFUSE, diff);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	glLightfv(GL_LIGHT0, GL_POSITION, posl);
+
+//	glEnable(GL_COLOR_MATERIAL);
+//	glColorMaterial(GL_FRONT, GL_AMBIENT);
+
+	// Light 1
+//	glLightfv(GL_LIGHT1, GL_AMBIENT, amb2);
+//	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDir);
+//	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 15.f);
+//	glLightfv(GL_LIGHT1, GL_SPECULAR, spec);
+//	glLightfv(GL_LIGHT1, GL_POSITION, posL1);
+//	glEnable(GL_LIGHT1);
+
+
 }
 
 void Scene::glCachePolygon(polygon_t* polygon)	{
@@ -212,17 +231,18 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 
 void Scene::render()
 {
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	// TODO FIX LIGHTING, ITS FUCKED TO HELL I SAY!
-	performLighting();
 
 	// position camera
 	gluLookAt(	cam->origin[0], cam->origin[1], cam->origin[2],	// camera origin
 				cam->dir[0], cam->dir[1], cam->dir[2],		// eye looking @ this vertex
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
+
+	performLighting();
 
 	//////////////////////////////////
 	// 		Scene Drawing Area		//
@@ -230,30 +250,39 @@ void Scene::render()
 	if( bspRoot )	{
 		// TODO find a better way to draw background sky
 		glPushMatrix();
+		// Make the sky emit light!
+		GLfloat emis[] = {0.4, 0.4, 0.4};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emis);
 		glCallList(skyCacheID);
 		glPopMatrix();
 
 		renderBSPTree(bspRoot);
 
+		// as of right now we have to draw the entities
+		// Separately because they're nearly always
+		// being added and removed from the bsp tree to
+		// check for collisions.
 		drawEntityList(entList);
 	}
 
-	///////////////////////////////////
-	// CONSOLE AND HUD DRAWING AREA  //
-	// v	v	v	v	v	v	v	 //
+	/////////////////////////////
+	// Lighting Disabled Area  //
+	// v	v	v	v	v	v  //
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
-	glDisable(GL_LIGHTING);
+//	glDisable(GL_LIGHTING);
 
 	// Draw the console if open
 	if( con->consoleActive )
 		con->Draw();
+
 
 	// FIXME TEMPORARY, FIND A BETTER WAY TO DO THIS
 	stringstream s;
 	s << "FPS: " << frameRate;
 	con->font->glPrint(0, 0, s.str().c_str(), 0);
 	// END FIXME
+
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }

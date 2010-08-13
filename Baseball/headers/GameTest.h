@@ -31,7 +31,7 @@
 #define YAW_RATE		1
 #define ROLL_RATE		1
 
-#define SKY_TEXTURE		"bright_clouds.bmp"
+#define SKY_TEXTURE		"partly_cloudy.bmp"
 
 // TODO REMOVE THIS
 extern int pitchSpeed;

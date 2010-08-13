@@ -96,7 +96,7 @@ public:
 
 
 		bindTexture(mat->map_Kd);
-/*
+
 		// TODO GET THE MATERIAL PROPERTIES WORKING!!
 		glMaterialfv(GL_FRONT, GL_AMBIENT, mat->Ka);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->Kd);
@@ -105,7 +105,7 @@ public:
 		// TODO implement light emission materials
 //		glMaterialfv(GL_FRONT, GL_EMISSION, mat-> );
 		glMaterialf(GL_FRONT, GL_SHININESS, mat->Ns);
-*/
+
 		return true;
 	}
 

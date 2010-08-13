@@ -1,6 +1,10 @@
 /*
  * shared.h
  *
+ *	This header contains frequently used Vector Math functions
+ *	and some ray tracing stuff.
+ *
+ *
  *  Created on: Jun 4, 2010
  *      Author: Derek Brooks
  */
@@ -51,9 +55,6 @@ typedef struct polygon_s	{
 	int numPoints;
 	vec3_t points[MAX_POLY_POINTS];
 
-	// TODO When the BSP is partitioning polygons, we
-	// need to resize the texpts along with it, normals
-	// will stay the same, but texpts needs recalculation.
 	bool isTextured;
 	vec2_t texpts[MAX_POLY_POINTS];
 
@@ -89,6 +90,7 @@ inline polygon_t* createPolygon()	{
 	return poly;
 }
 
+// Begin Vector Functions
 inline void VectorPrint(const vec3_t v)	{
 	cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
 }
@@ -143,6 +145,8 @@ inline void VectorScale2f(const vec2_t a, const float scale, vec2_t result)	{
 	result[1] = a[1] * scale;
 }
 
+// TODO Change this to multiply a fractional value instead of dividing by divisor
+// float fractVal = 1 / divisor;
 inline void VectorDivide(const vec3_t a, const float divisor, vec3_t result)	{
 	result[0] = a[0] / divisor;
 	result[1] = a[1] / divisor;
@@ -169,9 +173,7 @@ inline float VectorLength(const vec3_t a)	{
 
 inline float VectorUnitVector(const vec3_t a, vec3_t result)	{
 	float length = VectorLength(a);
-
 	VectorDivide(a, length, result);
-
 	return length;
 }
 
@@ -186,12 +188,15 @@ inline float DotProduct(const vec3_t a, const vec3_t b)	{
 }
 
 inline void CrossProduct(const vec3_t a, const vec3_t b, vec3_t result)	{
-	result[0] = a[1]*b[2] - a[2]*b[1];
-	result[1] = a[2]*b[0] - a[0]*b[2];
-	result[2] = a[0]*b[1] - a[1]*b[0];
+	result[0] = (a[1] * b[2]) - (a[2] * b[1]);
+	result[1] = (a[2] * b[0]) - (a[0] * b[2]);
+	result[2] = (a[0] * b[1]) - (a[1] * b[0]);
 }
 
+// End Vector Functions
 
+
+// Begin Geometric Functions
 inline bool isPointInPolygon(polygon_t* poly, vec3_t point)	{
 	vec3_t p;
 	vec3_t a;
@@ -216,10 +221,12 @@ inline bool isPointInPolygon(polygon_t* poly, vec3_t point)	{
 	return true;
 }
 
+// Which side of the plane is this point on?
 inline float classifyPoint(const plane_t *plane, const vec3_t point)	{
 	return DotProduct(plane->normal, point) - DotProduct(plane->normal, plane->origin);
 }
 
+// Which side of the plane is this polygon on? (relies on classifyPoint())
 inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	int x;
 	bool hasFront = false;
@@ -255,6 +262,7 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	return -99;	// Error of sorts happened.
 }
 
+// For all intensive purposes this is a ray-plane intersection
 inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect, float *fractSect)	{
 	vec3_t u;
 	vec3_t w;
@@ -266,31 +274,30 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	float denominator = DotProduct(plane->normal, u);
 
 	if( fabs(denominator) < EPSILON ) {          // segment is parallel to plane
-		if (numerator == 0)                     // segment lies in plane
-			return 2;
+		if (numerator == 0)	// segment is coincident with plane
+			return 2;	// no intersection
 		else
-			return 0;                   // no intersection
+			return 0;	// no intersection
 	}
 
-	// they are not parallel
-	// compute intersect param
+	// at this point they are not parallel
+	// compute intersect parameter
 	(*fractSect) = numerator / denominator;
 
 	if( (*fractSect) < 0 || (*fractSect) > 1 )
-		return 0;                       // no intersection
+		return 0;	// no intersection
 
 	VectorMA( pointA, u, (*fractSect), intersect);
 
 	return 1;	// Indicate that we had an intersection
 }
 
+// Returns reflection vector (of unit length) in result from given inputs
 inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t result)	{
 	vec3_t r;
 	VectorScale(surfNorm, 2, r);
-
 	float f = DotProduct(incident, surfNorm);
 	VectorScale(r, f, result);
-
 	VectorSubtract(incident, result, result);
 }
 

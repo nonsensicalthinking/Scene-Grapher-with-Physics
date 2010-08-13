@@ -141,8 +141,8 @@ public:
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 				glLoadIdentity();
-				// TODO REMOVE THIS WHEN LIGHTING IS RE-IMPLEMENTED
-				glColor3f(1.0, 1.0, 1.0);
+				GLfloat emis[] = {0.0, 0.0, 0.0};
+				glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emis);
 				glTranslated(x, y, 0);
 				glListBase(base - 32 + (128 * set));
 				glCallLists(strlen(string), GL_BYTE, string);
