@@ -24,11 +24,6 @@
 
 // The over all TODO list for the program
 //
-// TODO Fix Camera Class so it can do all directions
-//		with focal point adjustment too.
-//
-// TODO Implement collision detection
-//
 // TODO Devise strategy for sending network data, delta packets maybe?
 //		Select model for hosting games, design database for statistics.
 //
@@ -56,13 +51,6 @@
 // Definitions
 #define SCREEN_WIDTH 		800
 #define SCREEN_HEIGHT 		600
-
-// The rate at which to advance the scene
-// FIXME: This might have implications in other
-// operations such as animation.
-//#define SCENE_ADVANCE_RATE	5
-
-//int SCENE_ADVANCE_RATE = 5;
 
 int sceneAdvRate = 3;
 int pitchSpeed = 120;
@@ -134,7 +122,6 @@ Game* getGame()	{
 
 
 void cleanExit()	{
-
 	game->killGame();	// stop game thread first
 
 	delete game;
@@ -205,7 +192,6 @@ void init()	{
 				// see the function at the top of file.
 }
 
-
 void changeSize(int w, int h)	{
 	curScene->resizeSceneSize(w,h);
 }
@@ -245,7 +231,6 @@ void processSpecialKeys(int key, int x, int y) {
 	game->specialKeyPressedEvent(key, x, y);
 }
 
-
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -255,6 +240,7 @@ int main(int argc, char **argv) {
 	glutCreateWindow(GAME_TITLE);
 
 	init();
+
 	// Set GLUT Call backs
 	glutDisplayFunc(draw);
 	glutIdleFunc(draw);
@@ -287,8 +273,6 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
-
-
 
 
 
