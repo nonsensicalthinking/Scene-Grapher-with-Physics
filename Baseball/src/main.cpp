@@ -263,7 +263,26 @@ int main(int argc, char **argv) {
 	glutKeyboardFunc(processNormalKeys);
 	glutSpecialFunc(processSpecialKeys);
 
+	// Process startup commands.
+	int processed = 1;	// start at the first real argument
+	// Odd indices are commands, even indices are values of said commands
+	while( argc > processed )	{
+		if( !strcmp(argv[processed], "+map") )	{
+			game->load(argv[processed+1]);
+			cout << "Starting map: " << argv[processed+1] << endl;
+		}
+		else if( !strcmp(argv[processed], "+echo") )	{
+			cout << "Echoing: " << argv[processed+1] << endl;
+		}
+		else	{
+			cout << "Invalid startup argument: " << argv[processed] << endl;
+		}
 
+		processed += 2;
+	}
+
+
+	// This rodeo is fixin' to kick off...
 	glutMainLoop();
 
 	return 0;
