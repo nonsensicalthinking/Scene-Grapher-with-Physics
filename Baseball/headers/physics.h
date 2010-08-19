@@ -1,7 +1,7 @@
 /**************************************************************************
 
   File: physics.h
-	Portions of the code in this file was derived from the works of:
+	Portions of the code in this file were derived from the works of:
 	Erkin Tunca for http://nehe.gamedev.net/
  	More specifically the introduction to physical simulations lesson.
 	Thanks for the lesson.
@@ -15,14 +15,49 @@
 #include <math.h>
 #include "shared.h"
 
-// class Mass			---> An object to represent a mass
+extern int sceneAdvRate;
+
+// Returns angular speed in rad/ms
+inline float RPMtoAngularSpeed(float rpm)	{
+	return (TWO_PI_DIV_BY_60 * rpm) * (ONE_MILLISECOND * sceneAdvRate);
+}
+
+// this only does drag coefficient for baseballs
+// FIXME make this an index table instead
+inline float getDragCoeff(int speed)	{
+	float drag = 0.0;
+
+	if( speed > 100 )
+		drag = 0.22;
+	else if( speed > 90 )
+		drag = 0.275;
+	else if( speed > 80 )
+		drag = 0.3;
+	else if( speed > 70 )
+		drag = 0.4;
+	else if( speed > 60 )
+		drag = 0.55;
+	else if( speed < 60 )
+		drag = 0.6;
+	else
+		drag = 0.6;
+
+	return drag;
+}
+
+
 class Mass	{
 public:
-	float m;									// The mass value
-	vec3_t prevPos;							// previous position
-	vec3_t pos;								// Position in space
-	vec3_t vel;								// Velocity
-	vec3_t force;								// Force applied on this mass at an instance
+	float m;					// The mass value
+	float rotationSpeed;		// In RPM?
+	float instantSpeed;			// instantaneousSpeed
+
+	vec3_t prevPos;				// previous position
+	vec3_t pos;					// Position in space
+	vec3_t vel;					// Velocity
+	vec3_t force;				// Force applied on this mass at an instance
+	vec3_t rotationAxis;		// Axis of rotation
+
 
 	Mass(float m)	{
 		this->m = m;
@@ -38,11 +73,6 @@ public:
 		force[2] = 0;
 	}
 
-//	  void simulate(float dt) method calculates the new velocity and new position of
-//	  the mass according to change in time (dt). Here, a simulation method called
-//	  "The Euler Method" is used. The Euler Method is not always accurate, but it is
-//	  simple. It is suitable for most of physical simulations that we know in common
-//	  computer and video games.
 	void simulate(float dt)	{
 		vec3_t velocityDelta;
 
@@ -87,6 +117,52 @@ public:
 
 };
 
+
+// Physics of a baseball in flight
+class BaseballPhysics : public Simulation	{
+public:
+	vec3_t gravitation;													//the gravitational acceleration
+
+	BaseballPhysics(const vec3_t gravitation) : Simulation()	{																		//Vector3D gravitation, is the gravitational acceleration
+		VectorCopy(gravitation, this->gravitation);
+	}
+
+	virtual void solve(Mass* mass)	{
+		// Do gravity
+		vec3_t gravity;
+		VectorScale(gravitation, mass->m, gravity);
+		mass->applyForce(gravity);
+		float dragCoeff = getDragCoeff(mass->instantSpeed);
+
+		// Do Aerodynamic Drag
+		vec3_t dragForce;
+		VectorScale(mass->vel, dragCoeff, dragForce);
+		VectorNegate(dragForce, dragForce);
+		mass->applyForce(dragForce);
+
+		// Do Magnus Force
+		if( mass->rotationSpeed != 0 )	{
+			vec3_t result;
+			mass->instantSpeed = VectorLength(mass->vel);
+
+// its a beautiful thing!
+//			cout << "Speed: " << mass->instantSpeed << endl;
+
+			CrossProduct(NORMAL_Y, mass->vel, result);
+			VectorScale(result, dragCoeff, result);
+
+			float rotSpeedRad = RPMtoAngularSpeed(mass->rotationSpeed);
+			VectorScale(result, rotSpeedRad, result);
+
+			mass->applyForce(result);
+		}
+
+	}
+	
+};
+
+
+
 //  class ConstantVelocity is derived from class Simulation
 //  It creates 1 mass with mass value 1 kg and sets its velocity to (1.0f, 0.0f, 0.0f)
 //  so that the mass moves in the x direction with 1 m/s velocity.
@@ -103,31 +179,12 @@ public:
 
 };
 */
-//	class MotionUnderGravitation is derived from class Simulation
-//	It creates 1 mass with mass value 1 kg and sets its velocity to (10.0f, 15.0f, 0.0f) and its position to
-//	(-10.0f, 0.0f, 0.0f). The purpose of this application is to apply a gravitational force to the mass and
-//	observe the path it follows. The above velocity and position provides a fine projectile path with a
-//	9.81 m/s/s downward gravitational acceleration. 9.81 m/s/s is a very close value to the gravitational
-//	acceleration we experience on the earth.
-class MotionUnderGravitation : public Simulation	{
-public:
-	vec3_t gravitation;													//the gravitational acceleration
 
-	MotionUnderGravitation(const vec3_t gravitation) : Simulation()	{																		//Vector3D gravitation, is the gravitational acceleration
-		VectorCopy(gravitation, this->gravitation);
-	}
 
-	virtual void solve(Mass* mass)	{
-		vec3_t force;
-		VectorScale(gravitation, mass->m, force);
-		mass->applyForce(force);
-	}
-	
-};
 
 //	class MassConnectedWithSpring is derived from class Simulation
 //	It creates 1 mass with mass value 1 kg and binds the mass to an arbitrary constant point with a spring.
-//	This point is refered as the connectionPos and the spring has a springConstant value to represent its
+//	This point is referred as the connectionPos and the spring has a springConstant value to represent its
 //	stiffness.
 /*
 class MassConnectedWithSpring : public Simulation	{

@@ -44,14 +44,16 @@ using namespace std;
 #define Z_FAR		700	// this happens to be the diameter of the "skybox" for now
 
 
+#define BASEBALLSIZEINMETERS 0.0762
 
 // TODO have this draw a model instead of just a point
 void Scene::drawEntity(entity_t* ent)	{
 	if( ent->hasExpired )
 		return;
 
+
 	glPushMatrix();
-    glPointSize(5);
+    glPointSize(1);
     glBegin(GL_POINTS);
             glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
     glEnd();

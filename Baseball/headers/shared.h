@@ -32,6 +32,9 @@ using namespace std;
 #define PI					3.14159265
 #define PI_DIV_BY_180		PI/180.0
 #define ONE_RADIAN			PI_DIV_BY_180
+#define TWO_PI_DIV_BY_60	(2*PI)/60
+#define ONE_MILLISECOND		0.001
+
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -42,6 +45,7 @@ const vec3_t NORMAL_X = {1.0, 0.0, 0.0};
 const vec3_t NORMAL_Y = {0.0, 1.0, 0.0};
 const vec3_t NORMAL_Z = {0.0, 0.0, 1.0};
 
+const vec3_t ZERO_VECTOR = {0.0, 0.0, 0.0};
 
 typedef struct plane_s	{
 	vec3_t origin;
@@ -193,6 +197,14 @@ inline void CrossProduct(const vec3_t a, const vec3_t b, vec3_t result)	{
 	result[2] = (a[0] * b[1]) - (a[1] * b[0]);
 }
 
+inline float VectorDistance(const vec3_t a, const vec3_t b)	{
+	int x = b[0]-a[0];
+	int y = b[1]-a[1];
+	int z = b[2]-a[2];
+
+	return sqrt( (x*x)+(y*y)+(z*z) );
+}
+
 // End Vector Functions
 
 
@@ -304,5 +316,6 @@ inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t r
 inline float degToRad(float deg)	{
 	return deg * PI_DIV_BY_180;
 }
+
 
 #endif /* SHARED_H_ */

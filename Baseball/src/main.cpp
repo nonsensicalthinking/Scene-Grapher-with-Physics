@@ -91,22 +91,17 @@ void LoadGame()	{
 ///////////////////////////////////////////////////////////////////////////////////////
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE BELOW THIS LINE //
 ///////////////////////////////////////////////////////////////////////////////////////
-// Trying something here...
+
+// We don't use threading yet, need a resource locking model in place first.
 /*
-#ifdef __LINUX__
+#ifdef __LINUX__	// TODO This same define should work for MacOS too.
 	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
 		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
 #endif // __LINUX__
 */
+
 }
 
-
-
-void* start_game_thread(void* args)	{
-	cout << "Starting game thread..." << endl;
-	game->run();
-	cout << "Game thread finished." << endl;
-}
 
 MaterialManager* getMaterialManager()	{
 	return materials;
@@ -132,7 +127,15 @@ void cleanExit()	{
 
 // END GLOABLS!
 
-#ifdef __LINUX__
+
+void* start_game_thread(void* args)	{
+	cout << "Starting game thread..." << endl;
+	game->run();
+	cout << "Game thread finished." << endl;
+}
+
+
+#ifdef __LINUX__	// TODO This same define should work for MacOS too
 /* From Quake 3 Arena
 ================
 Sys_Milliseconds

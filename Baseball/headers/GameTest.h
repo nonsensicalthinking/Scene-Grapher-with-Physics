@@ -49,7 +49,7 @@ class SpecialGame : public Game	{
 	float timeElapsed;
 	float slowMotionRatio;
 
-	MotionUnderGravitation* motionUnderGravitation;
+	BaseballPhysics* motionUnderGravitation;
 
 
 	bool loaded;
@@ -66,10 +66,15 @@ public:
 		VectorCopy(standing, ent->mass->pos);
 		VectorCopy(vel, ent->mass->vel);
 
+		ent->mass->instantSpeed = speed;
+		ent->mass->rotationSpeed = 1500;
+		CrossProduct(NORMAL_Y, NORMAL_Z, ent->mass->rotationAxis);
+
 		// 3 seconds
-		ent->setTTL(6000);
+		ent->setTTL(4000);
 		ent->collisionType = COLLISION_SPHERE;
-		ent->radius = 2;
+		ent->radius = 1;
+//		VectorCopy(ent->mass->pos, ent->start);	// this was used for distances... maybe on home runs? or bp?
 
 		entityList.push_back(ent);
 	}
@@ -141,14 +146,27 @@ public:
 						float distSquared = DotProduct(dist, dist);
 						float rad = ent->radius + 0;	// no radius for polygon
 						if( distSquared <= (rad*rad) )	{	// is it within striking distance?
+//							float dist = VectorDistance(ent->start, ent->mass->pos);
+//							VectorCopy(ent->mass->pos, ent->start);
+
+//							if( dist > 0 )
+//								cout << "Distance: " << dist << "meters." << endl;
+
 							vec3_t reflect;
 							vec3_t incident;
+
 							float len = VectorUnitVector(ent->mass->vel, incident);
+							float newSpeed = len/3;
 
-							cout << "Old Speed: " << len << " New Speed: " << len/3 << endl;
+							// stop rotating when we hit objects
+							ent->mass->rotationSpeed = 0;
 
-							VectorReflect(incident, poly->normpts[0], reflect);
-							VectorScale(reflect, (len/3), ent->mass->vel);
+							if( newSpeed < 0.1 )	// stay still
+								VectorCopy(ZERO_VECTOR, ent->mass->vel);
+							else	{	// reflect damn you!
+								VectorReflect(incident, poly->normpts[0], reflect);
+								VectorScale(reflect, (len/3), ent->mass->vel);
+							}
 						}
 					}
 				}
@@ -307,14 +325,14 @@ public:
 				break;
 			case 'g':
 				vec3_t e1;
-				vec3_t r1;
-				r1[0] = -38;
-				r1[1] = 4;
-				r1[2] = 32;
-				vec3_t d1;
-				d1[0] = -42;
-				d1[1] = 4;
-				d1[2] = 36;
+				vec3_t r1;	// pitchers mound
+				r1[0] = -26.91;
+				r1[1] = 1.67;
+				r1[2] = 20.13;
+				vec3_t d1;	// home plate
+				d1[0] = -39.21;
+				d1[1] = 1.67;	// 5'5"
+				d1[2] = 31.86;
 
 				VectorSubtract(d1, r1, e1);
 				VectorUnitVector(e1, e1);
@@ -399,7 +417,7 @@ public:
 		timeElapsed = 0.0;
 		slowMotionRatio = 1.0;
 
-		motionUnderGravitation = new MotionUnderGravitation(GRAVITY_EARTH);
+		motionUnderGravitation = new BaseballPhysics(GRAVITY_EARTH);
 	}
 
 	~SpecialGame()	{
