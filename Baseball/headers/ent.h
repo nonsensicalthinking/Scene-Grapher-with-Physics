@@ -10,13 +10,13 @@
 #ifndef ENT_H_
 #define ENT_H_
 
-#define COLLISION_NONE		0
-#define COLLISION_BOX		1
-#define COLLISION_SPHERE	2
-#define COLLISION_CYLINDER	3
+#define COLLISION_NONE		0x01	// 1
+#define COLLISION_BOX		0x02	// 2
+#define COLLISION_SPHERE	0x04	// 4
+#define COLLISION_CYLINDER	0x08	// 8
+#define COLLISION_SAME_TYPE	0x10	// 16
 
-
-extern int Sys_Milliseconds(void);
+extern long Sys_Milliseconds(void);
 
 
 typedef struct entity_s	{
@@ -24,15 +24,16 @@ typedef struct entity_s	{
 	int expired;
 	bool hasExpired;
 
-	Mass* mass;	// Mass' current state
-
 	string md2name;
 
-	int collisionType;
-	float radius;
-	// Bounding box def
-	// Sphere def
-	// Cylinder def
+	Mass* mass;	// Mass' current state
+
+	// Collision Stuffs
+	char collisionType;	// stores bit flag for type of collision
+	float radius;	// for sphere collision
+//	cylinder_t* cylinder;	// constraints of cylinder
+//	bbox_t*	boundingBox; 	// constraints of bounding box
+	// end collision stuffs
 
 	// flags for gameplay
 

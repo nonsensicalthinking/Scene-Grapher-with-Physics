@@ -8,17 +8,16 @@
  *  TODO This particular todo may belong in the Game class but oh well...
  *  TODO Continued: Make it so resources can be unloaded and reloaded (vid_restart style)
  *
- *	Who am I and what am I trying to do?
  *	The game tells the renderer what dynamic objects are in the scene.
-
- *	Those dynamic objects are likely animateable models.  In the game
- *	we will refer it to as an entity.  Entities have masses that can be worked
- *	on and flags, possibly some AI. Entities also have bounding boxes (need to figure out
- *	we're going to create the bounding box automatically.
-
+ *  the game will refer it to as an entity.  Entities have masses that can be worked
+ *	on and flags, possibly some AI by way of a think() system? Entities also have
+ *	collision properties, sphere, cylinder, bounding box.
+ *
  *	Collision detection will chick dynamic objects against the objects in the
  *	bsp area they're located in.
  *
+ *
+ *	TODO Check for redundancies in collision checks for entities
  *
  */
 #include "Game.h"
@@ -27,9 +26,7 @@
 #include "shared.h"
 
 #define CAM_MOVE_RATE 	1
-#define PITCH_RATE		1
-#define YAW_RATE		1
-#define ROLL_RATE		1
+
 
 #define SKY_TEXTURE		"partly_cloudy.bmp"
 
@@ -42,6 +39,8 @@ const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 // inherit the game class
 class SpecialGame : public Game	{
 
+public:
+
 	bsp_node_t* bspRoot;
 	list<entity_t*> entityList;
 	list<list<entity_t*> > entityLeafList;
@@ -49,12 +48,11 @@ class SpecialGame : public Game	{
 	float timeElapsed;
 	float slowMotionRatio;
 
-	BaseballPhysics* motionUnderGravitation;
+	BaseballPhysics* bbPhys;
 
 
 	bool loaded;
 
-public:
 
 	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
 		entity_t* ent = createEntity();
@@ -68,9 +66,9 @@ public:
 
 		ent->mass->instantSpeed = speed;
 		ent->mass->rotationSpeed = 1500;
-		CrossProduct(NORMAL_Y, NORMAL_Z, ent->mass->rotationAxis);
+		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
 
-		// 3 seconds
+		// 4 seconds
 		ent->setTTL(4000);
 		ent->collisionType = COLLISION_SPHERE;
 		ent->radius = 1;
@@ -146,12 +144,16 @@ public:
 						float distSquared = DotProduct(dist, dist);
 						float rad = ent->radius + 0;	// no radius for polygon
 						if( distSquared <= (rad*rad) )	{	// is it within striking distance?
+
+							// TODO issue collision event so the engine can record what happened?
+
+// WARNING: THIS COMMENTED BLOCK IS SUPER COSTLY
 //							float dist = VectorDistance(ent->start, ent->mass->pos);
 //							VectorCopy(ent->mass->pos, ent->start);
-
+//
 //							if( dist > 0 )
 //								cout << "Distance: " << dist << "meters." << endl;
-
+// END WARNING BLOCK
 							vec3_t reflect;
 							vec3_t incident;
 
@@ -159,6 +161,7 @@ public:
 							float newSpeed = len/3;
 
 							// stop rotating when we hit objects
+							// not exactly accurate but ok for now
 							ent->mass->rotationSpeed = 0;
 
 							if( newSpeed < 0.1 )	// stay still
@@ -180,34 +183,67 @@ public:
 
 	}
 
+	// TODO BROKEN!
 	void entEntCollision(entity_t* ent, entity_t* otherEnt)	{
-		// TODO Use flags to switch? can you set a case to box+sphere flag?
+		if( !ent || !otherEnt )
+			return;
+
+		// FIXME the flag system, thanks
+		// This flagging system doesn't quite work properly, am I sure I'm using it right?
+		char collisionFlags;
+		if( ent->collisionType == otherEnt->collisionType )
+			collisionFlags = ent->collisionType | COLLISION_SAME_TYPE;
+		else
+			collisionFlags = ent->collisionType | otherEnt->collisionType;
+
+		switch(collisionFlags)	{
+		case COLLISION_BOX|COLLISION_SAME_TYPE:
+			cout << "Box v Box Collision" << endl;
+			break;
+
+		case COLLISION_SPHERE|COLLISION_SAME_TYPE:
+//				cout << "Sphere v Sphere Collision" << endl;
+			break;
+
+		case COLLISION_CYLINDER|COLLISION_SAME_TYPE:
+			cout << "Cylinder v Cylinder Collision" << endl;
+			break;
+		case COLLISION_SPHERE|COLLISION_BOX:
+			cout << "Sphere v Box Collision" << endl;
+			break;
+
+		case COLLISION_SPHERE|COLLISION_CYLINDER:
+			cout << "Sphere v Cylinder Collision" << endl;
+			break;
+
+		case COLLISION_CYLINDER|COLLISION_BOX:
+			cout << "Cylinder v Box Collision" << endl;
+			break;
+		}
 	}
 
-	void collideWithWorld(list<polygon_t*> polyList, entity_t* ent)	{
+	void collideWithWorld(entity_t* ent, list<polygon_t*> polyList)	{
 		list<polygon_t*>::iterator itr = polyList.begin();
 		for(; itr != polyList.end(); itr++)	{
 			entPolyCollision(ent, (*itr));
 		}
 	}
 
-/*	void collideWithOtherEntities(list<entity_t*> entList, entity_t* ent)	{
+	void collideWithOtherEntities(entity_t* ent, list<entity_t*> entList)	{
 		list<entity_t*>::iterator itr = entList.begin();
 		for(; itr != entList.end(); itr++)	{
-			if( entEntCollision(ent, (*itr)) )	{
-				// TODO Take appropirate action
-				cout << "ent collided with ent." << endl;
-			}
+			if( ent != (*itr) )	// if its not itself
+				entEntCollision(ent, (*itr));
 		}
 	}
-*/
+
 	void insertEntityIntoBSP(entity_t* ent)	{
 		bsp_node_t* node = findBSPLeaf(ent->mass->pos);
 
-		collideWithWorld(node->getPolygonList(), ent);
+		collideWithWorld(ent, node->getPolygonList());
 
-		// TODO Check for other entity collisions
-//		collideWithOtherEntities(node->getEntityList(), ent);
+		// TODO re-enable whence fixed
+//		collideWithOtherEntities(ent, node->getEntityList());
 
 		node->addEntity(ent);
 	}
@@ -229,7 +265,7 @@ public:
 		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 		// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
-		float dt = ms / 1000.0f;							// Let's Convert Milliseconds To Seconds
+		float dt = ms / 1000.0f;	// convert dt to seconds
 		dt /= slowMotionRatio;										// Divide dt By slowMotionRatio And Obtain The New dt
 		timeElapsed += dt;											// Iterate Elapsed Time
 		float maxPossible_dt = 0.1f;								// Say That The Maximum Possible dt Is 0.1 Seconds
@@ -240,13 +276,11 @@ public:
 
 
 		// Simulation work from here down
-		if( motionUnderGravitation != NULL )	{
-
+		if( bbPhys != NULL )	{
 			for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
 			{
 				// remove all ents from BSP Tree
 				removeEntitiesFromBSPTree();
-
 				// for number of masses do
 				vector<entity_t*> removalList;
 
@@ -255,17 +289,16 @@ public:
 						removalList.push_back((*itr));
 					}
 					else	{
-						motionUnderGravitation->operate(dt, (*itr)->mass);					// Iterate motionUnderGravitation Simulation By dt Seconds
+						bbPhys->operate(dt, (*itr)->mass);					// Iterate motionUnderGravitation Simulation By dt Seconds
 					}
 				}
 
 				for( int x=0; x < removalList.size(); x++)	{
-					motionUnderGravitation->release(removalList[x]->mass);
+					bbPhys->release(removalList[x]->mass);
 					entity_t* cur = removalList[x];
 					cur->hasExpired = true;
 					entityList.remove(cur);
 					delete cur;	// TODO don't delete, clean out and put into free ent list.
-//					cout << "Entity removed from scene! (" << entityList.size() << ")."<< endl;
 				}
 
 				insertEntitiesIntoBSPTree();
@@ -339,7 +372,13 @@ public:
 
 				throwPitch(pitchSpeed, r1, e1);
 				break;
+			case 'n':
+				if( curScene->cam == curScene->cameras[0] )
+					curScene->cam = curScene->cameras[1];
+				else
+					curScene->cam = curScene->cameras[0];
 
+				break;
 
 			case ESC_KEY:
 				curScene->exit();
@@ -353,7 +392,30 @@ public:
 	}
 
 	virtual void mouseEvent(int button, int state, int x, int y)	{
+		Scene* cs = getScene();
 
+		cout << "Camera Info" << endl << "Pos: ";
+		VectorPrint(cs->cam->origin);
+		cout << endl << "Dir: ";
+		VectorPrint(cs->cam->normDir);
+		cout << endl << "----------------------" << endl;
+	}
+
+	// FIXME DISABLE THIS FEATURE, THIS IS COSTLY, WTF?!
+	virtual void passiveMouseEvent(int x, int y)	{
+		float dx = 400-x;
+		float dy = 300-y;
+
+		if( dx == 0 && dy == 0 )
+			return;
+
+		Scene* curScene = getScene();
+
+		dx *= 0.025;
+		dy *= 0.025;
+
+		curScene->cam->rotateAboutX(dy);	// Pitch
+		curScene->cam->rotateAboutY(-dx);	// Yaw
 	}
 
 
@@ -417,7 +479,7 @@ public:
 		timeElapsed = 0.0;
 		slowMotionRatio = 1.0;
 
-		motionUnderGravitation = new BaseballPhysics(GRAVITY_EARTH);
+		bbPhys = new BaseballPhysics(GRAVITY_EARTH);
 	}
 
 	~SpecialGame()	{

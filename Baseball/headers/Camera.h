@@ -42,6 +42,7 @@ public:
 	void lookAtDir();
 	void goTo(vec3_t o);
 	void setFieldOfView(int degrees);
+	void setView(vec3_t from, vec3_t looking);
 };
 
 #endif /* CAMERA_H_ */

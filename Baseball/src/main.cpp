@@ -40,7 +40,12 @@
 #include <ctime>
 #include <iostream>
 
+// pre-processor definitions
 #define __LINUX__
+#define MOUSELOOK	// For development, disable in release
+
+
+
 
 #ifdef __LINUX__
 #include <pthread.h>
@@ -52,7 +57,7 @@
 #define SCREEN_WIDTH 		800
 #define SCREEN_HEIGHT 		600
 
-int sceneAdvRate = 3;
+float sceneAdvRate = 0.5;
 int pitchSpeed = 120;
 
 #ifdef __LINUX__
@@ -61,9 +66,6 @@ pthread_t gameThread;
 
 float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
-// Global variables
-time_t lastFrameTime;
-int frameRate;
 
 Scene* curScene;
 MaterialManager* materials;
@@ -151,8 +153,8 @@ unsigned long sys_timeBase = 0;
      0x7fffffff ms - ~24 days
    although timeval:tv_usec is an int, I'm not sure wether it is actually used as an unsigned int
      (which would affect the wrap period) */
-int curtime;
-int Sys_Milliseconds (void)
+long curtime;
+long Sys_Milliseconds (void)
 {
 	struct timeval tp;
 
@@ -193,33 +195,50 @@ void init()	{
 
 	LoadGame();	// End user game code loaded here
 				// see the function at the top of file.
+#ifdef MOUSELOOK
+	glutSetCursor(GLUT_CURSOR_NONE);
+#endif
 }
 
 void changeSize(int w, int h)	{
 	curScene->resizeSceneSize(w,h);
 }
 
+
+
 void draw(void)
 {
 	static int frameCount = 0;
+	static long lastFrameTime = Sys_Milliseconds();
+	static long frameStamp = lastFrameTime;
 
-	int curFrameTime = Sys_Milliseconds();
+	long curFrameTime = Sys_Milliseconds();
 
 	long timeSinceLastFrame = curFrameTime - lastFrameTime;
+	sceneAdvRate = timeSinceLastFrame / 1000.0f;
+
+#ifdef MOUSELOOK
+	// center mouse
+	glutWarpPointer(400, 300);
+#endif
 
 	// Draw the scene.
 	curScene->render();
 
 	if( game != NULL )
-		game->advance(sceneAdvRate);
+		game->advance(timeSinceLastFrame);
+
 
 	// Tabulate frame rate
 	frameCount++;
-	if( (lastFrameTime+1000) <= curFrameTime )	{
+	lastFrameTime = curFrameTime;
+
+	if( (frameStamp+1000) <= curFrameTime )	{
 		curScene->frameRate = frameCount;
 		frameCount = 0;
-		lastFrameTime = curFrameTime;
+		frameStamp = curFrameTime;
 	}
+
 }
 
 void processMouse(int button, int state, int x, int y)	{
@@ -233,6 +252,12 @@ void processNormalKeys(unsigned char key, int x, int y)	{
 void processSpecialKeys(int key, int x, int y) {
 	game->specialKeyPressedEvent(key, x, y);
 }
+
+#ifdef MOUSELOOK
+void passiveMouseMove(int x, int y)	{
+	game->passiveMouseEvent(x,y);
+}
+#endif
 
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
@@ -251,6 +276,10 @@ int main(int argc, char **argv) {
 	glutMouseFunc(processMouse);
 	glutKeyboardFunc(processNormalKeys);
 	glutSpecialFunc(processSpecialKeys);
+
+#ifdef MOUSELOOK
+	glutPassiveMotionFunc(passiveMouseMove);
+#endif
 
 	// Process startup commands.
 	int processed = 1;	// start at the first real argument

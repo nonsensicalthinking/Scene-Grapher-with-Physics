@@ -13,7 +13,8 @@
 /*
  * TODO LIST for this file
  *
- * Fix lighting crap
+ * TODO fix lighting to allow diffuse light
+ * TODO Tend to other todo's further down in file
  *
  *
  */
@@ -46,6 +47,9 @@ using namespace std;
 
 #define BASEBALLSIZEINMETERS 0.0762
 
+// Global getters
+extern Game* getGame();
+
 // TODO have this draw a model instead of just a point
 void Scene::drawEntity(entity_t* ent)	{
 	if( ent->hasExpired )
@@ -53,7 +57,7 @@ void Scene::drawEntity(entity_t* ent)	{
 
 
 	glPushMatrix();
-    glPointSize(1);
+    glPointSize(5);
     glBegin(GL_POINTS);
             glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
     glEnd();
@@ -93,9 +97,20 @@ Scene::Scene(int width, int height)
 	con = new Console(width,height);
 	con->consoleActive = false;
 	matsManager = getMaterialManager();
-	cam = new Camera();
 	polygonCount = 0;	// count of static polygons in the entire scene
 	bspRoot = NULL;
+
+	cam = new Camera();
+	vec3_t p = {-45, 3, 36};
+	vec3_t l = {0.684131, -0.198672, -0.701779};
+	cam->setView(p, l);
+	cameras.push_back(cam);
+
+	Camera* sideCam = new Camera();
+	vec3_t pos = {0, 23, 56};
+	vec3_t look = {-0.0738074, -0.295523, -0.95248};
+	sideCam->setView(pos, look);
+	cameras.push_back(sideCam);
 }
 
 
@@ -281,7 +296,7 @@ void Scene::render()
 
 	// FIXME TEMPORARY, FIND A BETTER WAY TO DO THIS
 	stringstream s;
-	s << "FPS: " << frameRate;
+	s << "[FPS: " << frameRate << "]";
 	con->font->glPrint(0, 0, s.str().c_str(), 0);
 	// END FIXME
 

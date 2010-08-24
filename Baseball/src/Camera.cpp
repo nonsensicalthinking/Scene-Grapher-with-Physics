@@ -145,3 +145,10 @@ void Camera::setFieldOfView(int degrees)	{
 	glLoadIdentity();
 }
 
+void Camera::setView(vec3_t from, vec3_t looking)	{
+	VectorCopy(from, origin);
+	VectorCopy(looking, normDir);
+	lookAtDir();
+}
+
+

@@ -16,7 +16,7 @@
 using namespace std;
 
 extern Scene* getScene();
-extern int Sys_Milliseconds();
+extern long Sys_Milliseconds();
 
 
 class Game	{
@@ -165,5 +165,9 @@ public:
 
 	}
 
+	// This is to be overridden
+	virtual void passiveMouseEvent(int x, int y)	{
+
+	}
 
 };

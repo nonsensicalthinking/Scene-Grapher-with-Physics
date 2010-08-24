@@ -31,7 +31,7 @@ public:
 	Console* con;
 
 	Camera* cam;
-	vector<Camera*> *cameras;
+	vector<Camera*> cameras;
 
 	unsigned int polygonCount;
 

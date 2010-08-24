@@ -15,11 +15,11 @@
 #include <math.h>
 #include "shared.h"
 
-extern int sceneAdvRate;
+extern float sceneAdvRate;
 
-// Returns angular speed in rad/ms
+// Returns angular speed in rad/s (?)
 inline float RPMtoAngularSpeed(float rpm)	{
-	return (TWO_PI_DIV_BY_60 * rpm) * (ONE_MILLISECOND * sceneAdvRate);
+	return (TWO_PI_DIV_BY_60 * rpm) * sceneAdvRate;
 }
 
 // this only does drag coefficient for baseballs
@@ -148,7 +148,7 @@ public:
 // its a beautiful thing!
 //			cout << "Speed: " << mass->instantSpeed << endl;
 
-			CrossProduct(NORMAL_Y, mass->vel, result);
+			CrossProduct(mass->rotationAxis, mass->vel, result);
 			VectorScale(result, dragCoeff, result);
 
 			float rotSpeedRad = RPMtoAngularSpeed(mass->rotationSpeed);

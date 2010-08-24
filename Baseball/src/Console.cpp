@@ -16,6 +16,7 @@ using namespace std;
 
 extern Scene* getScene();
 extern Game* getGame();
+extern float sceneAdvRate;
 
 
 Console::Console(int width, int height) {
@@ -146,7 +147,6 @@ void Console::con_print(string s)	{
 	output->push_back(s);
 }
 
-extern int sceneAdvRate;
 
 
 // Commands
