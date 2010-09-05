@@ -16,11 +16,12 @@
 #define COLLISION_CYLINDER	0x08	// 8
 #define COLLISION_SAME_TYPE	0x10	// 16
 
-extern long Sys_Milliseconds(void);
+extern long timeStamp;	// our current time reference in milliseconds
 
 
 typedef struct entity_s	{
 	unsigned int entID;
+	bool parishable;
 	int expired;
 	bool hasExpired;
 
@@ -40,14 +41,14 @@ typedef struct entity_s	{
 	// Returns TRUE if time is expired
 	// FALSE otherwise
 	bool checkTTL()	{
-		if( Sys_Milliseconds() >= expired )
+		if( timeStamp >= expired )
 			return true;
 
 		return false;
 	}
 
 	void setTTL(int ms)	{
-		expired = Sys_Milliseconds() + ms;
+		expired = timeStamp + ms;
 	}
 
 }entity_t;
@@ -62,6 +63,15 @@ inline entity_t* createEntity()	{
 	ent->mass = NULL;
 	ent->md2name = "";
 	ent->collisionType = COLLISION_NONE;
+}
+
+inline void cleanEntity(entity_t* ent)	{
+	ent->hasExpired = false;
+	ent->expired = 0;
+	ent->mass = NULL;
+	ent->md2name = "";
+	ent->collisionType = COLLISION_NONE;
+	ent->radius = 0;
 }
 
 

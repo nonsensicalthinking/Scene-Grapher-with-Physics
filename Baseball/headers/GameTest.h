@@ -18,13 +18,14 @@
  *
  *
  *	TODO Check for redundancies in collision checks for entities
+ *	TODO Insert Entities into the bsp tree as soon as we operate on them.
  *
  */
 #include "Game.h"
 #include "Scene.h"
 #include "objloader.h"
 #include "shared.h"
-
+#include <queue>
 #define CAM_MOVE_RATE 	1
 
 
@@ -44,6 +45,8 @@ public:
 	bsp_node_t* bspRoot;
 	list<entity_t*> entityList;
 	list<list<entity_t*> > entityLeafList;
+	queue<entity_t*> unusedEnts;
+
 
 	float timeElapsed;
 	float slowMotionRatio;
@@ -53,9 +56,23 @@ public:
 
 	bool loaded;
 
+	// X PINCH POINT X
+	// not thread safe
+	void recycleEntity(entity_t* ent)	{
+		cleanEntity(ent);
+		unusedEnts.push(ent);
+	}
+
+	// you're responsible for getting one...
+	// this reference may or may not come back NULL
+	entity_t* getFreshEntity()	{
+		entity_t* ent = unusedEnts.front();
+		unusedEnts.pop();
+		return ent;
+	}
 
 	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
-		entity_t* ent = createEntity();
+		entity_t* ent = getFreshEntity();
 
 		ent->mass = new Mass(1);
 
@@ -64,11 +81,13 @@ public:
 		VectorCopy(standing, ent->mass->pos);
 		VectorCopy(vel, ent->mass->vel);
 
+		ent->mass->moveType = MOVE_TYPE_BASEBALL;
 		ent->mass->instantSpeed = speed;
 		ent->mass->rotationSpeed = 1500;
 		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
 
 		// 4 seconds
+		ent->parishable = true;
 		ent->setTTL(4000);
 		ent->collisionType = COLLISION_SPHERE;
 		ent->radius = 1;
@@ -76,6 +95,38 @@ public:
 
 		entityList.push_back(ent);
 	}
+
+	void placePlayer(vec3_t pos, vec3_t facing)	{
+		entity_t* ent = getFreshEntity();
+
+		// movement info
+		ent->mass = new Mass(1);
+
+//		vec3_t vel;
+//		VectorMA(standing, looking, speed, vel);
+		VectorCopy(pos, ent->mass->pos);
+//		VectorCopy(vel, ent->mass->vel);
+
+		ent->mass->moveType = MOVE_TYPE_AT_REST;
+//		ent->mass->instantSpeed = speed;
+//		ent->mass->rotationSpeed = 1500;
+//		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
+
+
+		// Lifetime info
+		ent->parishable = false;
+//		ent->setTTL(4000);		// 4 seconds
+
+
+		// Collision info
+		ent->collisionType = COLLISION_SPHERE;
+		ent->radius = 1;
+
+		entityList.push_back(ent);
+	}
+
+
+
 
 	// call this function to load different maps
 	virtual void load(string mapname)	{
@@ -143,32 +194,24 @@ public:
 						VectorSubtract(ent->mass->pos, intersect, dist);
 						float distSquared = DotProduct(dist, dist);
 						float rad = ent->radius + 0;	// no radius for polygon
+
 						if( distSquared <= (rad*rad) )	{	// is it within striking distance?
-
 							// TODO issue collision event so the engine can record what happened?
-
-// WARNING: THIS COMMENTED BLOCK IS SUPER COSTLY
-//							float dist = VectorDistance(ent->start, ent->mass->pos);
-//							VectorCopy(ent->mass->pos, ent->start);
-//
-//							if( dist > 0 )
-//								cout << "Distance: " << dist << "meters." << endl;
-// END WARNING BLOCK
 							vec3_t reflect;
 							vec3_t incident;
 
 							float len = VectorUnitVector(ent->mass->vel, incident);
-							float newSpeed = len/3;
+							float newSpeed = len * 0.33;	// Shrink by 1/3~
 
 							// stop rotating when we hit objects
 							// not exactly accurate but ok for now
 							ent->mass->rotationSpeed = 0;
 
 							if( newSpeed < 0.1 )	// stay still
-								VectorCopy(ZERO_VECTOR, ent->mass->vel);
+								ent->mass->moveType = MOVE_TYPE_AT_REST;
 							else	{	// reflect damn you!
 								VectorReflect(incident, poly->normpts[0], reflect);
-								VectorScale(reflect, (len/3), ent->mass->vel);
+								VectorScale(reflect, newSpeed, ent->mass->vel);
 							}
 						}
 					}
@@ -183,43 +226,38 @@ public:
 
 	}
 
-	// TODO BROKEN!
 	void entEntCollision(entity_t* ent, entity_t* otherEnt)	{
 		if( !ent || !otherEnt )
 			return;
 
-		// FIXME the flag system, thanks
-		// This flagging system doesn't quite work properly, am I sure I'm using it right?
-		char collisionFlags;
-		if( ent->collisionType == otherEnt->collisionType )
-			collisionFlags = ent->collisionType | COLLISION_SAME_TYPE;
-		else
-			collisionFlags = ent->collisionType | otherEnt->collisionType;
-
+		char collisionFlags = ent->collisionType | otherEnt->collisionType;
+/*	// This works, just needs to be implemented.
 		switch(collisionFlags)	{
-		case COLLISION_BOX|COLLISION_SAME_TYPE:
-			cout << "Box v Box Collision" << endl;
+		case COLLISION_BOX|COLLISION_BOX:
+			cout << "Implement Box v Box Collision" << endl;
 			break;
 
-		case COLLISION_SPHERE|COLLISION_SAME_TYPE:
-//				cout << "Sphere v Sphere Collision" << endl;
+		case COLLISION_SPHERE|COLLISION_SPHERE:
+			cout << "Implement Sphere v Sphere Collision" << endl;
 			break;
 
-		case COLLISION_CYLINDER|COLLISION_SAME_TYPE:
-			cout << "Cylinder v Cylinder Collision" << endl;
-			break;
-		case COLLISION_SPHERE|COLLISION_BOX:
-			cout << "Sphere v Box Collision" << endl;
+		case COLLISION_CYLINDER|COLLISION_CYLINDER:
+			cout << "Implement Cylinder v Cylinder Collision" << endl;
 			break;
 
-		case COLLISION_SPHERE|COLLISION_CYLINDER:
-			cout << "Sphere v Cylinder Collision" << endl;
+		case COLLISION_SPHERE | COLLISION_BOX:
+			cout << "Implement Sphere v Box Collision" << endl;
 			break;
 
-		case COLLISION_CYLINDER|COLLISION_BOX:
-			cout << "Cylinder v Box Collision" << endl;
+		case COLLISION_SPHERE | COLLISION_CYLINDER:
+			cout << "Implement Sphere v Cylinder Collision" << endl;
+			break;
+
+		case COLLISION_CYLINDER | COLLISION_BOX:
+			cout << "Implement Cylinder v Box Collision" << endl;
 			break;
 		}
+*/
 	}
 
 	void collideWithWorld(entity_t* ent, list<polygon_t*> polyList)	{
@@ -242,12 +280,15 @@ public:
 
 		collideWithWorld(ent, node->getPolygonList());
 
-		// TODO re-enable whence fixed
-//		collideWithOtherEntities(ent, node->getEntityList());
+		collideWithOtherEntities(ent, node->getEntityList());
 
 		node->addEntity(ent);
 	}
 
+
+	// FIXME
+	// I do believe this is why we should crawl entities along surfaces...
+	// this is costly to do ... every frame!
 	void insertEntitiesIntoBSPTree()	{
 		list<entity_t*>::iterator itr = entityList.begin();
 
@@ -257,7 +298,7 @@ public:
 
 
 	// This is called once every time around the game loop.
-	virtual void advance(long ms)	{
+	virtual void advance(float dSec)	{
 
 		if( !loaded )
 			return;
@@ -265,19 +306,27 @@ public:
 		// Time work, used for Simulation work
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 		// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
-		float dt = ms / 1000.0f;	// convert dt to seconds
-		dt /= slowMotionRatio;										// Divide dt By slowMotionRatio And Obtain The New dt
-		timeElapsed += dt;											// Iterate Elapsed Time
-		float maxPossible_dt = 0.1f;								// Say That The Maximum Possible dt Is 0.1 Seconds
+
+		float maxPossible_dt = 0.1f;	// Cap time step to 0.1 sec
+
+
+// commenting this out shaved off 1 fps
+// before you un-comment, use multiplication instead!
+//		dt /= slowMotionRatio;		// Divide dt By slowMotionRatio And Obtain The New dt
+
+		timeElapsed += dSec;											// Iterate Elapsed Time
 																	// This Is Needed So We Do Not Pass Over A Non Precise dt Value
-	  	int numOfIterations = (int)(dt / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
-		if (numOfIterations != 0)									// Avoid Division By Zero
-			dt = dt / numOfIterations;								// dt Should Be Updated According To numOfIterations
+
+		int numOfIterations = (int)(dSec / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
+
+
+	  	if (numOfIterations != 0)						// Avoid Division By Zero
+			dSec = dSec / numOfIterations;					// dt Should Be Updated According To numOfIterations
 
 
 		// Simulation work from here down
 		if( bbPhys != NULL )	{
-			for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
+			for (int a = 0; a < numOfIterations; ++a)	// We Need To Iterate Simulations "numOfIterations" Times
 			{
 				// remove all ents from BSP Tree
 				removeEntitiesFromBSPTree();
@@ -285,11 +334,20 @@ public:
 				vector<entity_t*> removalList;
 
 				for( list<entity_t*>::iterator itr = entityList.begin(); itr != entityList.end(); itr++)	{
-					if( (*itr)->checkTTL() )	{
+					if( (*itr)->parishable && (*itr)->checkTTL() )	{
 						removalList.push_back((*itr));
 					}
 					else	{
-						bbPhys->operate(dt, (*itr)->mass);					// Iterate motionUnderGravitation Simulation By dt Seconds
+						switch((*itr)->mass->moveType)	{
+							case MOVE_TYPE_AT_REST:
+								break;
+							case MOVE_TYPE_BASEBALL:
+								bbPhys->operate(dSec, (*itr)->mass);	// iterate the entity by dt seconds
+								break;
+						}
+
+						// TODO Insert entity once its been operated instead of calling another
+						// function to call a loop to do it.
 					}
 				}
 
@@ -298,7 +356,7 @@ public:
 					entity_t* cur = removalList[x];
 					cur->hasExpired = true;
 					entityList.remove(cur);
-					delete cur;	// TODO don't delete, clean out and put into free ent list.
+					recycleEntity(cur);					// make entity available for use again.
 				}
 
 				insertEntitiesIntoBSPTree();
@@ -351,6 +409,9 @@ public:
 			case 'v':
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
+			case '1':
+				placePlayer(curScene->cam->origin, curScene->cam->normDir);
+				break;
 			case 'f':
 				vec3_t r;
 				VectorAdd(curScene->cam->origin, curScene->cam->normDir, r);
@@ -402,6 +463,7 @@ public:
 	}
 
 	// FIXME DISABLE THIS FEATURE, THIS IS COSTLY, WTF?!
+	// (probably polling the mouse, passive is a misnomer)
 	virtual void passiveMouseEvent(int x, int y)	{
 		float dx = 400-x;
 		float dy = 300-y;
@@ -478,6 +540,11 @@ public:
 		loaded = false;
 		timeElapsed = 0.0;
 		slowMotionRatio = 1.0;
+
+		// fill ent pool
+		for(int x=0; x < 100; x++)
+			unusedEnts.push(createEntity());
+
 
 		bbPhys = new BaseballPhysics(GRAVITY_EARTH);
 	}

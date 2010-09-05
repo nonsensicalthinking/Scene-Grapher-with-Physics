@@ -299,6 +299,7 @@ void Console::processConsoleCommand(const string conInput)	{
 		con_print(oss.str());
 		break;
 
+/*// Turn this into a slow-mo
 	case SAR:
 		int val2;
 		if( sscanf(conInput.c_str(), "sar %d", &val2) > 0 )	{
@@ -308,7 +309,7 @@ void Console::processConsoleCommand(const string conInput)	{
 		oss << "SAR = " << sceneAdvRate << endl;
 		con_print(oss.str());
 		break;
-
+*/
 
 
 	case -1:

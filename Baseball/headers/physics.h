@@ -6,6 +6,11 @@
  	More specifically the introduction to physical simulations lesson.
 	Thanks for the lesson.
 
+
+	// FIXME: This is probably one of the single most costly areas of the
+	// engine.  Try to keep physics calculations to a minimum while still
+	// obtaining "accurate enough" results.
+
 **************************************************************************/
 
 
@@ -14,6 +19,12 @@
 
 #include <math.h>
 #include "shared.h"
+
+
+#define MOVE_TYPE_AT_REST	0
+#define MOVE_TYPE_BASEBALL	1
+
+
 
 extern float sceneAdvRate;
 
@@ -48,6 +59,7 @@ inline float getDragCoeff(int speed)	{
 
 class Mass	{
 public:
+	int moveType;
 	float m;					// The mass value
 	float rotationSpeed;		// In RPM?
 	float instantSpeed;			// instantaneousSpeed
@@ -161,7 +173,15 @@ public:
 	
 };
 
+class MassAtRest : public Simulation	{
+	MassAtRest()	{
 
+	}
+
+	virtual void solve(Mass* mass)	{
+
+	}
+};
 
 //  class ConstantVelocity is derived from class Simulation
 //  It creates 1 mass with mass value 1 kg and sets its velocity to (1.0f, 0.0f, 0.0f)

@@ -9,14 +9,10 @@
 #include "physics.h"
 #include <iostream>
 
-// TODO REMOVE THIS, THIS DOES NOT BELONG HERE
-
-#define SCENE_ADVANCE_RATE	5
-
 using namespace std;
 
 extern Scene* getScene();
-extern long Sys_Milliseconds();
+extern long timeStamp;
 
 
 class Game	{
@@ -44,20 +40,22 @@ public:
 
 	// Run will call load, this is where the maps are loaded from
 	void run()	{
+/*
 //		load();
 		gameOn = true;
-		int preTime = 0;
-		int curTime = Sys_Milliseconds();
+		long preTime = 0;
+		long curTime = timeStamp;
 
 		while( gameOn )	{
 			preTime = curTime;
-			curTime = Sys_Milliseconds();
+			curTime = timeStamp;
 			long dt = curTime - preTime;
 
 			advance(dt);
 		}
 
 		cout << "Game thread ended." << endl;
+*/
 	}
 
 
@@ -146,7 +144,7 @@ public:
 	}
 
 	// This is to be overridden
-	virtual void advance(long ms)	{
+	virtual void advance(float ms)	{
 
 	}
 

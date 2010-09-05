@@ -67,6 +67,10 @@ pthread_t gameThread;
 float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
 
+// important time keeping variable
+long timeStamp;
+
+
 Scene* curScene;
 MaterialManager* materials;
 Game* game = NULL;	// C++ gives us inheritance, hooray!
@@ -205,7 +209,6 @@ void changeSize(int w, int h)	{
 }
 
 
-
 void draw(void)
 {
 	static int frameCount = 0;
@@ -213,9 +216,15 @@ void draw(void)
 	static long frameStamp = lastFrameTime;
 
 	long curFrameTime = Sys_Milliseconds();
+	timeStamp = curFrameTime;
 
 	long timeSinceLastFrame = curFrameTime - lastFrameTime;
-	sceneAdvRate = timeSinceLastFrame / 1000.0f;
+	// creative math translation (upon time of implementation
+	// this saves 1 extra frame every second! (old: dt = ms / 1000.0f)
+	// Lesson: AVOID DIVISION WHENEVER POSSIBLE!)
+	float dSec = timeSinceLastFrame * 0.001f;
+	sceneAdvRate = dSec;
+
 
 #ifdef MOUSELOOK
 	// center mouse
@@ -226,7 +235,7 @@ void draw(void)
 	curScene->render();
 
 	if( game != NULL )
-		game->advance(timeSinceLastFrame);
+		game->advance(dSec);
 
 
 	// Tabulate frame rate

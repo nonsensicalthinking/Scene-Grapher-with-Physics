@@ -121,7 +121,6 @@ Scene::~Scene()
 
 void Scene::resizeSceneSize(int width, int height)	{
 	// Prevent a divide by zero, when window is too short
-	// (you cant make a window of zero width).
 	if(height == 0)
 		height = 1;
 
@@ -144,7 +143,7 @@ void Scene::resizeSceneSize(int width, int height)	{
 				cam->up[0], cam->up[1], cam->up[2]);	// up direction
 }
 
-
+// This function is still a work in progress
 void Scene::performLighting()	{
 	GLfloat df = 1.0;
 	GLfloat amb[]=	{0.5, 0.5, 0.5, 1};   		//global ambient
@@ -282,9 +281,10 @@ void Scene::render()
 		drawEntityList(entList);
 	}
 
-	/////////////////////////////
-	// Lighting Disabled Area  //
-	// v	v	v	v	v	v  //
+	// FIXME: this is off to make the console bg black instead of
+	// blinding white.
+
+	// Lighting Disabled Area:
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
 //	glDisable(GL_LIGHTING);
@@ -294,11 +294,9 @@ void Scene::render()
 		con->Draw();
 
 
-	// FIXME TEMPORARY, FIND A BETTER WAY TO DO THIS
 	stringstream s;
-	s << "[FPS: " << frameRate << "]";
+	s << "FPS: " << frameRate;
 	con->font->glPrint(0, 0, s.str().c_str(), 0);
-	// END FIXME
 
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
@@ -323,52 +321,6 @@ void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 void Scene::exit()	{
 	cleanExit();
 }
-
-
-
-/*
-void Scene::advance(long milliseconds)
-{
-	// Time work, used for Simulation work
-	// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
-	// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
-	float dt = milliseconds / 1000.0f;							// Let's Convert Milliseconds To Seconds
-	dt /= slowMotionRatio;										// Divide dt By slowMotionRatio And Obtain The New dt
-	timeElapsed += dt;											// Iterate Elapsed Time
-	float maxPossible_dt = 0.1f;								// Say That The Maximum Possible dt Is 0.1 Seconds
-																// This Is Needed So We Do Not Pass Over A Non Precise dt Value
-  	int numOfIterations = (int)(dt / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
-	if (numOfIterations != 0)									// Avoid Division By Zero
-		dt = dt / numOfIterations;								// dt Should Be Updated According To numOfIterations
-
-
-	// Simulation work from here down
-
-	for (int a = 0; a < numOfIterations; ++a)					// We Need To Iterate Simulations "numOfIterations" Times
-	{
-		motionUnderGravitation->operate(dt);					// Iterate motionUnderGravitation Simulation By dt Seconds
-	}
-
-}
-*/
-
-
-
-// Example of animating md2 model
-/*
-	glPushMatrix();
-
-	glTranslated(-5.0, 10.0, 0.0);
-	glRotated(-90.0, 0.0, 0.0, 1.0);
-	glRotated(-45.0, 1.0, 0.0, 0.0);
-
-	m->setAnimation("run");
-	m->advance(0.01);
-	m->draw();
-
-	glPopMatrix();
-*/
-
 
 
 

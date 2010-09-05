@@ -65,8 +65,6 @@ public:
 	void cacheSky();
 
 	void exit();
-
-	//	void advance(clock_t milliseconds);		// TODO This needs to be pushed out to the game class
 };
 
 

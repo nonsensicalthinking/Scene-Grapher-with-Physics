@@ -12,18 +12,17 @@
 #define BSPTREE_H_
 #include <list>
 
-
-// MAYBE FIXME
-// Recursion depth now works up to but not including 7
-// don't know why, don't care at the moment.
-#define BSP_RECURSION_DEPTH		5
+// TODO Fool around with recursion depth to
+// find optimal solution so far 11 seems to balance
+// frame rate and collision so we aren't checking
+// too many things
+#define BSP_RECURSION_DEPTH		11
 
 #define		PLANE_NORMAL_X		0
 #define 	PLANE_NORMAL_Y		1
 #define		PLANE_NORMAL_Z		2
 
 
-// TODO: Consider making BSPNode class instead
 typedef struct bsp_node_s	{
 
 	plane_t *partition;
