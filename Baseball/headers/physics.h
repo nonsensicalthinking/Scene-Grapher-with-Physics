@@ -139,6 +139,10 @@ public:
 		VectorCopy(gravitation, this->gravitation);
 	}
 
+	virtual float magnusDecay(float rate, float decayRate)	{
+		return rate * decayRate;
+	}
+
 	virtual void solve(Mass* mass)	{
 		// Do gravity
 		vec3_t gravity;
@@ -163,7 +167,11 @@ public:
 			CrossProduct(mass->rotationAxis, mass->vel, result);
 			VectorScale(result, dragCoeff, result);
 
+
 			float rotSpeedRad = RPMtoAngularSpeed(mass->rotationSpeed);
+			// change for the next go around
+			mass->rotationSpeed = magnusDecay(mass->rotationSpeed, 0.99);
+
 			VectorScale(result, rotSpeedRad, result);
 
 			mass->applyForce(result);
@@ -171,6 +179,8 @@ public:
 
 	}
 	
+
+
 };
 
 class MassAtRest : public Simulation	{

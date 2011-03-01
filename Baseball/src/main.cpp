@@ -11,15 +11,6 @@
  *      Author: Derek Brooks
  *
  *
- *	ATTENTION ANYONE CREATING A GAME WITH THIS RENDERING ENGINE
- *	ATTENTION There is only a couple small modifications you need to do
- *	ATTENTION to this file to get what you want.
- *	ATTENTION The function is called LoadGame and everything between the
- *	ATTENTION clearly defined editing area around that is free game.
- *	ATTENTION You must derive a new class from the Game class and overload
- *	ATTENTION its functions to make it all work but there you go.
- *
- *
  */
 
 // The over all TODO list for the program
@@ -219,10 +210,11 @@ void draw(void)
 	timeStamp = curFrameTime;
 
 	long timeSinceLastFrame = curFrameTime - lastFrameTime;
-	// creative math translation (upon time of implementation
-	// this saves 1 extra frame every second! (old: dt = ms / 1000.0f)
+
+	// this gives 1 extra fps! (old: dt = ms / 1000.0f)
 	// Lesson: AVOID DIVISION WHENEVER POSSIBLE!)
 	float dSec = timeSinceLastFrame * 0.001f;
+
 	sceneAdvRate = dSec;
 
 

@@ -55,6 +55,8 @@ public:
 	void renderBSPTree(bsp_node_t* tree);
 	void renderPolygonList(list<polygon_t*> polygons);
 
+	void fullScreen(bool full);
+
 	// GL dominated routines
 	void render(void);
 	void resizeSceneSize(int width, int height);

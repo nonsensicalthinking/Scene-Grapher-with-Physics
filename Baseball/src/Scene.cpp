@@ -45,8 +45,7 @@ using namespace std;
 #define Z_FAR		700	// this happens to be the diameter of the "skybox" for now
 
 
-#define BASEBALLSIZEINMETERS 0.0762
-
+#define RADIUS_OF_BASEBALL 0.0762  // 0.448056	// in meters obviously
 // Global getters
 extern Game* getGame();
 
@@ -55,12 +54,17 @@ void Scene::drawEntity(entity_t* ent)	{
 	if( ent->hasExpired )
 		return;
 
+//	static GLUquadric* baseball;
+
+//	gluSphere(baseball, 5, 10, 5);
 
 	glPushMatrix();
-    glPointSize(5);
-    glBegin(GL_POINTS);
-            glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-    glEnd();
+	glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+	glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
+//    glPointSize(5);
+//    glBegin(GL_POINTS);
+//            glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+//    glEnd();
     glPopMatrix();
 }
 
@@ -151,7 +155,7 @@ void Scene::performLighting()	{
 	GLfloat amb2[]=	{1, 1, 1, 1};  		//ambiance of light source
 	GLfloat diff[]=	{1.0, 1.0, 1.0, 1.0};	// diffuse light
 	GLfloat spec[]=	{1.0, 1.0, 1.0, 1.0};      	//sets specular highlight
-	GLfloat posl[]=	{-21, 33, 18, 1};            //position of light source
+	GLfloat posl[]=	{-21, 75, 18, 1};            //position of light source
 
 //	GLfloat posL1[] = {0, 5, 0};
 //	GLfloat spotDir[] = {0, -1, 0};
@@ -244,6 +248,14 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 		renderBSPTree(tree->front);
 	}
 }
+
+void Scene::fullScreen(bool full)	{
+	if( full )
+		glutEnterGameMode();
+	else
+		glutLeaveGameMode();
+}
+
 
 void Scene::render()
 {

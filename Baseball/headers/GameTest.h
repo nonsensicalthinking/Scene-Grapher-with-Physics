@@ -39,6 +39,7 @@ const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
 
 // inherit the game class
 class SpecialGame : public Game	{
+	bool fullScreen;
 
 public:
 
@@ -439,6 +440,10 @@ public:
 				else
 					curScene->cam = curScene->cameras[0];
 
+				break;
+			case 'm':
+				curScene->fullScreen(fullScreen);
+				fullScreen = !fullScreen;
 				break;
 
 			case ESC_KEY:
