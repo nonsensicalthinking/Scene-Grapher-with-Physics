@@ -18,6 +18,12 @@
 
 extern long timeStamp;	// our current time reference in milliseconds
 
+typedef struct cylinder_s	{
+	vec3_t centerAxis;
+	vec3_t normal;	// will be used for telling which direction the bat is moving
+	float radius;
+
+}cylinder_t;
 
 typedef struct entity_s	{
 	unsigned int entID;
@@ -32,7 +38,7 @@ typedef struct entity_s	{
 	// Collision Stuffs
 	char collisionType;	// stores bit flag for type of collision
 	float radius;	// for sphere collision
-//	cylinder_t* cylinder;	// constraints of cylinder
+	cylinder_t* cylinder;	// constraints of cylinder
 //	bbox_t*	boundingBox; 	// constraints of bounding box
 	// end collision stuffs
 

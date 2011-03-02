@@ -5,7 +5,7 @@
  *      Author: brof
  *
  *
- *  TODO This particular todo may belong in the Game class but oh well...
+ *  TODO This particular todo may belong in the Game class...
  *  TODO Continued: Make it so resources can be unloaded and reloaded (vid_restart style)
  *
  *	The game tells the renderer what dynamic objects are in the scene.
@@ -25,11 +25,15 @@
 #include "Scene.h"
 #include "objloader.h"
 #include "shared.h"
+#include "ent.h"
 #include <queue>
 #define CAM_MOVE_RATE 	1
 
 
 #define SKY_TEXTURE		"partly_cloudy.bmp"
+
+#define IMAGE_DIRECTORY	"images/"
+
 
 // TODO REMOVE THIS
 extern int pitchSpeed;
@@ -232,33 +236,160 @@ public:
 			return;
 
 		char collisionFlags = ent->collisionType | otherEnt->collisionType;
-/*	// This works, just needs to be implemented.
 		switch(collisionFlags)	{
 		case COLLISION_BOX|COLLISION_BOX:
 			cout << "Implement Box v Box Collision" << endl;
 			break;
 
 		case COLLISION_SPHERE|COLLISION_SPHERE:
-			cout << "Implement Sphere v Sphere Collision" << endl;
+//			cout << "Implement Sphere v Sphere Collision" << endl;
 			break;
 
 		case COLLISION_CYLINDER|COLLISION_CYLINDER:
 			cout << "Implement Cylinder v Cylinder Collision" << endl;
 			break;
 
-		case COLLISION_SPHERE | COLLISION_BOX:
+		case COLLISION_SPHERE|COLLISION_BOX:
 			cout << "Implement Sphere v Box Collision" << endl;
 			break;
 
-		case COLLISION_SPHERE | COLLISION_CYLINDER:
-			cout << "Implement Sphere v Cylinder Collision" << endl;
+		case COLLISION_SPHERE|COLLISION_CYLINDER:
+//			cout << "Implement Sphere v Cylinder Collision" << endl;
+			entity_t* ball;
+			entity_t* bat;
+
+			if( ent->collisionType == COLLISION_SPHERE )	{
+				ball = ent;
+				bat = otherEnt;
+			}
+			else	{
+				ball = otherEnt;
+				bat = ent;
+			}
+
+			vec3_t result, colPath, out;
+
+			VectorSubtract(ball->mass->pos, bat->mass->pos, result);
+			CrossProduct(ball->mass->vel, bat->cylinder->centerAxis, colPath);
+
+			double length;
+			length = VectorLength(colPath);
+			double t;
+			double s;
+			double i, o;
+			double lamda;
+
+			if( (length < 0) && (length > -0) )
+				return;
+
+			VectorUnitVector(colPath, colPath);
+
+			double delta;
+			delta = fabs(DotProduct(result, colPath));
+
+			if( delta <= bat->cylinder->radius )	{
+				cout << "Ball hit bat!\a" << endl;
+
+				CrossProduct(result, bat->cylinder->centerAxis, out);
+				t = - DotProduct(out, colPath)/length;
+				CrossProduct(colPath, bat->cylinder->centerAxis, out);
+				VectorUnitVector(out, out);
+				s = fabs(FastSqrt(bat->cylinder->radius*bat->cylinder->radius - delta*delta) / DotProduct(ball->mass->vel, out) );
+				i = t - s;
+				o = t + s;
+
+				if(i < -0){
+					if(o < -0)
+						return;
+					else
+						lamda=o;
+				}
+				else if(o) {
+					lamda=i;
+				}
+				else if(i < o)
+					lamda=i;
+				else
+					lamda=o;
+
+		    	vec3_t newposition;
+		    	VectorMA(ball->mass->pos, ball->mass->vel, lamda, newposition);
+
+//		    	TVector HB=newposition-cylinder._Position;
+
+//		    	pNormal=HB - cylinder._Axis*(HB.dot(cylinder._Axis));
+//				pNormal.unit();
+
+			}
+			/*
+			TVector RC;
+			double d;
+			double t,s;
+			TVector n,D,O;
+			double ln;
+			double in,out;
+
+
+			TVector::subtract(position,cylinder._Position,RC);
+			TVector::cross(direction,cylinder._Axis,n);
+
+		    ln=n.mag();
+
+			if ( (ln<ZERO)&&(ln>-ZERO) ) return 0;
+
+			n.unit();
+
+			d= fabs( RC.dot(n) );
+
+		    if (d<=cylinder._Radius)
+			{
+				TVector::cross(RC,cylinder._Axis,O);
+				t= - O.dot(n)/ln;
+				TVector::cross(n,cylinder._Axis,O);
+				O.unit();
+				s= fabs( sqrt(cylinder._Radius*cylinder._Radius - d*d) / direction.dot(O) );
+
+				in=t-s;
+				out=t+s;
+
+				if (in<-ZERO){
+					if (out<-ZERO) return 0;
+					else lamda=out;
+				}
+				else
+		        if (out<-ZERO) {
+					      lamda=in;
+				}
+				else
+				if (in<out) lamda=in;
+				else lamda=out;
+
+		    	newposition=position+direction*lamda;
+				TVector HB=newposition-cylinder._Position;
+				pNormal=HB - cylinder._Axis*(HB.dot(cylinder._Axis));
+				pNormal.unit();
+
+				return 1;
+			}
+		    */
+
+
+
+
+
+
+
+
+
+
+
 			break;
 
-		case COLLISION_CYLINDER | COLLISION_BOX:
+		case COLLISION_CYLINDER|COLLISION_BOX:
 			cout << "Implement Cylinder v Box Collision" << endl;
 			break;
 		}
-*/
+
 	}
 
 	void collideWithWorld(entity_t* ent, list<polygon_t*> polyList)	{
@@ -445,6 +576,26 @@ public:
 				curScene->fullScreen(fullScreen);
 				fullScreen = !fullScreen;
 				break;
+			case 'p':
+				entity_t* cyl;
+				cyl = createEntity();
+				cyl->cylinder = new cylinder_t;
+				vec3_t plate;	// home plate
+				plate[0] = -39.21;
+				plate[1] = 1.67;	// 5'5"
+				plate[2] = 31.86;
+				cyl->mass = new Mass(1);
+				VectorCopy(plate, cyl->mass->pos);
+				cyl->mass->moveType = MOVE_TYPE_AT_REST;
+				cyl->cylinder->centerAxis[0] = 1.0;
+				cyl->cylinder->centerAxis[1] = 0.0;
+				cyl->cylinder->centerAxis[2] = 0.0;
+				cyl->cylinder->radius = 0.028575;	// bat radius in meters
+//				cyl->cylinder->normal;	// later
+				cyl->parishable = false;
+				cyl->collisionType = COLLISION_CYLINDER;
+				entityList.push_back(cyl);
+				break;
 
 			case ESC_KEY:
 				curScene->exit();
@@ -494,13 +645,18 @@ public:
 		generateBSPTree(bspRoot, obj->polygonList);
 		curScene->nameAndCachePolygons(bspRoot);
 
+		// TODO INCLUDE THIS WITH THE MAP!
+		// THIS IS JUST FOR LOADING THE SKY
 		chdir("images/");
+
 		curScene->sky = gluNewQuadric();
 		gluQuadricTexture(curScene->sky, true);
 		gluQuadricOrientation(curScene->sky, GLU_INSIDE);
 		getMaterialManager()->loadBitmap(SKY_TEXTURE);
+
 		chdir("..");
 		curScene->cacheSky();
+		// END LOADING THE SKY
 	}
 
 	ObjModel* loadMap(string map)	{

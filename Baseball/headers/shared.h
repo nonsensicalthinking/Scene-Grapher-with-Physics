@@ -325,6 +325,7 @@ inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, con
 	return 1;	// Indicate that we had an intersection
 }
 
+/*
 // Returns reflection vector (of unit length) in result from given inputs
 inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t result)	{
 	vec3_t r;
@@ -333,8 +334,20 @@ inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t r
 	VectorScale(r, f, result);
 	VectorSubtract(incident, result, result);
 }
+*/
 
+// Returns reflection vector (of unit length) in result from given inputs
+inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t result)  {
 
+        vec3_t neg;
 
+        VectorNegate(incident, neg);
+        double iA = DotProduct(neg, surfNorm);        // incident angle
+
+        iA *= 2;
+
+        VectorMA(incident, surfNorm, iA, result);
+
+}
 
 #endif /* SHARED_H_ */

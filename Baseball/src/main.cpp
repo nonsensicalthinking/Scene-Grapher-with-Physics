@@ -300,8 +300,6 @@ int main(int argc, char **argv) {
 		processed += 2;
 	}
 
-
-	// This rodeo is fixin' to kick off...
 	glutMainLoop();
 
 	return 0;

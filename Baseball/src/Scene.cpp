@@ -54,17 +54,10 @@ void Scene::drawEntity(entity_t* ent)	{
 	if( ent->hasExpired )
 		return;
 
-//	static GLUquadric* baseball;
-
-//	gluSphere(baseball, 5, 10, 5);
-
+	// TODO DRAW A MODEL INSTEAD OF A SPHERE!!
 	glPushMatrix();
-	glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-	glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
-//    glPointSize(5);
-//    glBegin(GL_POINTS);
-//            glVertex3f(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-//    glEnd();
+		glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+		glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
     glPopMatrix();
 }
 
@@ -250,8 +243,25 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 }
 
 void Scene::fullScreen(bool full)	{
-	if( full )
-		glutEnterGameMode();
+
+
+	if( full )	{
+//		  glutInit(NULL, NULL);
+
+		  /* Select type of Display mode:
+		     Double buffer
+		     RGBA color
+		     Alpha components supported
+		     Depth buffered for automatic clipping */
+		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+
+		  /* get a 640 x 480 window */
+		glutInitWindowSize(1360, 768);
+
+		  /* the window starts at the upper left corner of the screen */
+		glutInitWindowPosition(0, 0);
+		glutFullScreen();
+	}
 	else
 		glutLeaveGameMode();
 }
