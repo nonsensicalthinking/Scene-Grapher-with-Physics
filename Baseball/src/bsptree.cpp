@@ -442,6 +442,40 @@ void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList)	{
 	buildTree(400, 0, partition, root);
 }
 
+  // TODO make this return a leaf list when doing sphere and bounding box collisions
+	// because the box or sphere may be laying in more than one partition
+	bsp_node_t* findBSPLeaf(const vec3_t pos)	{
+		bsp_node_t* curNode = bspRoot;
+
+		while( !curNode->isLeaf() )	{
+			if( curNode->partition != NULL )	{
+				float result = classifyPoint(curNode->partition, pos);
+				if( result > EPSILON )	{
+					curNode = curNode->front;
+				}
+				else if(result < -EPSILON )	{
+					curNode = curNode->back;
+				}
+				else	{
+					//TODO HANDLE SPANNING OCCURANCE
+					cout << "Ent position spanning two nodes" << endl;
+					//FIXME for now just going down the front
+					// Will need to go down both front and back!
+					curNode = curNode->front;
+				}
+			}
+			else	{
+				cout << "NULL NODE REFERENCE" << endl;
+			}
+		}
+
+		if( curNode->isLeaf() )
+			return curNode;
+
+		return NULL;
+	}
+
+
 
 // Very simple BSP Test
 /*
