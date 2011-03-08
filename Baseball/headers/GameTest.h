@@ -131,15 +131,6 @@ public:
 	}
 
 
-
-
-	// call this function to load different maps
-	virtual void load(string mapname)	{
-		createBSP(mapname);
-		getScene()->submitBSPTree(bspRoot);
-		loaded = true;
-	}
-
  
 	void entPolyCollision(entity_t* ent, polygon_t* poly)	{
 		switch( ent->collisionType )	{
@@ -636,6 +627,15 @@ public:
 		obj->loadObjFile(map);
 		return obj;
 	}
+
+
+	// call this function to load different maps
+	virtual void load(string mapname)	{
+		createBSP(mapname);
+		getScene()->submitBSPTree(bspRoot);
+		loaded = true;
+	}
+
 
 	void createDynamicLeafList(bsp_node_t* root, bool start)	{
 		if( start )
