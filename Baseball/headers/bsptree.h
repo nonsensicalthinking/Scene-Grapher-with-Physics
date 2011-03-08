@@ -88,9 +88,12 @@ typedef struct bsp_node_s	{
 
 }bsp_node_t;
 
-
+// splitPolygon is only used in bsptree.cpp, hence it's lack of visiblity here
 void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node);
+void bspInOrderBackToFront(bsp_node_t* tree);
+void bspInOrderFrontToBack(bsp_node_t* tree);
 void deleteTree(bsp_node_t* bspRoot);
 void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList);
+bsp_node_t* findBSPLeaf(const vec3_t pos);
 
 #endif /* BSPTREE_H_ */
