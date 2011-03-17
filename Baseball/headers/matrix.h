@@ -111,6 +111,8 @@ inline void ZRotationMatrix(float zRad, matrix_3x3_t result)	{
 }
 
 
+// rot is a 1x3 matrix where you've entered x, y and z rotation
+// quantified by degrees of movement, you get back the proper rotation matrix
 inline void getRotationMatrix(matrix_1x3_t rot, matrix_3x3_t result)	{
 	matrix_3x3_t xrot, yrot, zrot;
 

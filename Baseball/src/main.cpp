@@ -64,6 +64,7 @@ long timeStamp;
 
 Scene* curScene;
 MaterialManager* materials;
+ModelManager* models;
 Game* game = NULL;	// C++ gives us inheritance, hooray!
 
 void* start_game_thread(void* args);	// Func defined below this
@@ -224,7 +225,7 @@ void draw(void)
 #endif
 
 	// Draw the scene.
-	curScene->render();
+	curScene->render(dSec);
 
 	if( game != NULL )
 		game->advance(dSec);

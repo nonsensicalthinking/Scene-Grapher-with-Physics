@@ -35,6 +35,7 @@
 
 #include "GameTest.h"
 
+
 #include <sstream>
 #include <GL/glut.h>
 
@@ -49,22 +50,35 @@ using namespace std;
 // Global getters
 extern Game* getGame();
 
+
+
 // TODO have this draw a model instead of just a point
-void Scene::drawEntity(entity_t* ent)	{
+void Scene::drawEntity(float dt, entity_t* ent)	{
 	if( ent->hasExpired )
 		return;
 
-	// TODO DRAW A MODEL INSTEAD OF A SPHERE!!
-	glPushMatrix();
+	if( ent->model )	{
+		glPushMatrix();
 		glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-		glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
-    glPopMatrix();
+		glRotatef(ent->facing[0], 1.0, 0, 0);
+		glRotatef(ent->facing[1], 0, 1.0, 0);
+		glRotatef(ent->facing[2], 0, 0, 1.0);
+		ent->model->advance(dt);
+		ent->model->draw();
+		glPopMatrix();
+	}
+	else	{
+		glPushMatrix();
+			glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+			glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
+	    glPopMatrix();
+	}
 }
 
-void Scene::drawEntityList(list<entity_t*> mlist)	{
+void Scene::drawEntityList(float dt, list<entity_t*> mlist)	{
 	list<entity_t*>::iterator itr;
 	for(itr=mlist.begin(); itr != mlist.end(); itr++)
-		drawEntity((*itr));
+		drawEntity(dt,(*itr));
 }
 
 void Scene::setEntityList(list<entity_t*> mlist)	{
@@ -94,6 +108,7 @@ Scene::Scene(int width, int height)
 	con = new Console(width,height);
 	con->consoleActive = false;
 	matsManager = getMaterialManager();
+	modelManager = new ModelManager();
 	polygonCount = 0;	// count of static polygons in the entire scene
 	bspRoot = NULL;
 
@@ -267,7 +282,7 @@ void Scene::fullScreen(bool full)	{
 }
 
 
-void Scene::render()
+void Scene::render(float dt)
 {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -300,8 +315,25 @@ void Scene::render()
 		// Separately because they're nearly always
 		// being added and removed from the bsp tree to
 		// check for collisions.
-		drawEntityList(entList);
+		drawEntityList(dt, entList);
 	}
+
+
+//	if( drawGrid )	{
+		glPushMatrix();
+		glBegin(GL_LINES);
+//		glColor3f(0, 0, 1);
+		for(int x=0; x < 20; x++)	{
+			glVertex3f(x, 0, 0);
+			glVertex3f(x, 0, 20);
+		}
+		glEnd();
+		glPopMatrix();
+//	}
+
+
+
+
 
 	// FIXME: this is off to make the console bg black instead of
 	// blinding white.

@@ -444,7 +444,7 @@ void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList)	{
 
   // TODO make this return a leaf list when doing sphere and bounding box collisions
 	// because the box or sphere may be laying in more than one partition
-	bsp_node_t* findBSPLeaf(const vec3_t pos)	{
+	bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
 		bsp_node_t* curNode = bspRoot;
 
 		while( !curNode->isLeaf() )	{

@@ -6,6 +6,7 @@
  */
 
 #include "physics.h"
+#include "md2model.h"
 
 #ifndef ENT_H_
 #define ENT_H_
@@ -31,7 +32,10 @@ typedef struct entity_s	{
 	int expired;
 	bool hasExpired;
 
+	vec3_t facing;
+
 	string md2name;
+	MD2Model* model;
 
 	Mass* mass;	// Mass' current state
 
@@ -68,14 +72,24 @@ inline entity_t* createEntity()	{
 	ent->expired = 0;
 	ent->mass = NULL;
 	ent->md2name = "";
+	ent->model = NULL;
 	ent->collisionType = COLLISION_NONE;
+
+	ent->facing[0] = 1.0;
+	ent->facing[1] = 0;
+	ent->facing[2] = 0;
 }
 
 inline void cleanEntity(entity_t* ent)	{
 	ent->hasExpired = false;
 	ent->expired = 0;
+//	if( ent->mass )
+//		delete ent->mass;
 	ent->mass = NULL;
 	ent->md2name = "";
+//	if( ent->model )
+//		delete ent->model;
+	ent->model = NULL;
 	ent->collisionType = COLLISION_NONE;
 	ent->radius = 0;
 }
