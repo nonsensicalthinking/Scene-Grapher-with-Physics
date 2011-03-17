@@ -5,21 +5,24 @@
  *      Author: Derek Brooks
  */
 
+#include <string>
+#include <list>
+#include <map>
+#include <vector>
+
 #include "shared.h"
 #include "MaterialManager.h"
 #include "Console.h"
 #include "Camera.h"
 #include "bsptree.h"
 #include "ent.h"
-#include <string>
-#include <list>
-#include <map>
-#include <vector>
+#include "ModelManager.h"
+
+extern void cleanExit();	// defined in main.cpp
 
 #ifndef SCENE_H_
 #define SCENE_H_
 
-extern void cleanExit();	// defined in main.cpp
 
 class Scene	{
 public:
@@ -27,6 +30,7 @@ public:
 
 	int sceneWidth;
 	int sceneHeight;
+
 
 	Console* con;
 
@@ -36,6 +40,7 @@ public:
 	unsigned int polygonCount;
 
 	MaterialManager* matsManager;
+	ModelManager* modelManager;
 
 	bsp_node_t* bspRoot;
 
@@ -47,8 +52,8 @@ public:
 	Scene(int width, int height);
 	~Scene(void);
 
-	void drawEntity(entity_t* ent);
-	void drawEntityList(list<entity_t*> mlist);
+	void drawEntity(float dt, entity_t* ent);
+	void drawEntityList(float dt, list<entity_t*> mlist);
 	void setEntityList(list<entity_t*> mlist);
 	void submitBSPTree(bsp_node_t* root);
 
@@ -58,7 +63,7 @@ public:
 	void fullScreen(bool full);
 
 	// GL dominated routines
-	void render(void);
+	void render(float dt);
 	void resizeSceneSize(int width, int height);
 	void performLighting();
 	void drawPolygon(polygon_t* poly);

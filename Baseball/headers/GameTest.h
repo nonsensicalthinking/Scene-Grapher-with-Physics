@@ -29,6 +29,8 @@
 #include <queue>
 #define CAM_MOVE_RATE 	1
 
+#ifndef GAME_TEST_H_
+#define GAME_TEST_H_
 
 #define SKY_TEXTURE		"partly_cloudy.bmp"
 
@@ -107,21 +109,17 @@ public:
 		// movement info
 		ent->mass = new Mass(1);
 
-//		vec3_t vel;
-//		VectorMA(standing, looking, speed, vel);
+		ent->md2name = "smallguy.md2";
+
+		ent->model = getScene()->modelManager->loadMD2Model(ent->md2name);
+		ent->model->setAnimation("run");
 		VectorCopy(pos, ent->mass->pos);
-//		VectorCopy(vel, ent->mass->vel);
+		VectorCopy(facing, ent->facing);
 
 		ent->mass->moveType = MOVE_TYPE_AT_REST;
-//		ent->mass->instantSpeed = speed;
-//		ent->mass->rotationSpeed = 1500;
-//		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
-
 
 		// Lifetime info
 		ent->parishable = false;
-//		ent->setTTL(4000);		// 4 seconds
-
 
 		// Collision info
 		ent->collisionType = COLLISION_SPHERE;
@@ -367,7 +365,7 @@ public:
 	}
 
 	void insertEntityIntoBSP(entity_t* ent)	{
-		bsp_node_t* node = findBSPLeaf(ent->mass->pos);
+		bsp_node_t* node = findBSPLeaf(bspRoot, ent->mass->pos);
 
 		collideWithWorld(ent, node->getPolygonList());
 
@@ -555,6 +553,22 @@ public:
 				cyl->collisionType = COLLISION_CYLINDER;
 				entityList.push_back(cyl);
 				break;
+			case 'o':	// place player
+				vec3_t plate1;	// home plate
+				plate1[0] = -39.21;
+				plate1[1] = 0;	// 5'5"
+				plate1[2] = 31.86;
+				vec3_t mound; // pitchers mound
+				mound[0] = -26.91;
+				mound[1] = 0.5;
+				mound[2] = 20.13;
+				vec3_t facing;
+				VectorSubtract(plate1, mound, facing);
+				VectorUnitVector(facing, facing);
+				placePlayer(mound, facing);
+				break;
+
+
 
 			case ESC_KEY:
 				curScene->exit();
@@ -682,3 +696,6 @@ public:
 
 	}
 };
+
+#endif
+
