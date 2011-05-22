@@ -19,8 +19,6 @@
 #include "shared.h"
 #include "bsptree.h"
 
-//#define DEBUG_SPLIT	// for debugging the bsp partitions
-
 using namespace std;
 
 #define FRONT 		 1
@@ -216,6 +214,9 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 bsp_node_t* getNewBSPNode()	{
 	bsp_node_t* node = new bsp_node_t;
 
+#ifdef BSPDEBUG
+	node->nodeNumber = -1;	// init to something out of the scope
+#endif
 	node->root = false;
 	node->partition = NULL;
 	node->parent = NULL;
@@ -230,6 +231,9 @@ void buildTree(bsp_node_t* currentNode)
 {
 	static int depth = 0;
 	static int leafCount = 0;
+#ifdef BSPDEBUG
+	static int nodeCount = 1;
+#endif
 
 	// FIXME: isn't tree depth zero based?
 	depth++;
@@ -339,23 +343,38 @@ void buildTree(bsp_node_t* currentNode)
 		front->parent = currentNode;
 		back->parent = currentNode;
 
+#ifdef BSPDEBUG
+		nodeCount++;
+		front->nodeNumber = nodeCount;
+		nodeCount++;
+		back->nodeNumber = nodeCount;
+#endif
+
 		buildTree(front);
 		buildTree(back);
 	}
 
 	depth--;
+
+#ifdef BSPDEBUG
+	cout << "Total Nodes(includes leaves): " << nodeCount << endl;
+#endif
 }
 
 
 void bspInOrderBackToFront(bsp_node_t* tree)	{
 
 	if( !tree )	{
+#ifdef BSPDEBUG
 		cout << "WARNING BSPTree: Null Tree Reference" << endl;
+#endif
 		return;
 	}
 
 	if( tree->isLeaf() )	{
+#ifdef BSPDEBUG
 		cout << "Found a leaf!" << endl;
+#endif
 		return;
 	}
 
@@ -365,13 +384,17 @@ void bspInOrderBackToFront(bsp_node_t* tree)	{
 
 void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	if( !tree )	{
+#ifdef BSPDEBUG
 		cout << "WARNING BSPTree: Null Tree Reference" << endl;
+#endif
 		return;
 	}
 
 	if( tree->isLeaf() )	{
+#ifdef BSPDEBUG
 		cout << "Found a leaf!" << endl;
 		cout << "Polygons: " << tree->getPolygonList().size() << endl;
+#endif
 		return;
 	}
 
@@ -381,29 +404,39 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 
 void deleteTree(bsp_node_t* tree)	{
 
-
 	if( !tree )	{
-		cout << "Warning BSPTree: Null tree reference" << endl;
+#ifdef BSPDEBUG
+		cout << "WARNING: BSPTree followed NULL tree reference" << endl;
+#endif
 		return;
 	}
 
+#ifdef BSPDEBUG
 	cout << "Tree Node: " << tree << endl;
+#endif
 
-
-	if( tree->root )	{
-		cout << "THIS IS THE ROOT" << endl;
-	}
-	else if( tree->isLeaf() )	{
+	if( tree->isLeaf() )	{
+#ifdef BSPDEBUG
+		cout << "Freeing Node# " << tree->nodeNumber << "(LEAF)" << endl;
+#endif
 		tree->clearNode();
+		delete tree;
 	}
 	else	{
-		deleteTree(tree->front);
-		deleteTree(tree->back);
+		if( tree->front )
+			deleteTree(tree->front);
+		if( tree->back )
+			deleteTree(tree->back);
+#ifdef BSPDEBUG
+		cout << "Freeing Node# " << tree->nodeNumber << endl;
+#endif
 		if( tree->partition )
 			delete tree->partition;
+
+		if( tree )
+			delete tree;
 	}
 
-	delete tree;
 }
 
 
@@ -424,12 +457,11 @@ void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList, float initi
 	root->setPolygonList(polygonList);
 	root->partition = partition;
 
-	// the first argument must be double the width of the largest surface
 	buildTree(root);
-	// FIXME THIS WAS 240 for FENWAY, SHOULD BE VARIABLE
-	// ITS 120 NOW FOR A TEST
 }
 
+
+// TODO IGNORE COMMENT BELOW, MAKE THIS FUNCTION RECURSIVE AND IT WILL CHECK EVERYTHING WITHOUT A LIST!!
 // TODO make this return a leaf list when doing sphere and bounding box collisions
 // because the box or sphere may be laying in more than one partition
 bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
@@ -453,7 +485,7 @@ bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
 			}
 		}
 		else	{
-			cout << "NULL NODE REFERENCE" << endl;
+			cout << "WARNING: findBSPLeaf(): NULL NODE REFERENCE" << endl;
 		}
 	}
 
@@ -463,151 +495,8 @@ bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
 	return NULL;
 }
 
-/*
-
-// Very simple BSP Test
-
-int main(void)
-{
-	list<polygon_t*> polygonList;
-
-	polygon_t* p = new polygon_t;
-	p->numPoints = 4;
-
-	p->points[0][0] = -199;
-	p->points[0][1] = 0;
-	p->points[0][2] = -199;
-
-	p->points[1][0] = -199;
-	p->points[1][1] = 0;
-	p->points[1][2] = 200;
-
-	p->points[2][0] = 200;
-	p->points[2][1] = 0;
-	p->points[2][2] = 200;
-
-	p->points[3][0] = 200;
-	p->points[3][1] = 0;
-	p->points[3][2] = -199;
-
-	polygonList.push_back(p);
-
-	bsp_node_t* root = new bsp_node_t;
 
 
-	plane_t* partition = new plane_t;
-
-	partition->normal[0] = 1.0;
-	partition->normal[1] = 0.0;
-	partition->normal[2] = 0.0;
-
-	partition->origin[0] = 0.0;
-	partition->origin[1] = 0.0;
-	partition->origin[2] = 0.0;
-
-	root->setPolygonList(polygonList);
-
-
-	buildTree(400, 0, partition, root);
-
-	bspInOrderFrontToBack(root);
-
-	deleteTree(root);
-
-	return 0;
-}
-
-*/
-
-
-
-
-/*
- * This function tests the working-ness of splitting polygons
- * oh, but you have to evaluate the results by paper =P
- */
-
-/*
-void testSplittingOperations()
-{
-	int x;
-
-	polygon_t *poly = new polygon_t;
-	polygon_t *front = new polygon_t;
-	polygon_t *back = new polygon_t;
-
-	plane_t *splitPlane = new plane_t;
-
-
-	splitPlane->origin[0] = 2.0;
-	splitPlane->origin[1] = 0.0;
-	splitPlane->origin[2] = 3.0;
-
-	splitPlane->normal[0] = 0.0;
-	splitPlane->normal[1] = 0.0;
-	splitPlane->normal[2] = 1.0;
-
-	cout << "===> Splitting square..." << endl;
-
-	poly->numPoints = 4;
-	vec3_t polygon[] = {{1.0f, 0.0f, 2.0f},
-						{1.0f, 0.0f, 4.0f},
-						{3.0f, 0.0f, 4.0f},
-						{3.0f, 0.0f, 2.0f}};
-
-	for(x=0; x < poly->numPoints; x++)
-		VectorCopy(polygon[x], poly->points[x]);
-
-	splitPolygon(poly, splitPlane, front, back);
-
-	for(x =0; x < front->numPoints; x++)	{
-		cout << "Front Point " << x << ": ";
-		VectorPrint(front->points[x]);
-		cout << endl;
-	}
-
-	for(x =0; x < back->numPoints; x++)	{
-		cout << "Back Point " << x << ": ";
-		VectorPrint(back->points[x]);
-		cout << endl;
-	}
-
-	// Triangle
-	cout << "===> Splitting triangle..." << endl;
-	delete poly;
-	poly = new polygon_t;
-
-	vec3_t polygonB[] = {{1.0, 0.0, 1.0}, {2.5, 0.0, 4.0}, {4.0, 0.0, 1.0} };
-
-	splitPlane->origin[0] = 2.5;
-	splitPlane->origin[1] = 0.0;
-	splitPlane->origin[2] = 2.0;
-
-	splitPlane->normal[0] = 0.0;
-	splitPlane->normal[1] = 0.0;
-	splitPlane->normal[2] = 1.0;
-
-	poly->numPoints = 3;
-
-	for(x=0; x < poly->numPoints; x++)
-		VectorCopy(polygonB[x], poly->points[x]);
-
-	splitPolygon(poly, splitPlane, front, back);
-
-	for(x =0; x < front->numPoints; x++)	{
-		cout << "Front Point " << x << ": ";
-		VectorPrint(front->points[x]);
-		cout << endl;
-	}
-
-	for(x =0; x < back->numPoints; x++)	{
-		cout << "Back Point " << x << ": ";
-		VectorPrint(back->points[x]);
-		cout << endl;
-	}
-
-}
-*/
 
 
 

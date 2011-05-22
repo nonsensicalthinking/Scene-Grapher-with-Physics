@@ -18,9 +18,12 @@
 #define 	PLANE_NORMAL_Y		1
 #define		PLANE_NORMAL_Z		2
 
+//#define BSPDEBUG
+
+
 
 typedef struct bsp_node_s	{
-
+	int nodeNumber;
 	bool root;
 	plane_t* partition;
 	bsp_node_s* parent;
@@ -56,16 +59,22 @@ typedef struct bsp_node_s	{
 	}
 
 	void clearNode()	{
-		for(int x=0; x < polygonList.size(); x++)	{
+//		if( partition )
+//			delete partition;
+
+		int size = polygonList.size();
+		for(int x=0; x < size; x++)	{
 			polygon_t* poly = polygonList.front();
-			delete poly;
+			if( poly )
+				delete poly;
 			polygonList.pop_front();
 		}
 
-
-		for(int x=0; x < entityList.size(); x++)	{
+		size = entityList.size();
+		for(int x=0; x < size; x++)	{
 			entity_t* ent = entityList.front();
-			delete ent;
+			if( ent )
+				delete ent;
 			entityList.pop_front();
 		}
 	}

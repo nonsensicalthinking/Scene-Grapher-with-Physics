@@ -206,7 +206,7 @@ void Scene::drawPolygon(polygon_t* poly)	{
 	}
 	else	{
 		glPushMatrix();
-			if( 1 )	{	// FIXME DEBUG FOR BSP, DRAWS POLYGONS AS OUTLINES
+			if( 0 )	{	// FIXME DEBUG FOR BSP, DRAWS POLYGONS AS OUTLINES
 				glBegin(GL_LINE_STRIP);
 				for(int x=0; x < poly->numPoints; x++)	{
 					glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
@@ -352,7 +352,8 @@ void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 			(*itr)->polyID = (*itr)->glCacheID;
 			polygonCount++;	// just for stats, may be removed later
 
-			cout << "PolyCacheID: " << (*itr)->glCacheID << endl;
+			// This is a mem mgmt debug print
+//			cout << "PolyCacheID: " << (*itr)->glCacheID << endl;
 		}
 	}
 	else	{
@@ -365,20 +366,28 @@ void Scene::unCachePolygons(bsp_node_t* bspNode)	{
 	list<polygon_t*>::iterator itr;
 
 	if( !bspNode )	{
-		cout << "BSP NODE IS NULL DAMN YOU" << endl;
+#ifdef BSPDEBUG
+		cout << "ERROR: unCachePolygons(): BSP NODE IS NULL DAMN YOU" << endl;
+#endif
 		return;
 	}
 
 	if( bspNode->isLeaf() )	{
-		cout << "Found a leaf uncaching " << bspNode->getPolygonList().size() << " polygons..." << endl;
+#ifdef BSPDEBUG
+		cout << "unCachePolygons(): Found a leaf uncaching " << bspNode->getPolygonList().size() << " polygons..." << endl;
+#endif
 		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
 			int i = (*itr)->glCacheID;
 			glDeleteLists(i, 1);
-			cout << "glCacheID: " << (*itr)->glCacheID << " cleared." << endl;
+#ifdef BSPDEBUG
+			cout << "unCachePolygons(): glCacheID: " << (*itr)->glCacheID << " cleared." << endl;
+#endif
 		}
 	}
 	else	{
-		cout << "Found node going front & back..." << endl;
+#ifdef BSPDEBUG
+		cout << "unCachePolygons(): Found node going front & back... following both" << endl;
+#endif
 		nameAndCachePolygons(bspNode->front);
 		nameAndCachePolygons(bspNode->back);
 	}
@@ -392,14 +401,20 @@ void Scene::exit()	{
 void Scene::reset()	{
 	// unload textures, models, bsp tree
 	bsp_node_t* bspTree = getGame()->getBSPTree();
-	cout << "------ UNLOADING RESOURCES -------" << endl;
-	cout << "-> Un-caching Polygons..." << endl;
+	cout << "------------ UNLOADING RESOURCES -------------" << endl;
+	cout << "-> unCaching Polygons...";
 	unCachePolygons(bspTree);
-	cout << "-> Freeing BSP Tree..." << endl;
+	cout << "done." << endl;
+	cout << "-> Freeing BSP Tree and its referenced resources...";
 	deleteTree(bspTree);
 	polygonCount = 0;
-	cout << "-> Polygon Count set to 0." << endl;
-	cout << "------ RESOURCES UNLOADED  -------" << endl;
+	cout << "done. (0 polygons in the scene)" << endl;
+
+	cout << "-> Purging Materials...";
+	matsManager->purgeMaterials();
+	cout << "done" << endl;
+
+	cout << "------ UNLOADING RESOURCES COMPLETED  -------" << endl;
 
 }
 
