@@ -49,293 +49,7 @@ class SpecialGame : public Game	{
 	bool fullScreen;
 
 public:
-
-	bsp_node_t* bspRoot;
-	list<entity_t*> entityList;
-	list<list<entity_t*> > entityLeafList;
-	queue<entity_t*> unusedEnts;
-
-
-	float timeElapsed;
-	float slowMotionRatio;
-
 	BaseballPhysics* bbPhys;
-
-
-	bool loaded;
-
-	// X PINCH POINT X
-	// not thread safe
-	void recycleEntity(entity_t* ent)	{
-		cleanEntity(ent);
-		unusedEnts.push(ent);
-	}
-
-	// you're responsible for getting one...
-	// this reference may or may not come back NULL
-	entity_t* getFreshEntity()	{
-		entity_t* ent = unusedEnts.front();
-		unusedEnts.pop();
-		return ent;
-	}
-
-	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
-		entity_t* ent = getFreshEntity();
-
-		ent->mass = new Mass(1);
-
-		vec3_t vel;
-		VectorMA(standing, looking, speed, vel);
-		VectorCopy(standing, ent->mass->pos);
-		VectorCopy(vel, ent->mass->vel);
-
-		ent->mass->moveType = MOVE_TYPE_BASEBALL;
-		ent->mass->instantSpeed = speed;
-		ent->mass->rotationSpeed = 1500;
-		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
-
-		// 4 seconds
-		ent->parishable = true;
-		ent->setTTL(4000);
-		ent->collisionType = COLLISION_SPHERE;
-		ent->radius = 1;
-//		VectorCopy(ent->mass->pos, ent->start);	// this was used for distances... maybe on home runs? or bp?
-
-		entityList.push_back(ent);
-	}
-
-	void placePlayer(vec3_t pos, vec3_t facing)	{
-		entity_t* ent = getFreshEntity();
-
-		// movement info
-		ent->mass = new Mass(1);
-
-		ent->md2name = "smallguy.md2";
-
-		ent->model = getScene()->modelManager->loadMD2Model(ent->md2name);
-		ent->model->setAnimation("run");
-		VectorCopy(pos, ent->mass->pos);
-		VectorCopy(facing, ent->facing);
-
-		ent->mass->moveType = MOVE_TYPE_AT_REST;
-
-		// Lifetime info
-		ent->parishable = false;
-
-		// Collision info
-		ent->collisionType = COLLISION_SPHERE;
-		ent->radius = 1;
-
-		entityList.push_back(ent);
-	}
-
-
- 
-	void entPolyCollision(entity_t* ent, polygon_t* poly)	{
-		switch( ent->collisionType )	{
-		case COLLISION_NONE:	// You said it chief
-			break;
-		case COLLISION_BOX:		// Bounding Box vs Polygon
-			// TODO perform BOX + POLY COLLISION
-			break;
-		case COLLISION_SPHERE:	// Sphere vs Polygon
-
-			if(ent->mass->moveType == MOVE_TYPE_AT_REST)
-				break;
-
-			plane_t* plane = new plane_t;
-
-			if( poly->hasNormals )	{
-				VectorCopy(poly->normpts[0], plane->normal);
-				VectorCopy(poly->points[0], plane->origin);
-
-				vec3_t intersect;
-				vec3_t rayEnd;
-
-				VectorAdd(ent->mass->pos, ent->mass->vel, rayEnd);
-
-				float discard;
-				if( findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &discard) )	{
-					if( isPointInPolygon(poly, intersect) )	{
-						vec3_t dist;
-						VectorSubtract(ent->mass->pos, intersect, dist);
-						float distSquared = DotProduct(dist, dist);
-						float rad = ent->radius + 0;	// no radius for polygon
-
-						if( distSquared <= (rad*rad) )	{	// is it within striking distance?
-							// TODO issue collision event so the engine can record what happened?
-							vec3_t reflect;
-							vec3_t incident;
-
-							float len = VectorUnitVector(ent->mass->vel, incident); // the changed
-							float newSpeed = len * 0.33;	// Shrink by 1/3~
-
-							// FIXME stop rotating when we hit objects
-							// FIXME not exactly accurate but ok for now
-							ent->mass->rotationSpeed = 0;
-
-							if( newSpeed < 0.1 )	{	// stay still
-								ent->mass->moveType = MOVE_TYPE_AT_REST;
-							}
-							else	{	// reflect damn you!
-								VectorReflect(incident, poly->normpts[0], reflect);
-								VectorScale(reflect, newSpeed, ent->mass->vel);
-								VectorCopy(ent->mass->prevPos, ent->mass->pos);
-							}
-						}
-					}
-				}
-			}
-			else	{	// Polygon has no normals... planeFromPoints()?
-				// TODO Figure out how to handle this
-			}
-
-			break;
-		}
-
-	}
-
-	void entEntCollision(entity_t* ent, entity_t* otherEnt)	{
-		if( !ent || !otherEnt )
-			return;
-
-		char collisionFlags = ent->collisionType | otherEnt->collisionType;
-		switch(collisionFlags)	{
-		case COLLISION_BOX|COLLISION_BOX:
-			cout << "Implement Box v Box Collision" << endl;
-			break;
-
-		case COLLISION_SPHERE|COLLISION_SPHERE:
-//			cout << "Implement Sphere v Sphere Collision" << endl;
-			break;
-
-		case COLLISION_CYLINDER|COLLISION_CYLINDER:
-			cout << "Implement Cylinder v Cylinder Collision" << endl;
-			break;
-
-		case COLLISION_SPHERE|COLLISION_BOX:
-			cout << "Implement Sphere v Box Collision" << endl;
-			break;
-
-		case COLLISION_SPHERE|COLLISION_CYLINDER:
-//			cout << "Implement Sphere v Cylinder Collision" << endl;
-			entity_t* ball;
-			entity_t* bat;
-
-			if( ent->collisionType == COLLISION_SPHERE )	{
-				ball = ent;
-				bat = otherEnt;
-			}
-			else	{
-				ball = otherEnt;
-				bat = ent;
-			}
-
-			vec3_t result, colPath, out;
-
-			VectorSubtract(ball->mass->pos, bat->mass->pos, result);
-			CrossProduct(ball->mass->vel, bat->cylinder->centerAxis, colPath);
-
-			double length;
-			length = VectorLength(colPath);
-			double t;
-			double s;
-			double i, o;
-			double lamda;
-
-			if( (length < 0) && (length > -0) )
-				return;
-
-			VectorUnitVector(colPath, colPath);
-
-			double delta;
-			delta = fabs(DotProduct(result, colPath));
-
-			if( delta <= bat->cylinder->radius )	{
-				cout << "Ball hit bat!\a" << endl;
-
-				CrossProduct(result, bat->cylinder->centerAxis, out);
-				t = - DotProduct(out, colPath)/length;
-				CrossProduct(colPath, bat->cylinder->centerAxis, out);
-				VectorUnitVector(out, out);
-				s = fabs(FastSqrt(bat->cylinder->radius*bat->cylinder->radius - delta*delta) / DotProduct(ball->mass->vel, out) );
-				i = t - s;
-				o = t + s;
-
-				if(i < -0){
-					if(o < -0)
-						return;
-					else
-						lamda=o;
-				}
-				else if(o) {
-					lamda=i;
-				}
-				else if(i < o)
-					lamda=i;
-				else
-					lamda=o;
-
-		    	vec3_t newposition;
-
-		    	VectorSubtract(bat->mass->pos, ball->mass->vel, newposition);
-		    	VectorUnitVector(newposition, newposition);
-		    	VectorReflect(ball->mass->vel, newposition, newposition);
-		    	VectorScale(newposition, ball->mass->instantSpeed, ball->mass->vel);
-		    	VectorCopy(ball->mass->prevPos, ball->mass->pos);
-		    	// to reflect
-//		    	VectorReflect(incident, poly->normpts[0], reflect);
-//				VectorScale(reflect, newSpeed, ent->mass->vel);
-
-
-			}
-
-
-			break;
-
-		case COLLISION_CYLINDER|COLLISION_BOX:
-			cout << "Implement Cylinder v Box Collision" << endl;
-			break;
-		}
-
-	}
-
-	void collideWithWorld(entity_t* ent, list<polygon_t*> polyList)	{
-		list<polygon_t*>::iterator itr = polyList.begin();
-		for(; itr != polyList.end(); itr++)	{
-			entPolyCollision(ent, (*itr));
-		}
-	}
-
-	void collideWithOtherEntities(entity_t* ent, list<entity_t*> entList)	{
-		list<entity_t*>::iterator itr = entList.begin();
-		for(; itr != entList.end(); itr++)	{
-			if( ent != (*itr) )	// if its not itself
-				entEntCollision(ent, (*itr));
-		}
-	}
-
-	void insertEntityIntoBSP(entity_t* ent)	{
-		bsp_node_t* node = findBSPLeaf(bspRoot, ent->mass->pos);
-
-		collideWithWorld(ent, node->getPolygonList());
-
-		collideWithOtherEntities(ent, node->getEntityList());
-
-		node->addEntity(ent);
-	}
-
-
-	// FIXME
-	// I do believe this is why we should crawl entities along surfaces...
-	// this is costly to do ... every frame!
-	void insertEntitiesIntoBSPTree()	{
-		list<entity_t*>::iterator itr = entityList.begin();
-
-		for(;itr != entityList.end(); itr++)
-			insertEntityIntoBSP((*itr));
-	}
-
 
 	// This is called once every time around the game loop.
 	virtual void advance(float dSec)	{
@@ -411,6 +125,67 @@ public:
 
 
 
+	void throwPitch(int speed, vec3_t standing, vec3_t looking)	{
+		entity_t* ent = getFreshEntity();
+
+		ent->mass = new Mass(1);
+
+		vec3_t vel;
+		VectorMA(standing, looking, speed, vel);
+		VectorCopy(standing, ent->mass->pos);
+		VectorCopy(vel, ent->mass->vel);
+
+		ent->mass->moveType = MOVE_TYPE_BASEBALL;
+		ent->mass->instantSpeed = speed;
+		ent->mass->rotationSpeed = 1500;
+		CrossProduct(NORMAL_X, NORMAL_Z, ent->mass->rotationAxis);
+
+		// 4 seconds
+		ent->parishable = true;
+		ent->setTTL(4000);
+		ent->collisionType = COLLISION_SPHERE;
+		ent->radius = 1;
+//		VectorCopy(ent->mass->pos, ent->start);	// this was used for distances... maybe on home runs? or bp?
+
+		entityList.push_back(ent);
+	}
+
+	void placePlayer(vec3_t pos, vec3_t facing)	{
+		entity_t* ent = getFreshEntity();
+
+		// movement info
+		ent->mass = new Mass(1);
+
+		ent->md2name = "smallguy.md2";
+
+		ent->model = getScene()->modelManager->loadMD2Model(ent->md2name);
+		ent->model->setAnimation("run");
+		VectorCopy(pos, ent->mass->pos);
+		VectorCopy(facing, ent->facing);
+
+		ent->mass->moveType = MOVE_TYPE_AT_REST;
+
+		// Lifetime info
+		ent->parishable = false;
+
+		// Collision info
+		ent->collisionType = COLLISION_SPHERE;
+		ent->radius = 1;
+
+		entityList.push_back(ent);
+	}
+
+
+
+	void insertEntitiesIntoBSPTree()	{
+		list<entity_t*>::iterator itr = entityList.begin();
+
+		for(;itr != entityList.end(); itr++)
+			insertEntityIntoBSP((*itr));
+	}
+
+
+
 	// Event handlers
 	// Handles keyboard input from normal text keys
 	virtual void keyPressed(unsigned char key, int x, int y)	{
@@ -453,6 +228,7 @@ public:
 			case '1':
 				break;
 			case 'f':
+				throwPitch(120, curScene->cam->origin, curScene->cam->normDir);
 				break;
 			case 'g':
 				break;
@@ -533,11 +309,6 @@ public:
 
 	}
 
-
-
-
-
-
 	ObjModel* loadMap(string map)	{
 		// TODO FIX THIS SLOPPYNESS AND THE STUFF WHEN LOADING
 		// BMP FILES TOO, THIS IS JUST A TEMP HACK TO CLEAN UP
@@ -566,47 +337,6 @@ public:
 		createBSP(mapname);
 		loaded = true;
 	}
-
-	virtual void unloadBSP()	{
-		bspRoot = NULL;
-		loaded = false;
-	}
-
-	virtual bsp_node_t* getBSPTree()	{
-		return bspRoot;
-	}
-
-	virtual list<entity_t*> getEntList()	{
-		return entityList;
-	}
-
-	void createDynamicLeafList(bsp_node_t* root, bool start)	{
-		if( start )
-			entityLeafList.clear();
-
-		if( root->isLeaf() )	{
-			entityLeafList.push_back(root->getEntityList());
-		}
-		else	{
-			createDynamicLeafList(root->front, false);
-			createDynamicLeafList(root->back, false);
-		}
-	}
-
-	void removeEntitiesFromBSPTree()	{
-		list<list<entity_t*> >::iterator itr;
-		for(itr=entityLeafList.begin(); itr != entityLeafList.end(); itr++)
-			(*itr).clear();
-	}
-
-	void addEntity(entity_t* ent)	{
-		entityList.push_back(ent);
-	}
-
-	void removeEntity(entity_t* ent)	{
-		entityList.remove(ent);
-	}
-
 
 	SpecialGame() : Game()	{
 		bspRoot = NULL;

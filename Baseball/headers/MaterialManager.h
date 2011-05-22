@@ -164,7 +164,19 @@ public:
 	}
 
 	void removeMaterial(string matName)	{
+		material_t* mat;
+		mat = materials[matName];
 		materials.erase(matName);
+		delete mat;
+	}
+
+	void purgeMaterials()	{
+		map<string,material_t*>::iterator itr;
+		for(itr=materials.begin(); itr != materials.end(); itr++)	{
+			material_t* mat = (*itr).second;	// itr is key,val pair
+			delete mat;
+		}
+		materials.clear();
 	}
 
 	bool hasMaterial(string matName)	{
