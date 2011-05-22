@@ -39,37 +39,33 @@ public:
 
 	unsigned int polygonCount;
 
+	// TODO Incorporate the texture manager and console permanently in this class
 	MaterialManager* matsManager;
 	ModelManager* modelManager;
-
 
 	// TODO Remove this, make the sky part of the map
 	GLUquadric* sky;
 	GLuint skyCacheID;
 
-	Scene(int width, int height);
-	~Scene(void);
-
-	void drawEntity(float dt, entity_t* ent);
-	void drawEntityList(float dt, list<entity_t*> mlist);
-
-	void renderBSPTree(bsp_node_t* tree);
-	void renderPolygonList(list<polygon_t*> polygons);
-
 	void fullScreen(bool full);
-
-	// GL dominated routines
-	void render(float dt);
 	void resizeSceneSize(int width, int height);
 	void performLighting();
 	void drawPolygon(polygon_t* poly);
+	void cacheSky();
+	void glCachePolygon(polygon_t* polygon);
 	void nameAndCachePolygons(bsp_node_t* bspNode);
 	void unCachePolygons(bsp_node_t* bspNode);
-	void glCachePolygon(polygon_t* polygon);
-	void cacheSky();
+	void drawEntity(float dt, entity_t* ent);
+	void drawEntityList(float dt, list<entity_t*> mlist);
+	void renderBSPTree(bsp_node_t* tree);
+	void renderPolygonList(list<polygon_t*> polygons);
+	void render(float dt);
 
-	void exit();
 	void reset();
+	void exit();
+
+	Scene(int width, int height);
+	~Scene(void);
 };
 
 

@@ -23,7 +23,9 @@
 
 
 typedef struct bsp_node_s	{
+#ifdef BSPDEBUG
 	int nodeNumber;
+#endif
 	bool root;
 	plane_t* partition;
 	bsp_node_s* parent;
@@ -59,8 +61,8 @@ typedef struct bsp_node_s	{
 	}
 
 	void clearNode()	{
-//		if( partition )
-//			delete partition;
+		if( partition )
+			delete partition;
 
 		int size = polygonList.size();
 		for(int x=0; x < size; x++)	{
