@@ -45,82 +45,17 @@ using namespace std;
 #define Z_NEAR		0.1
 #define Z_FAR		700	// this happens to be the diameter of the "skybox" for now
 
-
+// TODO Put this some place else!!
 #define RADIUS_OF_BASEBALL 0.0762  // 0.448056	// in meters obviously
+
+// CVARS
+int r_drawWireFrame = 0;
+
 // Global getters
 extern Game* getGame();
 
-
-
-// TODO have this draw a model instead of just a point
-void Scene::drawEntity(float dt, entity_t* ent)	{
-	if( ent->hasExpired )
-		return;
-
-	if( ent->model )	{
-		glPushMatrix();
-		glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-		glRotatef(ent->facing[0], 1.0, 0, 0);
-		glRotatef(ent->facing[1], 0, 1.0, 0);
-		glRotatef(ent->facing[2], 0, 0, 1.0);
-		ent->model->advance(dt);
-		ent->model->draw();
-		glPopMatrix();
-	}
-	else	{
-		glPushMatrix();
-			glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
-			glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
-	    glPopMatrix();
-	}
-}
-
-void Scene::drawEntityList(float dt, list<entity_t*> mlist)	{
-	list<entity_t*>::iterator itr;
-	for(itr=mlist.begin(); itr != mlist.end(); itr++)
-		drawEntity(dt,(*itr));
-}
-
-
-void Scene::cacheSky()	{
-    skyCacheID = glGenLists(1);
-    glNewList(skyCacheID, GL_COMPILE);
-    glPushMatrix();
-	matsManager->enableSphereMapping();
-	matsManager->bindTexture(SKY_TEXTURE);
-	gluSphere(sky, 350, 10, 5);
-	matsManager->disableSphereMapping();
-	glPopMatrix();
-    glEndList();
-}
-
-Scene::Scene(int width, int height)
-{
-	sceneWidth = width;
-	sceneHeight = height;
-	con = new Console(width,height);
-	con->consoleActive = false;
-	matsManager = getMaterialManager();
-	modelManager = new ModelManager();
-	polygonCount = 0;	// count of static polygons in the entire scene
-
-	cam = new Camera();
-	vec3_t p = {-45, 3, 36};
-	vec3_t l = {0.684131, -0.198672, -0.701779};
-	cam->setView(p, l);
-	cameras.push_back(cam);
-
-	Camera* sideCam = new Camera();
-	vec3_t pos = {0, 23, 56};
-	vec3_t look = {-0.0738074, -0.295523, -0.95248};
-	sideCam->setView(pos, look);
-	cameras.push_back(sideCam);
-}
-
-
-Scene::~Scene()
-{
-	delete con;
+void Scene::fullScreen(bool full)	{
+	// TODO Get full screen working
 }
 
 void Scene::resizeSceneSize(int width, int height)	{
@@ -191,14 +126,34 @@ void Scene::performLighting()	{
 
 }
 
-void Scene::glCachePolygon(polygon_t* polygon)	{
-    polygon->glCacheID = glGenLists(1);
-    glNewList(polygon->glCacheID, GL_COMPILE);
-    drawPolygon(polygon);
-    glEndList();
-    polygon->glCached = true;
+
+void Scene::drawEntity(float dt, entity_t* ent)	{
+	if( ent->hasExpired )
+		return;
+
+	if( ent->model )	{
+		glPushMatrix();
+		glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+		glRotatef(ent->facing[0], 1.0, 0, 0);
+		glRotatef(ent->facing[1], 0, 1.0, 0);
+		glRotatef(ent->facing[2], 0, 0, 1.0);
+		ent->model->advance(dt);
+		ent->model->draw();
+		glPopMatrix();
+	}
+	else	{
+		glPushMatrix();
+			glTranslatef(ent->mass->pos[0], ent->mass->pos[1], ent->mass->pos[2]);
+			glutSolidSphere(RADIUS_OF_BASEBALL, 10, 5);
+	    glPopMatrix();
+	}
 }
 
+void Scene::drawEntityList(float dt, list<entity_t*> mlist)	{
+	list<entity_t*>::iterator itr;
+	for(itr=mlist.begin(); itr != mlist.end(); itr++)
+		drawEntity(dt,(*itr));
+}
 
 void Scene::drawPolygon(polygon_t* poly)	{
 	if( poly->glCached )	{
@@ -206,32 +161,33 @@ void Scene::drawPolygon(polygon_t* poly)	{
 	}
 	else	{
 		glPushMatrix();
-			if( 0 )	{	// FIXME DEBUG FOR BSP, DRAWS POLYGONS AS OUTLINES
-				glBegin(GL_LINE_STRIP);
-				for(int x=0; x < poly->numPoints; x++)	{
-					glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
-				}
-				glEnd();
+		if( r_drawWireFrame )	{	// draw wire frame for polygons
+			glBegin(GL_LINE_STRIP);
+			for(int x=0; x < poly->numPoints; x++)	{
+				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
 			}
-			else	{
-				if( poly->hasMaterial )
-					matsManager->enableMaterial(poly->materialName);
+			glEnd();
+		}
+		else	{
+			if( poly->hasMaterial )
+				matsManager->enableMaterial(poly->materialName);
 
-				glBegin(GL_POLYGON);
-				for(int x=0; x < poly->numPoints; x++)	{
-					if( poly->hasNormals )
-						glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
+			glBegin(GL_POLYGON);
+			for(int x=0; x < poly->numPoints; x++)	{
+				if( poly->hasNormals )
+					glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
 
-					if( poly->isTextured )
-						glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
+				if( poly->isTextured )
+					glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
 
-					glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
-				}
-				glEnd();
-
-				if( poly->hasMaterial )
-					matsManager->disableMaterial(poly->materialName);
+				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
 			}
+			glEnd();
+
+			if( poly->hasMaterial )
+				matsManager->disableMaterial(poly->materialName);
+		}
+
 		glPopMatrix();
 	}
 }
@@ -256,31 +212,6 @@ void Scene::renderBSPTree(bsp_node_t* tree)	{
 		renderBSPTree(tree->front);
 	}
 }
-
-void Scene::fullScreen(bool full)	{
-
-
-	if( full )	{
-//		  glutInit(NULL, NULL);
-
-		  /* Select type of Display mode:
-		     Double buffer
-		     RGBA color
-		     Alpha components supported
-		     Depth buffered for automatic clipping */
-		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-
-		  /* get a 640 x 480 window */
-		glutInitWindowSize(1360, 768);
-
-		  /* the window starts at the upper left corner of the screen */
-		glutInitWindowPosition(0, 0);
-		glutFullScreen();
-	}
-	else
-		glutLeaveGameMode();
-}
-
 
 void Scene::render(float dt)
 {
@@ -343,6 +274,28 @@ void Scene::render(float dt)
 	glutSwapBuffers();	// swap out the display buffer with our new scene
 }
 
+// TODO Make this part of the map some how instead of
+// separately like this.
+void Scene::cacheSky()	{
+    skyCacheID = glGenLists(1);
+    glNewList(skyCacheID, GL_COMPILE);
+    glPushMatrix();
+	matsManager->enableSphereMapping();
+	matsManager->bindTexture(SKY_TEXTURE);
+	gluSphere(sky, 350, 10, 5);
+	matsManager->disableSphereMapping();
+	glPopMatrix();
+    glEndList();
+}
+
+void Scene::glCachePolygon(polygon_t* polygon)	{
+    polygon->glCacheID = glGenLists(1);
+    glNewList(polygon->glCacheID, GL_COMPILE);
+    drawPolygon(polygon);
+    glEndList();
+    polygon->glCached = true;
+}
+
 void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 	list<polygon_t*>::iterator itr;
 
@@ -393,11 +346,6 @@ void Scene::unCachePolygons(bsp_node_t* bspNode)	{
 	}
 }
 
-
-void Scene::exit()	{
-	cleanExit();
-}
-
 void Scene::reset()	{
 	// unload textures, models, bsp tree
 	bsp_node_t* bspTree = getGame()->getBSPTree();
@@ -414,9 +362,42 @@ void Scene::reset()	{
 	matsManager->purgeMaterials();
 	cout << "done" << endl;
 
-	cout << "------ UNLOADING RESOURCES COMPLETED  -------" << endl;
+	cout << "------- UNLOADING RESOURCES COMPLETED  -------" << endl;
 
 }
 
+void Scene::exit()	{
+	cleanExit();
+}
+
+Scene::Scene(int width, int height)
+{
+	sceneWidth = width;
+	sceneHeight = height;
+	con = new Console(width,height);
+	con->consoleActive = false;
+	matsManager = getMaterialManager();
+	modelManager = new ModelManager();
+	polygonCount = 0;	// count of static polygons in the entire scene
+
+	cam = new Camera();
+	vec3_t p = {-45, 3, 36};
+	vec3_t l = {0.684131, -0.198672, -0.701779};
+	cam->setView(p, l);
+	cameras.push_back(cam);
+
+	Camera* sideCam = new Camera();
+	vec3_t pos = {0, 23, 56};
+	vec3_t look = {-0.0738074, -0.295523, -0.95248};
+	sideCam->setView(pos, look);
+	cameras.push_back(sideCam);
+}
+
+
+Scene::~Scene()
+{
+	reset();
+	delete con;
+}
 
 
