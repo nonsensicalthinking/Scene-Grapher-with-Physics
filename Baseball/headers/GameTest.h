@@ -21,12 +21,13 @@
  *	TODO Insert Entities into the bsp tree as soon as we operate on them.
  *
  */
+#include <queue>
 #include "Game.h"
 #include "Scene.h"
 #include "objloader.h"
 #include "shared.h"
 #include "ent.h"
-#include <queue>
+
 #define CAM_MOVE_RATE 	1
 
 #ifndef GAME_TEST_H_
@@ -138,6 +139,10 @@ public:
 			// TODO perform BOX + POLY COLLISION
 			break;
 		case COLLISION_SPHERE:	// Sphere vs Polygon
+
+			if(ent->mass->moveType == MOVE_TYPE_AT_REST)
+				break;
+
 			plane_t* plane = new plane_t;
 
 			if( poly->hasNormals )	{
@@ -150,7 +155,7 @@ public:
 				VectorAdd(ent->mass->pos, ent->mass->vel, rayEnd);
 
 				float discard;
-				if( (findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &discard)) == 1 )	{
+				if( findLinePlaneIntersect(plane, ent->mass->pos, rayEnd, intersect, &discard) )	{
 					if( isPointInPolygon(poly, intersect) )	{
 						vec3_t dist;
 						VectorSubtract(ent->mass->pos, intersect, dist);
@@ -162,18 +167,20 @@ public:
 							vec3_t reflect;
 							vec3_t incident;
 
-							float len = VectorUnitVector(ent->mass->vel, incident);
+							float len = VectorUnitVector(ent->mass->vel, incident); // the changed
 							float newSpeed = len * 0.33;	// Shrink by 1/3~
 
-							// stop rotating when we hit objects
-							// not exactly accurate but ok for now
+							// FIXME stop rotating when we hit objects
+							// FIXME not exactly accurate but ok for now
 							ent->mass->rotationSpeed = 0;
 
-							if( newSpeed < 0.1 )	// stay still
+							if( newSpeed < 0.1 )	{	// stay still
 								ent->mass->moveType = MOVE_TYPE_AT_REST;
+							}
 							else	{	// reflect damn you!
 								VectorReflect(incident, poly->normpts[0], reflect);
 								VectorScale(reflect, newSpeed, ent->mass->vel);
+								VectorCopy(ent->mass->prevPos, ent->mass->pos);
 							}
 						}
 					}
@@ -270,74 +277,18 @@ public:
 					lamda=o;
 
 		    	vec3_t newposition;
-		    	VectorMA(ball->mass->pos, ball->mass->vel, lamda, newposition);
 
-//		    	TVector HB=newposition-cylinder._Position;
+		    	VectorSubtract(bat->mass->pos, ball->mass->vel, newposition);
+		    	VectorUnitVector(newposition, newposition);
+		    	VectorReflect(ball->mass->vel, newposition, newposition);
+		    	VectorScale(newposition, ball->mass->instantSpeed, ball->mass->vel);
+		    	VectorCopy(ball->mass->prevPos, ball->mass->pos);
+		    	// to reflect
+//		    	VectorReflect(incident, poly->normpts[0], reflect);
+//				VectorScale(reflect, newSpeed, ent->mass->vel);
 
-//		    	pNormal=HB - cylinder._Axis*(HB.dot(cylinder._Axis));
-//				pNormal.unit();
 
 			}
-			/*
-			TVector RC;
-			double d;
-			double t,s;
-			TVector n,D,O;
-			double ln;
-			double in,out;
-
-
-			TVector::subtract(position,cylinder._Position,RC);
-			TVector::cross(direction,cylinder._Axis,n);
-
-		    ln=n.mag();
-
-			if ( (ln<ZERO)&&(ln>-ZERO) ) return 0;
-
-			n.unit();
-
-			d= fabs( RC.dot(n) );
-
-		    if (d<=cylinder._Radius)
-			{
-				TVector::cross(RC,cylinder._Axis,O);
-				t= - O.dot(n)/ln;
-				TVector::cross(n,cylinder._Axis,O);
-				O.unit();
-				s= fabs( sqrt(cylinder._Radius*cylinder._Radius - d*d) / direction.dot(O) );
-
-				in=t-s;
-				out=t+s;
-
-				if (in<-ZERO){
-					if (out<-ZERO) return 0;
-					else lamda=out;
-				}
-				else
-		        if (out<-ZERO) {
-					      lamda=in;
-				}
-				else
-				if (in<out) lamda=in;
-				else lamda=out;
-
-		    	newposition=position+direction*lamda;
-				TVector HB=newposition-cylinder._Position;
-				pNormal=HB - cylinder._Axis*(HB.dot(cylinder._Axis));
-				pNormal.unit();
-
-				return 1;
-			}
-		    */
-
-
-
-
-
-
-
-
-
 
 
 			break;
@@ -454,7 +405,8 @@ public:
 
 		}
 
-		getScene()->setEntityList(entityList);
+		// FIXME
+		// TODO Get entities into the scene some how....
 	}
 
 
@@ -499,73 +451,22 @@ public:
 				curScene->cam->rotateAboutX(curScene->cam->pitch_rate);
 				break;
 			case '1':
-				placePlayer(curScene->cam->origin, curScene->cam->normDir);
 				break;
 			case 'f':
-				vec3_t r;
-				VectorAdd(curScene->cam->origin, curScene->cam->normDir, r);
-				throwPitch(pitchSpeed, r, curScene->cam->normDir);
 				break;
 			case 'g':
-				vec3_t e1;
-				vec3_t r1;	// pitchers mound
-				r1[0] = -26.91;
-				r1[1] = 1.67;
-				r1[2] = 20.13;
-				vec3_t d1;	// home plate
-				d1[0] = -39.21;
-				d1[1] = 1.67;	// 5'5"
-				d1[2] = 31.86;
-
-				VectorSubtract(d1, r1, e1);
-				VectorUnitVector(e1, e1);
-
-				throwPitch(pitchSpeed, r1, e1);
 				break;
 			case 'n':
 				if( curScene->cam == curScene->cameras[0] )
 					curScene->cam = curScene->cameras[1];
 				else
 					curScene->cam = curScene->cameras[0];
-
 				break;
 			case 'm':
-				curScene->fullScreen(fullScreen);
-				fullScreen = !fullScreen;
 				break;
-			case 'p':
-				entity_t* cyl;
-				cyl = createEntity();
-				cyl->cylinder = new cylinder_t;
-				vec3_t plate;	// home plate
-				plate[0] = -39.21;
-				plate[1] = 1.67;	// 5'5"
-				plate[2] = 31.86;
-				cyl->mass = new Mass(1);
-				VectorCopy(plate, cyl->mass->pos);
-				cyl->mass->moveType = MOVE_TYPE_AT_REST;
-				cyl->cylinder->centerAxis[0] = 1.0;
-				cyl->cylinder->centerAxis[1] = 0.0;
-				cyl->cylinder->centerAxis[2] = 0.0;
-				cyl->cylinder->radius = 0.028575;	// bat radius in meters
-//				cyl->cylinder->normal;	// later
-				cyl->parishable = false;
-				cyl->collisionType = COLLISION_CYLINDER;
-				entityList.push_back(cyl);
+			case 'p':	// create bat in space to hit
 				break;
 			case 'o':	// place player
-				vec3_t plate1;	// home plate
-				plate1[0] = -39.21;
-				plate1[1] = 0;	// 5'5"
-				plate1[2] = 31.86;
-				vec3_t mound; // pitchers mound
-				mound[0] = -26.91;
-				mound[1] = 0.5;
-				mound[2] = 20.13;
-				vec3_t facing;
-				VectorSubtract(plate1, mound, facing);
-				VectorUnitVector(facing, facing);
-				placePlayer(mound, facing);
 				break;
 
 
@@ -588,6 +489,8 @@ public:
 		VectorPrint(cs->cam->origin);
 		cout << endl << "Dir: ";
 		VectorPrint(cs->cam->normDir);
+		cout << endl << "Angles: ";
+		VectorPrint(cs->cam->angles);
 		cout << endl << "----------------------" << endl;
 	}
 
@@ -602,21 +505,18 @@ public:
 
 		Scene* curScene = getScene();
 
-		dx *= 0.025;
-		dy *= 0.025;
+		dx *= 0.0025;
+		dy *= 0.0025;
 
 		curScene->cam->rotateAboutX(dy);	// Pitch
 		curScene->cam->rotateAboutY(-dx);	// Yaw
 	}
 
 
-	void createBSP(string mapName)	{
-		Scene* curScene = getScene();
-		ObjModel* obj = loadMap(mapName);
-		bspRoot = new bsp_node_t;
 
-		generateBSPTree(bspRoot, obj->polygonList);
-		curScene->nameAndCachePolygons(bspRoot);
+
+	void loadSky()	{
+		Scene* curScene = getScene();
 
 		// TODO INCLUDE THIS WITH THE MAP!
 		// THIS IS JUST FOR LOADING THE SKY
@@ -630,7 +530,13 @@ public:
 		chdir("..");
 		curScene->cacheSky();
 		// END LOADING THE SKY
+
 	}
+
+
+
+
+
 
 	ObjModel* loadMap(string map)	{
 		// TODO FIX THIS SLOPPYNESS AND THE STUFF WHEN LOADING
@@ -642,14 +548,37 @@ public:
 		return obj;
 	}
 
+	void createBSP(string mapName)	{
+		Scene* curScene = getScene();
+		ObjModel* obj = loadMap(mapName);
+		bspRoot = new bsp_node_t;
+		bspRoot->root = true;
+
+		// FIXME this diameter is static (60), but should be set to width/2 of map...
+		generateBSPTree(bspRoot, obj->polygonList, 100);
+		curScene->nameAndCachePolygons(bspRoot);
+
+		delete obj;
+	}
 
 	// call this function to load different maps
 	virtual void load(string mapname)	{
 		createBSP(mapname);
-		getScene()->submitBSPTree(bspRoot);
 		loaded = true;
 	}
 
+	virtual void unloadBSP()	{
+		bspRoot = NULL;
+		loaded = false;
+	}
+
+	virtual bsp_node_t* getBSPTree()	{
+		return bspRoot;
+	}
+
+	virtual list<entity_t*> getEntList()	{
+		return entityList;
+	}
 
 	void createDynamicLeafList(bsp_node_t* root, bool start)	{
 		if( start )
@@ -680,6 +609,7 @@ public:
 
 
 	SpecialGame() : Game()	{
+		bspRoot = NULL;
 		loaded = false;
 		timeElapsed = 0.0;
 		slowMotionRatio = 1.0;

@@ -115,7 +115,7 @@ Game* getGame()	{
 
 
 void cleanExit()	{
-	game->killGame();	// stop game thread first
+	game->killGame();	// stops game thread
 
 	delete game;
 	delete materials;
@@ -227,11 +227,11 @@ void draw(void)
 	// Draw the scene.
 	curScene->render(dSec);
 
-	if( game != NULL )
+	if( game )
 		game->advance(dSec);
 
 
-	// Tabulate frame rate
+	// START: Frame rate processing
 	frameCount++;
 	lastFrameTime = curFrameTime;
 
@@ -240,6 +240,7 @@ void draw(void)
 		frameCount = 0;
 		frameStamp = curFrameTime;
 	}
+	// END: frame rate processing
 
 }
 

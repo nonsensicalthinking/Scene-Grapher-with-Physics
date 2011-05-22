@@ -23,16 +23,17 @@ using namespace std;
 #define	SPANNING			0
 #define	FRONT				1
 
-#define EPSILON				0.0001f
+
+#define EPSILON				0.0000001
 
 
 #define MAX_POLY_POINTS		10		// Max number of points in a polygon
 #define MAX_FILE_LENGTH		64		// Max length for a filename
 
 #define PI					3.14159265
-#define PI_DIV_BY_180		PI/180.0
+#define PI_DIV_BY_180		PI / 180.0
 #define ONE_RADIAN			PI_DIV_BY_180
-#define TWO_PI_DIV_BY_60	(2*PI)/60
+#define TWO_PI_DIV_BY_60	(2.0 * PI) / 60.0
 #define ONE_MILLISECOND		0.001
 
 
@@ -48,6 +49,7 @@ const vec3_t NORMAL_Z = {0.0, 0.0, 1.0};
 const vec3_t ZERO_VECTOR = {0.0, 0.0, 0.0};
 
 typedef struct plane_s	{
+	float diameter;
 	vec3_t origin;
 	vec3_t normal;
 }plane_t;
@@ -295,6 +297,31 @@ inline int classifyPolygon(const plane_t* partition, const polygon_t* poly)	{
 	return -99;	// Error of sorts happened.
 }
 
+/*
+int TestIntersionPlane(plane_t* plane, const vec3_t position, const TVector& direction, double& lamda, TVector& pNormal)
+{
+
+    double DotProduct=direction.dot(plane._Normal);
+	double l2;
+
+    //determine if ray paralle to plane
+    if ((DotProduct<ZERO)&&(DotProduct>-ZERO))
+		return 0;
+
+    l2=(plane._Normal.dot(plane._Position-position))/DotProduct;
+
+    if (l2<-ZERO)
+		return 0;
+
+    pNormal=plane._Normal;
+	lamda=l2;
+    return 1;
+
+}
+*/
+
+
+
 // For all intensive purposes this is a ray-plane intersection
 inline int findLinePlaneIntersect(const plane_t *plane, const vec3_t pointA, const vec3_t pointB, vec3_t intersect, float *fractSect)	{
 	vec3_t u;
@@ -349,5 +376,10 @@ inline void VectorReflect(const vec3_t incident, const vec3_t surfNorm, vec3_t r
         VectorMA(incident, surfNorm, iA, result);
 
 }
+
+
+
+
+
 
 #endif /* SHARED_H_ */

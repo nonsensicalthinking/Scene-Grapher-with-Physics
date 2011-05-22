@@ -12,11 +12,7 @@
 #define BSPTREE_H_
 #include <list>
 
-// TODO Fool around with recursion depth to
-// find optimal solution so far 11 seems to balance
-// frame rate and collision so we aren't checking
-// too many things
-#define BSP_RECURSION_DEPTH		11
+#define BSP_RECURSION_DEPTH		7
 
 #define		PLANE_NORMAL_X		0
 #define 	PLANE_NORMAL_Y		1
@@ -25,10 +21,11 @@
 
 typedef struct bsp_node_s	{
 
-	plane_t *partition;
-	bsp_node_s *parent;
-	bsp_node_s *front;
-	bsp_node_s *back;
+	bool root;
+	plane_t* partition;
+	bsp_node_s* parent;
+	bsp_node_s* front;
+	bsp_node_s* back;
 
 	private:
 	list<polygon_t*> polygonList;
@@ -56,6 +53,21 @@ typedef struct bsp_node_s	{
 
 	void removePolygon(polygon_t* poly)	{
 		polygonList.remove(poly);
+	}
+
+	void clearNode()	{
+		for(int x=0; x < polygonList.size(); x++)	{
+			polygon_t* poly = polygonList.front();
+			delete poly;
+			polygonList.pop_front();
+		}
+
+
+		for(int x=0; x < entityList.size(); x++)	{
+			entity_t* ent = entityList.front();
+			delete ent;
+			entityList.pop_front();
+		}
 	}
 
 	list<polygon_t*>::iterator beginPolyListItr()	{
@@ -89,11 +101,12 @@ typedef struct bsp_node_s	{
 }bsp_node_t;
 
 // splitPolygon is only used in bsptree.cpp, hence it's lack of visiblity here
-void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node);
+bsp_node_t* getNewBSPNode();
+void buildTree(bsp_node_t*);
 void bspInOrderBackToFront(bsp_node_t* tree);
 void bspInOrderFrontToBack(bsp_node_t* tree);
 void deleteTree(bsp_node_t* bspRoot);
-void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList);
+void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList, float initialDiameter);
 bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos);
 
 #endif /* BSPTREE_H_ */

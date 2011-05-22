@@ -243,6 +243,9 @@ void Console::processConsoleCommand(const string conInput)	{
 		break;
 
 	case LOAD:
+		getScene()->reset();
+		getGame()->unloadBSP();
+
 		char mapname[128];
 		if( sscanf(conInput.c_str(), "load %s", mapname) > 0 )	{
 			oss << "Loading map: " << mapname;

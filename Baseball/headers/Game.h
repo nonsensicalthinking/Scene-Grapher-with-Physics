@@ -144,6 +144,21 @@ public:
 	}
 
 	// This is to be overridden
+	virtual void unloadBSP()	{
+
+	}
+
+	// This is to be overridden
+	virtual bsp_node_t* getBSPTree()	{
+
+	}
+
+	// This is to be overridden
+	virtual list<entity_t*> getEntList()	{
+
+	}
+
+	// This is to be overridden
 	virtual void advance(float ms)	{
 
 	}

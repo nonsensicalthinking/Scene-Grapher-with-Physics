@@ -53,7 +53,7 @@ public:
 			return md2;
 		}
 		
-		cout << "Couldn't load MD2Model " << modelName << endl;
+		cerr << "Couldn't load MD2Model " << modelName << endl;
 		return NULL;
 	}
 
