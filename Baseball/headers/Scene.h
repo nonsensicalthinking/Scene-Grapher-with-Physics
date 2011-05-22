@@ -42,10 +42,8 @@ public:
 	MaterialManager* matsManager;
 	ModelManager* modelManager;
 
-	bsp_node_t* bspRoot;
 
-	list<entity_t*> entList;
-
+	// TODO Remove this, make the sky part of the map
 	GLUquadric* sky;
 	GLuint skyCacheID;
 
@@ -54,8 +52,6 @@ public:
 
 	void drawEntity(float dt, entity_t* ent);
 	void drawEntityList(float dt, list<entity_t*> mlist);
-	void setEntityList(list<entity_t*> mlist);
-	void submitBSPTree(bsp_node_t* root);
 
 	void renderBSPTree(bsp_node_t* tree);
 	void renderPolygonList(list<polygon_t*> polygons);
@@ -68,10 +64,12 @@ public:
 	void performLighting();
 	void drawPolygon(polygon_t* poly);
 	void nameAndCachePolygons(bsp_node_t* bspNode);
+	void unCachePolygons(bsp_node_t* bspNode);
 	void glCachePolygon(polygon_t* polygon);
 	void cacheSky();
 
 	void exit();
+	void reset();
 };
 
 

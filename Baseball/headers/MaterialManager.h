@@ -126,7 +126,7 @@ public:
 		Bitmap* bmp = new Bitmap();
 
 		if( !bmp->loadBMP(str) )	{
-			cout << "Couldn't load bitmap: " << bmp->error << endl;
+			cout << "Couldn't load bitmap (" << str << "): " << bmp->error << endl;
 			return false;
 		}
 

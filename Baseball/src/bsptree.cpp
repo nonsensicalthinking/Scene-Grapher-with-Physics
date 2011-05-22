@@ -27,6 +27,9 @@ using namespace std;
 #define BACK 		-1
 #define COINCIDENT	 0
 
+const vec3_t NORMAL_X_DIR = {1.0, 0.0, 0.0};
+const vec3_t NORMAL_Z_DIR = {0.0, 0.0, 1.0};
+
 
 //	splitPolygon is one of those long and messy functions that needs a
 // 	good solid re-write, but because it works for now it will remain
@@ -75,8 +78,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 		sideB = classifyPoint(split, pointB);
 
 
-		if( sideB > 0 )	{
-			if( sideA < 0 )	{
+		if( sideB > EPSILON )	{
+			if( sideA < -EPSILON )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a ray-plane intersection.
@@ -117,8 +120,8 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 			// jack up the front count
 			frontCount++;
 		}
-		else if( sideB < 0 )	{
-			if( sideA > 0 )	{
+		else if( sideB < -EPSILON )	{
+			if( sideA > EPSILON )	{
 				// compute the intersection point of the line
 				// from point A to point B with the partition
 				// plane. This is a ray-plane intersection.
@@ -210,8 +213,20 @@ void splitPolygon(const polygon_t *poly, const plane_t *split, polygon_t *front,
 
 }
 
+bsp_node_t* getNewBSPNode()	{
+	bsp_node_t* node = new bsp_node_t;
 
-void buildTree(const float planeLen, const float nextCenter, plane_t* partition, bsp_node_t* parent_node)
+	node->root = false;
+	node->partition = NULL;
+	node->parent = NULL;
+	node->front = NULL;
+	node->back = NULL;
+
+	return node;
+}
+
+
+void buildTree(bsp_node_t* currentNode)
 {
 	static int depth = 0;
 	static int leafCount = 0;
@@ -226,17 +241,16 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 		return;
 	}
 	else	{
-		parent_node->partition = partition;
 
 		float sideOfPlane = 0;
 		list<polygon_t*>::iterator itr;
 		list<polygon_t*> front_list;
 		list<polygon_t*> back_list;
 
-		for(itr=parent_node->beginPolyListItr(); itr != parent_node->endPolyListItr(); itr++)	{
+		for(itr=currentNode->beginPolyListItr(); itr != currentNode->endPolyListItr(); itr++)	{
 			polygon_t* curPoly = (*itr);
 
-			int polySide = classifyPolygon(partition, curPoly);
+			int polySide = classifyPolygon(currentNode->partition, curPoly);
 
 			if( polySide == SPANNING )	{
 				polygon_t* front_half = createPolygon();
@@ -253,7 +267,7 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 				back_half->hasNormals = curPoly->hasNormals;
 				back_half->isTextured = curPoly->isTextured;
 
-				splitPolygon(curPoly, partition, front_half, back_half);
+				splitPolygon(curPoly, currentNode->partition, front_half, back_half);
 
 				front_list.push_back(front_half);
 				back_list.push_back(back_half);
@@ -268,105 +282,65 @@ void buildTree(const float planeLen, const float nextCenter, plane_t* partition,
 			}
 		}
 
-		/*
-		 * Begin calculation of next partitioning plane
-		 */
-		plane_t* new_front_partition = new plane_t;
-		plane_t* new_back_partition = new plane_t;
-
-		VectorCopy(partition->origin, new_front_partition->origin);
-		VectorCopy(partition->origin, new_back_partition->origin);
-
-// Changes the width dimensions every other split
-		static bool change = true;	// must be true to calc first coords
-		float newNextCenter = 0;
-		float nextLength;
-		// NOTE: nextCenter is changed every other
-		// call to this function.
-
-		if( change )	{
-			nextLength = planeLen / 2;
-			newNextCenter = nextLength / 2;
-			change = false;
-		}
-		else	{
-			newNextCenter = nextCenter;
-			nextLength = planeLen;
-			change = true;
-		}
-// End change over stuff
-
-
-
-		if( partition->normal[PLANE_NORMAL_X] == 0.0 )	{
-			// if the last partition was on the z axis
-			// make this one on the x axis, to do that
-			// we add nextCenter to the z axis origin
-			new_front_partition->origin[PLANE_NORMAL_Z] += newNextCenter;
-			new_back_partition->origin[PLANE_NORMAL_Z] -= newNextCenter;
-
-			VectorCopy(NORMAL_X, new_front_partition->normal);
-			VectorCopy(NORMAL_X, new_back_partition->normal);
-		}
-		else	{	// partition->normal[PLANE_NORMAL_Z] == 0.0
-			// make this one on the z axis, to do that
-			// we add nextCenter to the x axis origin
-
-			new_front_partition->origin[PLANE_NORMAL_X] += newNextCenter;
-			new_back_partition->origin[PLANE_NORMAL_X] -= newNextCenter;
-
-			VectorCopy(NORMAL_Z, new_front_partition->normal);
-			VectorCopy(NORMAL_Z, new_back_partition->normal);
-		}
-
-#ifdef DEBUG_SPLIT
-			cout << "********************" << endl;
-			cout << "Next Front Partition" << endl;
-			cout << "-Normal: ";
-			VectorPrint(new_front_partition->normal);
-			cout << endl;
-			cout << "-Origin: ";
-			VectorPrint(new_front_partition->origin);
-			cout << endl;
-			cout << "Next Back Partition" << endl;
-			cout << "-Normal: ";
-			VectorPrint(new_back_partition->normal);
-			cout << endl;
-			cout << "-Origin: ";
-			VectorPrint(new_back_partition->origin);
-			cout << endl;
-			cout << "Next Center = " << nextCenter << endl;
-#endif
 
 		/*
-		 * End creation of new partitioning planes
+		 * End polygon splitting, prepare for recursion
 		 */
 
 
-		bsp_node_t* front_node = new bsp_node_t;
-		bsp_node_t* back_node = new bsp_node_t;
+		// build new partitions
+		vec3_t newFront;
+		vec3_t newBack;
+		plane_t* fp = new plane_t;
+		plane_t* bp = new plane_t;
+		bsp_node_t* front = getNewBSPNode();
+		bsp_node_t* back = getNewBSPNode();
 
-		front_node->front = NULL;
-		front_node->back = NULL;
+		VectorCopy(currentNode->partition->origin, newFront);
+		VectorCopy(currentNode->partition->origin, newBack);
 
-		back_node->front = NULL;
-		back_node->back = NULL;
+		if( currentNode->partition->normal[PLANE_NORMAL_X] == 1 )	{
+			float diameter = currentNode->partition->diameter / 2;	// only modify diameter after Z split (previous split)
 
+			newFront[PLANE_NORMAL_X] += diameter;
+			newBack[PLANE_NORMAL_X] -= diameter;
 
-		// Link the new nodes to the tree
-		front_node->parent = parent_node;
-		back_node->parent = parent_node;
+			VectorCopy(newFront, fp->origin);
+			VectorCopy(NORMAL_Z_DIR, fp->normal);
+			fp->diameter = diameter;
 
-		parent_node->front = front_node;
-		parent_node->back = back_node;
-		// End node linking
+			VectorCopy(newBack, bp->origin);
+			VectorCopy(NORMAL_Z_DIR, bp->normal);
+			bp->diameter = diameter;
+
+		}	else	{	// PLANE_NORMAL_Z
+			newFront[PLANE_NORMAL_Z] += currentNode->partition->diameter;
+			newBack[PLANE_NORMAL_Z] -= currentNode->partition->diameter;
+
+			VectorCopy(newFront, fp->origin);
+			VectorCopy(NORMAL_X_DIR, fp->normal);
+			fp->diameter = currentNode->partition->diameter;
+
+			VectorCopy(newBack, bp->origin);
+			VectorCopy(NORMAL_X_DIR, bp->normal);
+			bp->diameter = currentNode->partition->diameter;
+		}
 
 		// Give the nodes work to do
-		front_node->setPolygonList(front_list);
-		back_node->setPolygonList(back_list);
+		front->setPolygonList(front_list);
+		back->setPolygonList(back_list);
 
-		buildTree(nextLength, newNextCenter, new_front_partition, front_node);
-		buildTree(nextLength, newNextCenter, new_back_partition, back_node);
+		front->partition = fp;
+		back->partition = bp;
+
+		currentNode->front = front;
+		currentNode->back = back;
+
+		front->parent = currentNode;
+		back->parent = currentNode;
+
+		buildTree(front);
+		buildTree(back);
 	}
 
 	depth--;
@@ -381,6 +355,7 @@ void bspInOrderBackToFront(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
+		cout << "Found a leaf!" << endl;
 		return;
 	}
 
@@ -395,6 +370,8 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	}
 
 	if( tree->isLeaf() )	{
+		cout << "Found a leaf!" << endl;
+		cout << "Polygons: " << tree->getPolygonList().size() << endl;
 		return;
 	}
 
@@ -402,29 +379,35 @@ void bspInOrderFrontToBack(bsp_node_t* tree)	{
 	bspInOrderFrontToBack(tree->back);
 }
 
-void deleteTree(bsp_node_t* root)	{
+void deleteTree(bsp_node_t* tree)	{
 
-	if( !root )	{
+
+	if( !tree )	{
 		cout << "Warning BSPTree: Null tree reference" << endl;
 		return;
 	}
 
-	if( root->isLeaf() )	{
-		delete root;
-		return;
+	cout << "Tree Node: " << tree << endl;
+
+
+	if( tree->root )	{
+		cout << "THIS IS THE ROOT" << endl;
+	}
+	else if( tree->isLeaf() )	{
+		tree->clearNode();
+	}
+	else	{
+		deleteTree(tree->front);
+		deleteTree(tree->back);
+		if( tree->partition )
+			delete tree->partition;
 	}
 
-	deleteTree(root->front);
-	deleteTree(root->back);
-
-	// Delete the intermediate nodes between leaves
-	// since we've already been to our children
-//	delete root;
-//	root = NULL;
+	delete tree;
 }
 
 
-void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList)	{
+void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList, float initialDiameter)	{
 
 	plane_t* partition = new plane_t;
 
@@ -436,49 +419,54 @@ void generateBSPTree(bsp_node_t* root, list<polygon_t*> polygonList)	{
 	partition->origin[1] = 0.0;
 	partition->origin[2] = 0.0;
 
+	partition->diameter = initialDiameter;
+
 	root->setPolygonList(polygonList);
+	root->partition = partition;
 
 	// the first argument must be double the width of the largest surface
-	buildTree(400, 0, partition, root);
+	buildTree(root);
+	// FIXME THIS WAS 240 for FENWAY, SHOULD BE VARIABLE
+	// ITS 120 NOW FOR A TEST
 }
 
-  // TODO make this return a leaf list when doing sphere and bounding box collisions
-	// because the box or sphere may be laying in more than one partition
-	bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
-		bsp_node_t* curNode = bspRoot;
+// TODO make this return a leaf list when doing sphere and bounding box collisions
+// because the box or sphere may be laying in more than one partition
+bsp_node_t* findBSPLeaf(bsp_node_t* bspRoot, const vec3_t pos)	{
+	bsp_node_t* curNode = bspRoot;
 
-		while( !curNode->isLeaf() )	{
-			if( curNode->partition != NULL )	{
-				float result = classifyPoint(curNode->partition, pos);
-				if( result > EPSILON )	{
-					curNode = curNode->front;
-				}
-				else if(result < -EPSILON )	{
-					curNode = curNode->back;
-				}
-				else	{
-					//TODO HANDLE SPANNING OCCURANCE
-					cout << "Ent position spanning two nodes" << endl;
-					//FIXME for now just going down the front
-					// Will need to go down both front and back!
-					curNode = curNode->front;
-				}
+	while( !curNode->isLeaf() )	{
+		if( curNode->partition != NULL )	{
+			float result = classifyPoint(curNode->partition, pos);
+			if( result > EPSILON )	{
+				curNode = curNode->front;
+			}
+			else if(result < -EPSILON )	{
+				curNode = curNode->back;
 			}
 			else	{
-				cout << "NULL NODE REFERENCE" << endl;
+				//TODO HANDLE SPANNING OCCURANCE
+				cout << "Ent position spanning two nodes" << endl;
+				//FIXME for now just going down the front
+				// Will need to go down both front and back!
+				curNode = curNode->front;
 			}
 		}
-
-		if( curNode->isLeaf() )
-			return curNode;
-
-		return NULL;
+		else	{
+			cout << "NULL NODE REFERENCE" << endl;
+		}
 	}
 
+	if( curNode->isLeaf() )
+		return curNode;
 
+	return NULL;
+}
+
+/*
 
 // Very simple BSP Test
-/*
+
 int main(void)
 {
 	list<polygon_t*> polygonList;
@@ -486,11 +474,11 @@ int main(void)
 	polygon_t* p = new polygon_t;
 	p->numPoints = 4;
 
-	p->points[0][0] = -200;
+	p->points[0][0] = -199;
 	p->points[0][1] = 0;
-	p->points[0][2] = -200;
+	p->points[0][2] = -199;
 
-	p->points[1][0] = -200;
+	p->points[1][0] = -199;
 	p->points[1][1] = 0;
 	p->points[1][2] = 200;
 
@@ -500,7 +488,7 @@ int main(void)
 
 	p->points[3][0] = 200;
 	p->points[3][1] = 0;
-	p->points[3][2] = -200;
+	p->points[3][2] = -199;
 
 	polygonList.push_back(p);
 
@@ -520,9 +508,11 @@ int main(void)
 	root->setPolygonList(polygonList);
 
 
-	buildTree(400, partition, root);
+	buildTree(400, 0, partition, root);
 
 	bspInOrderFrontToBack(root);
+
+	deleteTree(root);
 
 	return 0;
 }

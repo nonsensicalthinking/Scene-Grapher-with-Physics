@@ -81,13 +81,6 @@ void Scene::drawEntityList(float dt, list<entity_t*> mlist)	{
 		drawEntity(dt,(*itr));
 }
 
-void Scene::setEntityList(list<entity_t*> mlist)	{
-	entList = mlist;
-}
-
-void Scene::submitBSPTree(bsp_node_t* root)	{
-	bspRoot = root;
-}
 
 void Scene::cacheSky()	{
     skyCacheID = glGenLists(1);
@@ -110,7 +103,6 @@ Scene::Scene(int width, int height)
 	matsManager = getMaterialManager();
 	modelManager = new ModelManager();
 	polygonCount = 0;	// count of static polygons in the entire scene
-	bspRoot = NULL;
 
 	cam = new Camera();
 	vec3_t p = {-45, 3, 36};
@@ -214,24 +206,32 @@ void Scene::drawPolygon(polygon_t* poly)	{
 	}
 	else	{
 		glPushMatrix();
-			if( poly->hasMaterial )
-				matsManager->enableMaterial(poly->materialName);
-
-			glBegin(GL_POLYGON);
-			for(int x=0; x < poly->numPoints; x++)	{
-				if( poly->hasNormals )
-					glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
-
-				if( poly->isTextured )
-					glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
-
-				glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+			if( 1 )	{	// FIXME DEBUG FOR BSP, DRAWS POLYGONS AS OUTLINES
+				glBegin(GL_LINE_STRIP);
+				for(int x=0; x < poly->numPoints; x++)	{
+					glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+				}
+				glEnd();
 			}
-			glEnd();
+			else	{
+				if( poly->hasMaterial )
+					matsManager->enableMaterial(poly->materialName);
 
-			if( poly->hasMaterial )
-				matsManager->disableMaterial(poly->materialName);
+				glBegin(GL_POLYGON);
+				for(int x=0; x < poly->numPoints; x++)	{
+					if( poly->hasNormals )
+						glNormal3f(poly->normpts[x][0], poly->normpts[x][1], poly->normpts[x][2] );
 
+					if( poly->isTextured )
+						glTexCoord2f(poly->texpts[x][0], poly->texpts[x][1]);
+
+					glVertex3f(poly->points[x][0], poly->points[x][1], poly->points[x][2]);
+				}
+				glEnd();
+
+				if( poly->hasMaterial )
+					matsManager->disableMaterial(poly->materialName);
+			}
 		glPopMatrix();
 	}
 }
@@ -300,7 +300,9 @@ void Scene::render(float dt)
 	//////////////////////////////////
 	// 		Scene Drawing Area		//
 	// v	v	v	v	v	v	v	//
-	if( bspRoot )	{
+	bsp_node_t* bspTree = getGame()->getBSPTree();
+
+	if( bspTree )	{
 		// TODO find a better way to draw background sky
 		glPushMatrix();
 		// Make the sky emit light!
@@ -309,29 +311,14 @@ void Scene::render(float dt)
 		glCallList(skyCacheID);
 		glPopMatrix();
 
-		renderBSPTree(bspRoot);
+		renderBSPTree(bspTree);
 
 		// as of right now we have to draw the entities
 		// Separately because they're nearly always
 		// being added and removed from the bsp tree to
 		// check for collisions.
-		drawEntityList(dt, entList);
+		drawEntityList(dt, getGame()->getEntList());
 	}
-
-
-//	if( drawGrid )	{
-		glPushMatrix();
-		glBegin(GL_LINES);
-//		glColor3f(0, 0, 1);
-		for(int x=0; x < 20; x++)	{
-			glVertex3f(x, 0, 0);
-			glVertex3f(x, 0, 20);
-		}
-		glEnd();
-		glPopMatrix();
-//	}
-
-
 
 
 
@@ -341,7 +328,7 @@ void Scene::render(float dt)
 	// Lighting Disabled Area:
 	// Disable lighting for drawing text and huds to the screen.
 	// Lighting will be re-enabled next time through.
-//	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHTING);
 
 	// Draw the console if open
 	if( con->consoleActive )
@@ -364,6 +351,8 @@ void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 			glCachePolygon(*itr);
 			(*itr)->polyID = (*itr)->glCacheID;
 			polygonCount++;	// just for stats, may be removed later
+
+			cout << "PolyCacheID: " << (*itr)->glCacheID << endl;
 		}
 	}
 	else	{
@@ -372,8 +361,46 @@ void Scene::nameAndCachePolygons(bsp_node_t* bspNode)	{
 	}
 }
 
+void Scene::unCachePolygons(bsp_node_t* bspNode)	{
+	list<polygon_t*>::iterator itr;
+
+	if( !bspNode )	{
+		cout << "BSP NODE IS NULL DAMN YOU" << endl;
+		return;
+	}
+
+	if( bspNode->isLeaf() )	{
+		cout << "Found a leaf uncaching " << bspNode->getPolygonList().size() << " polygons..." << endl;
+		for(itr = bspNode->beginPolyListItr(); itr != bspNode->endPolyListItr(); itr++)	{
+			int i = (*itr)->glCacheID;
+			glDeleteLists(i, 1);
+			cout << "glCacheID: " << (*itr)->glCacheID << " cleared." << endl;
+		}
+	}
+	else	{
+		cout << "Found node going front & back..." << endl;
+		nameAndCachePolygons(bspNode->front);
+		nameAndCachePolygons(bspNode->back);
+	}
+}
+
+
 void Scene::exit()	{
 	cleanExit();
+}
+
+void Scene::reset()	{
+	// unload textures, models, bsp tree
+	bsp_node_t* bspTree = getGame()->getBSPTree();
+	cout << "------ UNLOADING RESOURCES -------" << endl;
+	cout << "-> Un-caching Polygons..." << endl;
+	unCachePolygons(bspTree);
+	cout << "-> Freeing BSP Tree..." << endl;
+	deleteTree(bspTree);
+	polygonCount = 0;
+	cout << "-> Polygon Count set to 0." << endl;
+	cout << "------ RESOURCES UNLOADED  -------" << endl;
+
 }
 
 
