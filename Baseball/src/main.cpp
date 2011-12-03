@@ -26,7 +26,11 @@
 #include "Scene.h"
 #include "MaterialManager.h"
 #include "keys.h"			// Key presses defined
+
+
 #include "GameTest.h"		// INCLUDE GAME HEADER HERE
+
+
 #include <stdlib.h>
 #include <ctime>
 #include <iostream>
@@ -126,7 +130,7 @@ void cleanExit()	{
 // END GLOABLS!
 
 
-void* start_game_thread(void* args)	{
+void *start_game_thread(void* args)	{
 	cout << "Starting game thread..." << endl;
 	game->run();
 	cout << "Game thread finished." << endl;
@@ -159,10 +163,10 @@ long Sys_Milliseconds (void)
 	if (!sys_timeBase)
 	{
 		sys_timeBase = tp.tv_sec;
-		return tp.tv_usec/1000;
+		return tp.tv_usec*0.001f;
 	}
 
-	curtime = (tp.tv_sec - sys_timeBase)*1000 + tp.tv_usec/1000;
+	curtime = (tp.tv_sec - sys_timeBase)*1000 + (tp.tv_usec*0.001f);
 
 	return curtime;
 }
