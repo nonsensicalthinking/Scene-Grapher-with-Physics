@@ -7,16 +7,12 @@
 
 
 #include "MaterialManager.h"
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <math.h>
-
-//#include <GL/glx.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-
 
 #ifndef FONT_H_
 #define FONT_H_
