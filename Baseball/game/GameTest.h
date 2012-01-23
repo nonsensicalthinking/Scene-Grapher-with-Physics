@@ -28,6 +28,10 @@
 #include "shared.h"
 #include "ent.h"
 
+#ifdef _WIN32
+#include <direct.h>
+#endif// WINDOWS
+
 #define CAM_MOVE_RATE 	1
 
 #ifndef GAME_TEST_H_
@@ -296,7 +300,9 @@ public:
 
 		// TODO INCLUDE THIS WITH THE MAP!
 		// THIS IS JUST FOR LOADING THE SKY
-		chdir("images/");
+		string imagePath = "images/";
+
+		chdir(imagePath.c_str());
 
 		curScene->sky = gluNewQuadric();
 		gluQuadricTexture(curScene->sky, true);
