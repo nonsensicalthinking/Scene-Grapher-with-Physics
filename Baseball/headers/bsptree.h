@@ -12,7 +12,7 @@
 #define BSPTREE_H_
 #include <list>
 
-#define BSP_RECURSION_DEPTH		7
+#define BSP_RECURSION_DEPTH		11
 
 #define		PLANE_NORMAL_X		0
 #define 	PLANE_NORMAL_Y		1

@@ -276,6 +276,7 @@ void Scene::render(float dt)
 
 
 	glutSwapBuffers();	// swap out the display buffer with our new scene
+//	glFinish();	// make a possible option (will speed up transport delay but might cause studdering)
 }
 
 // TODO Make this part of the map some how instead of
