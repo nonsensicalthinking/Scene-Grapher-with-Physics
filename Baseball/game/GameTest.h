@@ -65,7 +65,7 @@ public:
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 		// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
 
-		float maxPossible_dt = 0.1f;	// Cap time step to 0.1 sec
+		float maxPossible_dt = 0.008f;	// Cap time step to 0.1 sec
 
 
 // commenting this out shaved off 1 fps

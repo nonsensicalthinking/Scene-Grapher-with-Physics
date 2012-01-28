@@ -150,6 +150,7 @@ public:
 		mass->applyForce(gravity);
 		float dragCoeff = getDragCoeff(mass->instantSpeed);
 
+/*
 		// Do Aerodynamic Drag
 		vec3_t dragForce;
 		VectorScale(mass->vel, dragCoeff, dragForce);
@@ -176,7 +177,7 @@ public:
 
 			mass->applyForce(result);
 		}
-
+*/
 	}
 	
 
