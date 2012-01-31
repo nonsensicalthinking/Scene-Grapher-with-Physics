@@ -78,6 +78,8 @@ inline entity_t* createEntity()	{
 	ent->facing[0] = 1.0;
 	ent->facing[1] = 0;
 	ent->facing[2] = 0;
+
+	return ent;
 }
 
 inline void cleanEntity(entity_t* ent)	{

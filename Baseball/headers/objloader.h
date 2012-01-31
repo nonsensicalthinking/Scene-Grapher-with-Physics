@@ -76,6 +76,8 @@ public:
 
 			processOBJLine(in);
 		}
+
+		return true;
 	}
 
 	void processOBJLine(char line[MAX_OBJ_LINE_LEN])	{
