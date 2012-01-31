@@ -42,22 +42,23 @@
 
 
 
-#ifdef __LINUX__
+#ifdef linux
 #include <pthread.h>
 #include <sys/time.h>
 #include <GL/glut.h>
-#endif // __LINUX__
+#endif // linux
 
 // Definitions
 #define SCREEN_WIDTH 		800
 #define SCREEN_HEIGHT 		600
 
 float sceneAdvRate = 0.5;
+float maxPossible_dt = 0.008f;
 int pitchSpeed = 120;
 
-#ifdef __LINUX__
+#ifdef linux
 pthread_t gameThread;
-#endif // __LINUX__
+#endif // linux
 
 float clearColor[] = {0.0, 0.12, 0.24, 0.0};
 
@@ -71,9 +72,7 @@ MaterialManager* materials;
 ModelManager* models;
 Game* game = NULL;	// C++ gives us inheritance, hooray!
 
-void* start_game_thread(void* args);	// Func defined below this
-
-
+void start_game_thread(void* args);	// Func defined below this
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE ABOVE THIS LINE //
@@ -96,10 +95,10 @@ void LoadGame()	{
 
 // We don't use threading yet, need a resource locking model in place first.
 /*
-#ifdef __LINUX__	// TODO This same define should work for MacOS too.
+#ifdef linux	// TODO This same define should work for MacOS too.
 	if( (errcode=pthread_create(&gameThread, NULL, start_game_thread, &args)) )
 		cout << "Error: Couldn't create pthread, error code: " << errcode << endl;
-#endif // __LINUX__
+#endif // linux
 */
 
 }
@@ -130,14 +129,13 @@ void cleanExit()	{
 // END GLOABLS!
 
 
-void *start_game_thread(void* args)	{
+void start_game_thread(void* args)	{
 	cout << "Starting game thread..." << endl;
 	game->run();
 	cout << "Game thread finished." << endl;
 }
 
 
-#ifdef __LINUX__	// TODO This same define should work for MacOS too
 /* From Quake 3 Arena
 ================
 Sys_Milliseconds
@@ -170,7 +168,7 @@ long Sys_Milliseconds (void)
 
 	return curtime;
 }
-#endif // __LINUX__
+
 
 void init()	{
 

@@ -105,6 +105,10 @@ public:
 	Simulation()	{
 	}
 
+	virtual ~Simulation()	{
+
+	}
+
 	virtual void release(Mass* mass)	{
 		delete(mass);
 		mass = NULL;
@@ -130,6 +134,50 @@ public:
 };
 
 
+class RK4Phys : public Simulation	{
+
+public:
+	RK4Phys()	{
+
+	}
+
+	virtual void solve(Mass* mass)	{
+
+
+	    /*def rk4(x, v, a, dt):
+	        """Returns final (position, velocity) tuple after
+	        time dt has passed.
+
+	        x: initial position (number-like object)
+	        v: initial velocity (number-like object)
+	        a: acceleration function a(x,v,dt) (must be callable)
+	        dt: timestep (number)"""
+	        x1 = x
+	        v1 = v
+	        a1 = a(x1, v1, 0)
+
+	        x2 = x + 0.5*v1*dt
+	        v2 = v + 0.5*a1*dt
+	        a2 = a(x2, v2, dt/2.0)
+
+	        x3 = x + 0.5*v2*dt
+	        v3 = v + 0.5*a2*dt
+	        a3 = a(x3, v3, dt/2.0)
+
+	        x4 = x + v3*dt
+	        v4 = v + a3*dt
+	        a4 = a(x4, v4, dt)
+
+	        xf = x + (dt/6.0)*(v1 + 2*v2 + 2*v3 + v4)
+	        vf = v + (dt/6.0)*(a1 + 2*a2 + 2*a3 + a4)
+
+	        return xf, vf*/
+	}
+
+
+};
+
+
 // Physics of a baseball in flight
 class BaseballPhysics : public Simulation	{
 public:
@@ -138,6 +186,7 @@ public:
 	BaseballPhysics(const vec3_t gravitation) : Simulation()	{																		//Vector3D gravitation, is the gravitational acceleration
 		VectorCopy(gravitation, this->gravitation);
 	}
+
 
 	virtual float magnusDecay(float rate, float decayRate)	{
 		return rate * decayRate;
@@ -148,7 +197,7 @@ public:
 		vec3_t gravity;
 		VectorScale(gravitation, mass->m, gravity);
 		mass->applyForce(gravity);
-		float dragCoeff = getDragCoeff(mass->instantSpeed);
+//		float dragCoeff = getDragCoeff(mass->instantSpeed);
 
 /*
 		// Do Aerodynamic Drag

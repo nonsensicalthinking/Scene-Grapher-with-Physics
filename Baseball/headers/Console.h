@@ -18,7 +18,6 @@
 
 using namespace std;
 
-
 class Console {
 public:
 	bool consoleActive;

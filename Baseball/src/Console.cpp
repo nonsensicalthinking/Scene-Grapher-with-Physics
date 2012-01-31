@@ -16,8 +16,7 @@ using namespace std;
 
 extern Scene* getScene();
 extern Game* getGame();
-extern float sceneAdvRate;
-
+extern float maxPossible_dt;
 
 Console::Console(int width, int height) {
 	input = new list<string>;
@@ -302,17 +301,15 @@ void Console::processConsoleCommand(const string conInput)	{
 		con_print(oss.str());
 		break;
 
-/*// Turn this into a slow-mo
 	case SAR:
-		int val2;
-		if( sscanf(conInput.c_str(), "sar %d", &val2) > 0 )	{
-			sceneAdvRate = val2;
+		float val2;
+		if( sscanf(conInput.c_str(), "sar %f", &val2) > 0 )	{
+			maxPossible_dt = val2;
 		}
 
-		oss << "SAR = " << sceneAdvRate << endl;
+		oss << "SAR = " << maxPossible_dt << endl;
 		con_print(oss.str());
 		break;
-*/
 
 
 	case -1:
