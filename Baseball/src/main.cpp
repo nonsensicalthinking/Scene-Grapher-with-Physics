@@ -35,10 +35,7 @@
 #include <ctime>
 #include <iostream>
 
-// pre-processor definitions
-#define __LINUX__
 #define MOUSELOOK	// For development, disable in release
-
 
 
 
@@ -70,9 +67,9 @@ long timeStamp;
 Scene* curScene;
 MaterialManager* materials;
 ModelManager* models;
-Game* game = NULL;	// C++ gives us inheritance, hooray!
+Game* game = NULL;
 
-void start_game_thread(void* args);	// Func defined below this
+void start_game_thread(void* args);
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // IF YOU ARE MODDING THIS ENGINE YOU DON'T NEED TO MODIFY THIS FILE ABOVE THIS LINE //
