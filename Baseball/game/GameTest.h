@@ -44,9 +44,9 @@
 
 // TODO REMOVE THIS
 extern int pitchSpeed;
+extern float maxPossible_dt;
 
 const vec3_t GRAVITY_EARTH = {0.0f, -9.81f, 0.0f};
-
 
 // inherit the game class
 class SpecialGame : public Game	{
@@ -65,8 +65,6 @@ public:
 		// dt Is The Time Interval (As Seconds) From The Previous Frame To The Current Frame.
 		// dt Will Be Used To Iterate Simulation Values Such As Velocity And Position Of Masses.
 
-		float maxPossible_dt = 0.008f;	// Cap time step to 0.1 sec
-
 
 // commenting this out shaved off 1 fps
 // before you un-comment, use multiplication instead!
@@ -75,8 +73,13 @@ public:
 		timeElapsed += dSec;											// Iterate Elapsed Time
 																	// This Is Needed So We Do Not Pass Over A Non Precise dt Value
 
-		int numOfIterations = (int)(dSec / maxPossible_dt) + 1;		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
+		// test comment, this had +1 added to it...
+		int numOfIterations = (int)(dSec / maxPossible_dt);		// Calculate Number Of Iterations To Be Made At This Update Depending On maxPossible_dt And dt
 
+//		int numOfIterations = (dSec * 125);
+
+		cout << "** numOfIterations: " << numOfIterations << "\n";
+//		cout << "** New numOfIterations: " << testNumOfIterations << "\n";
 
 	  	if (numOfIterations != 0)						// Avoid Division By Zero
 			dSec = dSec / numOfIterations;					// dt Should Be Updated According To numOfIterations
@@ -84,10 +87,12 @@ public:
 
 		// Simulation work from here down
 		if( bbPhys != NULL )	{
+
 			for (int a = 0; a < numOfIterations; ++a)	// We Need To Iterate Simulations "numOfIterations" Times
 			{
-				// remove all ents from BSP Tree
-				removeEntitiesFromBSPTree();
+				// we don't need to remove all ents, when re-adding it will re-classify (I think, investigate this)
+	//			removeEntitiesFromBSPTree();
+
 				// for number of masses do
 				vector<entity_t*> removalList;
 

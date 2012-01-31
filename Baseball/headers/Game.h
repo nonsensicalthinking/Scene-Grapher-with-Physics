@@ -38,7 +38,7 @@ public:
 
 	}
 
-	~Game()	{
+	virtual ~Game()	{
 
 	}
 
@@ -97,6 +97,7 @@ public:
 					break;
 				default:	// add to input line
 					curScene->con->appendToInput(key);
+					break;
 			}
 		}
 		else	{	// Don't send key input to console
