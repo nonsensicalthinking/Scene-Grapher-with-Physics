@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <iostream>
+#include <sys/time.h>
 
 #define MOUSELOOK	// For development, disable in release
 
@@ -41,7 +42,6 @@
 
 #ifdef linux
 #include <pthread.h>
-#include <sys/time.h>
 #include <GL/glut.h>
 #endif // linux
 

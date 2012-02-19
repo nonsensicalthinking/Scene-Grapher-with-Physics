@@ -78,7 +78,7 @@ public:
 
 //		int numOfIterations = (dSec * 125);
 
-		cout << "** numOfIterations: " << numOfIterations << "\n";
+//		cout << "** numOfIterations: " << numOfIterations << "\n";
 //		cout << "** New numOfIterations: " << testNumOfIterations << "\n";
 
 	  	if (numOfIterations != 0)						// Avoid Division By Zero
